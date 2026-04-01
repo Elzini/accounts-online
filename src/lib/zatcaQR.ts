@@ -52,6 +52,33 @@ function encodeTLV(tag: number, value: string): Uint8Array {
 }
 
 /**
+ * Encode a TLV field with raw binary value (for Tags 6-9)
+ */
+function encodeTLVBinary(tag: number, valueBytes: Uint8Array): Uint8Array {
+  const length = valueBytes.length;
+  if (length > 255) {
+    throw new Error(`TLV value too long for tag ${tag}: ${length} bytes`);
+  }
+  const result = new Uint8Array(2 + length);
+  result[0] = tag;
+  result[1] = length;
+  result.set(valueBytes, 2);
+  return result;
+}
+
+/**
+ * Decode Base64 string to Uint8Array (raw binary)
+ */
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
  * Combine multiple TLV fields into a single byte array
  */
 function combineTLV(fields: Uint8Array[]): Uint8Array {
@@ -142,18 +169,18 @@ export function generateZatcaQRData(data: ZatcaQRData): string {
     encodeTLV(5, formatAmount(data.vatAmount)),
   ];
   
-  // Phase 2 Tags (6-9, optional)
+  // Phase 2 Tags (6-9, optional) - encode as raw binary bytes per ZATCA spec
   if (data.invoiceHash) {
-    fields.push(encodeTLV(6, data.invoiceHash));
+    fields.push(encodeTLVBinary(6, base64ToUint8Array(data.invoiceHash)));
   }
   if (data.ecdsaSignature) {
-    fields.push(encodeTLV(7, data.ecdsaSignature));
+    fields.push(encodeTLVBinary(7, base64ToUint8Array(data.ecdsaSignature)));
   }
   if (data.ecdsaPublicKey) {
-    fields.push(encodeTLV(8, data.ecdsaPublicKey));
+    fields.push(encodeTLVBinary(8, base64ToUint8Array(data.ecdsaPublicKey)));
   }
   if (data.certificateSignature) {
-    fields.push(encodeTLV(9, data.certificateSignature));
+    fields.push(encodeTLVBinary(9, base64ToUint8Array(data.certificateSignature)));
   }
   
   const combined = combineTLV(fields);
@@ -241,36 +268,31 @@ export function decodeZatcaQRData(base64Data: string): ZatcaQRData | null {
     while (offset < bytes.length) {
       const tag = bytes[offset];
       const length = bytes[offset + 1];
-      const value = decoder.decode(bytes.slice(offset + 2, offset + 2 + length));
+      const rawValue = bytes.slice(offset + 2, offset + 2 + length);
       
-      switch (tag) {
-        case 1:
-          result.sellerName = value;
-          break;
-        case 2:
-          result.vatNumber = value;
-          break;
-        case 3:
-          result.invoiceDateTime = value;
-          break;
-        case 4:
-          result.invoiceTotal = parseFloat(value);
-          break;
-        case 5:
-          result.vatAmount = parseFloat(value);
-          break;
-        case 6:
-          result.invoiceHash = value;
-          break;
-        case 7:
-          result.ecdsaSignature = value;
-          break;
-        case 8:
-          result.ecdsaPublicKey = value;
-          break;
-        case 9:
-          result.certificateSignature = value;
-          break;
+      // Tags 1-5 are UTF-8 text, Tags 6-9 are raw binary (convert to Base64)
+      if (tag >= 1 && tag <= 5) {
+        const value = decoder.decode(rawValue);
+        switch (tag) {
+          case 1: result.sellerName = value; break;
+          case 2: result.vatNumber = value; break;
+          case 3: result.invoiceDateTime = value; break;
+          case 4: result.invoiceTotal = parseFloat(value); break;
+          case 5: result.vatAmount = parseFloat(value); break;
+        }
+      } else {
+        // Binary tags - convert to Base64 for storage
+        let binStr = '';
+        for (let i = 0; i < rawValue.length; i++) {
+          binStr += String.fromCharCode(rawValue[i]);
+        }
+        const b64Value = btoa(binStr);
+        switch (tag) {
+          case 6: result.invoiceHash = b64Value; break;
+          case 7: result.ecdsaSignature = b64Value; break;
+          case 8: result.ecdsaPublicKey = b64Value; break;
+          case 9: result.certificateSignature = b64Value; break;
+        }
       }
       
       offset += 2 + length;
