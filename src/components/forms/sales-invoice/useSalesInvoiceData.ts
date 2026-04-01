@@ -31,7 +31,7 @@ import { createSalesInvoiceActions } from './useSalesInvoiceActions';
 const defaultInvoiceData: InvoiceFormData = {
   invoice_number: '', customer_id: '', sale_date: new Date().toISOString().split('T')[0],
   issue_time: new Date().toTimeString().slice(0, 5), payment_account_id: '', warehouse: 'main',
-  seller_name: '', notes: '', price_includes_tax: false, commission: '', other_expenses: '',
+  seller_name: '', notes: '', price_includes_tax: true, commission: '', other_expenses: '',
   is_installment: false, down_payment: '', number_of_installments: '12', last_payment_date: '',
   first_installment_date: new Date().toISOString().split('T')[0],
 };
@@ -299,7 +299,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
       issue_time: isInvoiceRecord && sale.invoice_date?.includes('T') ? sale.invoice_date.split('T')[1]?.slice(0, 5) || new Date(sale.created_at).toTimeString().slice(0, 5) : new Date(sale.created_at).toTimeString().slice(0, 5),
       payment_account_id: sale.payment_account_id || '', warehouse: 'main',
       seller_name: sale.seller_name || '', notes: sale.notes || '',
-      price_includes_tax: false, commission: String(sale.commission || ''), other_expenses: String(sale.other_expenses || ''),
+      price_includes_tax: true, commission: String(sale.commission || ''), other_expenses: String(sale.other_expenses || ''),
       is_installment: false, down_payment: '', number_of_installments: '12', last_payment_date: '',
       first_installment_date: new Date().toISOString().split('T')[0],
     });
