@@ -432,9 +432,18 @@ export function CarWarehouseStocktakingPage() {
           <Button variant="outline" className="gap-2" onClick={handleExportExcel} disabled={entries.length === 0}>
             <FileSpreadsheet className="w-4 h-4" />تصدير Excel
           </Button>
-          <Button variant="outline" className="gap-2" onClick={handlePrintReport} disabled={entries.length === 0}>
-            <Printer className="w-4 h-4" />طباعة تقرير
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2" disabled={entries.length === 0}>
+                <Printer className="w-4 h-4" />طباعة تقرير
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handlePrintReport('all')}>جميع السيارات</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePrintReport('available')}>السيارات المتاحة فقط</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePrintReport('exited')}>السيارات التي خرجت فقط</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {/* Bulk Import Button */}
           <Dialog open={showBulk} onOpenChange={v => { if (!v) { bulkEntries.forEach(e => URL.revokeObjectURL(e.preview)); setBulkEntries([]); } setShowBulk(v); }}>
             <DialogTrigger asChild>
