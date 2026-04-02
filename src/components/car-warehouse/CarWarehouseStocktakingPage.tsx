@@ -200,7 +200,7 @@ export function CarWarehouseStocktakingPage() {
         location: e.location === 'warehouse' || !e.location ? 'المستودع' : e.location,
         buyer: buyerName,
         status: e.exit_date ? 'خرجت' : 'في المستودع',
-      })),
+      }}),
       summaryCards: [
         { label: 'إجمالي السيارات (في المستودع)', value: String(inCount) },
         { label: 'إجمالي المسجلة', value: String(entries.length) },
