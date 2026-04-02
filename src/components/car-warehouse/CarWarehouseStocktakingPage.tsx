@@ -571,10 +571,11 @@ export function CarWarehouseStocktakingPage() {
             />
           </div>
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
-            <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{filteredEntries.length}</div><p className="text-sm text-muted-foreground">إجمالي السيارات</p></CardContent></Card>
-            <Card><CardContent className="pt-4 text-center"><Warehouse className="w-8 h-8 mx-auto mb-2 text-green-600" /><div className="text-2xl font-bold">{inCount}</div><p className="text-sm text-muted-foreground">داخل المستودع</p></CardContent></Card>
-            <Card><CardContent className="pt-4 text-center"><Calendar className="w-8 h-8 mx-auto mb-2 text-orange-600" /><div className="text-2xl font-bold">{outCount}</div><p className="text-sm text-muted-foreground">خرجت من المستودع</p></CardContent></Card>
+          <div className="grid grid-cols-4 gap-4">
+            <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{inCount}</div><p className="text-sm text-muted-foreground">إجمالي السيارات (في المستودع)</p></CardContent></Card>
+            <Card><CardContent className="pt-4 text-center"><Warehouse className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{filteredEntries.length}</div><p className="text-sm text-muted-foreground">إجمالي المسجلة</p></CardContent></Card>
+            <Card><CardContent className="pt-4 text-center"><Calendar className="w-8 h-8 mx-auto mb-2 text-destructive" /><div className="text-2xl font-bold">{outCount}</div><p className="text-sm text-muted-foreground">خرجت من المستودع</p></CardContent></Card>
+            <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-muted-foreground" /><div className="text-2xl font-bold">{inCount + outCount > 0 ? Math.round((inCount / (inCount + outCount)) * 100) : 0}%</div><p className="text-sm text-muted-foreground">نسبة المتبقي</p></CardContent></Card>
           </div>
 
       {/* Table */}
