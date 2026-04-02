@@ -169,11 +169,21 @@ export function usePrintReport() {
             text-align: left;
           }
           
+          .summary-group-label {
+            font-size: 15px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 8px;
+            margin-top: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #e2e8f0;
+          }
+          
           .summary-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 15px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
           }
           
           .summary-card {
