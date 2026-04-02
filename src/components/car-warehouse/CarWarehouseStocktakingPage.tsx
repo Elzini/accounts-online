@@ -227,12 +227,12 @@ export function CarWarehouseStocktakingPage() {
           }, {})
         ).map(([loc, count]) => ({ label: loc, value: `${count} سيارة`, color: '#8b5cf6', group: 'توزيع الأماكن (المتاحة)' })),
         ...Object.entries(
-          entries.reduce<Record<string, number>>((acc, e) => {
+          notExitedEntries.reduce<Record<string, number>>((acc, e) => {
             const type = e.car_type?.trim() || 'غير محدد';
             acc[type] = (acc[type] || 0) + 1;
             return acc;
           }, {})
-        ).map(([type, count]) => ({ label: type, value: `${count} سيارة`, color: '#f59e0b', group: 'توزيع حسب النوع' })),
+        ).map(([type, count]) => ({ label: type, value: `${count} سيارة`, color: '#f59e0b', group: 'توزيع حسب النوع (المتاحة)' })),
       ],
     });
   }
