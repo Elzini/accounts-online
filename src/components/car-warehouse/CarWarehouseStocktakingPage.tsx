@@ -697,6 +697,24 @@ export function CarWarehouseStocktakingPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Buyer Dialog */}
+      <Dialog open={!!editBuyer} onOpenChange={(v) => { if (!v) setEditBuyer(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>تعديل اسم المشتري</DialogTitle></DialogHeader>
+          {editBuyer && (
+            <div className="space-y-4">
+              <div>
+                <Label>اسم المشتري / جهة الخروج</Label>
+                <Input value={editBuyer.buyer} onChange={e => setEditBuyer(p => p ? { ...p, buyer: e.target.value } : p)} placeholder="اسم المشتري" />
+              </div>
+              <Button className="w-full" onClick={() => editBuyerMutation.mutate({ id: editBuyer.id, buyer: editBuyer.buyer, oldNotes: editBuyer.notes })} disabled={editBuyerMutation.isPending}>
+                {editBuyerMutation.isPending ? 'جاري الحفظ...' : 'حفظ'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Image Preview Dialog */}
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
         <DialogContent className="max-w-2xl">
