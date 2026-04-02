@@ -761,7 +761,23 @@ export function CarWarehouseStocktakingPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Image Preview Dialog */}
+      {/* Edit Sale Date Dialog */}
+      <Dialog open={!!editSaleDate} onOpenChange={(v) => { if (!v) setEditSaleDate(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>تعديل تاريخ البيع</DialogTitle></DialogHeader>
+          {editSaleDate && (
+            <div className="space-y-4">
+              <div>
+                <Label>تاريخ البيع</Label>
+                <Input type="date" value={editSaleDate.saleDate} onChange={e => setEditSaleDate(p => p ? { ...p, saleDate: e.target.value } : p)} />
+              </div>
+              <Button className="w-full" onClick={() => updateSaleDateMutation.mutate({ id: editSaleDate.id, saleDate: editSaleDate.saleDate })} disabled={updateSaleDateMutation.isPending || !editSaleDate.saleDate}>
+                {updateSaleDateMutation.isPending ? 'جاري الحفظ...' : 'حفظ'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>صورة الهيكل</DialogTitle></DialogHeader>
