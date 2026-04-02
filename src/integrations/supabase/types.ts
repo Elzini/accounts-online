@@ -10053,6 +10053,7 @@ export type Database = {
           location: string | null
           notes: string | null
           price: number | null
+          sale_date: string | null
           updated_at: string
         }
         Insert: {
@@ -10068,6 +10069,7 @@ export type Database = {
           location?: string | null
           notes?: string | null
           price?: number | null
+          sale_date?: string | null
           updated_at?: string
         }
         Update: {
@@ -10083,6 +10085,7 @@ export type Database = {
           location?: string | null
           notes?: string | null
           price?: number | null
+          sale_date?: string | null
           updated_at?: string
         }
         Relationships: [
