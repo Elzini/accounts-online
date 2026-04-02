@@ -109,6 +109,7 @@ export function CarWarehouseStocktakingPage() {
     onError: () => toast.error('حدث خطأ أثناء الحذف'),
   });
 
+  const [editBuyer, setEditBuyer] = useState<{ id: string; buyer: string; notes: string } | null>(null);
   const [exitForm, setExitForm] = useState<{ id: string; date: string; buyer: string; existingNotes: string } | null>(null);
 
   const exitMutation = useMutation({
