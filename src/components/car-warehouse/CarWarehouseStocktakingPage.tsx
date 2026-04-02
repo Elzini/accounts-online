@@ -396,8 +396,14 @@ export function CarWarehouseStocktakingPage() {
            (e.car_color || '').toLowerCase().includes(term) ||
            (e.location || '').toLowerCase().includes(term);
   });
-  const inCount = filteredEntries.filter(e => !e.exit_date).length;
   const outCount = filteredEntries.filter(e => !!e.exit_date).length;
+  const notExitedEntries = filteredEntries.filter(e => !e.exit_date);
+  const externalLocations = ['ابها', 'الخيار البديل'];
+  const inWarehouseCount = notExitedEntries.filter(e => {
+    const loc = (e.location || '').trim().toLowerCase();
+    return !loc || loc === 'warehouse' || loc === 'المستودع';
+  }).length;
+  const inCount = inWarehouseCount;
 
   return (
     <div className="space-y-6 animate-fade-in">
