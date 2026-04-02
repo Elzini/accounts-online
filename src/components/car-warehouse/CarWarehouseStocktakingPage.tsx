@@ -627,7 +627,7 @@ export function CarWarehouseStocktakingPage() {
                         {entry.location === 'warehouse' || !entry.location ? 'المستودع' : entry.location}
                       </Badge>
                     </TableCell>
-                    <TableCell>{entry.price ? new Intl.NumberFormat('en-SA').format(entry.price) : '-'}</TableCell>
+                    <TableCell>{(() => { const buyerMatch = entry.notes?.match(/المشتري:\s*(.+?)(?:\s*\||$)/); return buyerMatch ? buyerMatch[1].trim() : (entry.price ? String(entry.price) : '-'); })()}</TableCell>
                     <TableCell>
                       <Badge variant={entry.exit_date ? 'secondary' : 'default'}>
                         {entry.exit_date ? 'خرجت' : 'في المستودع'}
