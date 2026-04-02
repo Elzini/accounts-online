@@ -216,6 +216,7 @@ export function CarWarehouseStocktakingPage() {
       }}),
       summaryCards: [
         { label: 'إجمالي السيارات (في المستودع)', value: String(inCount) },
+        { label: 'إجمالي المتاحة', value: String(notExitedEntries.length) },
         { label: 'إجمالي المسجلة', value: String(entries.length) },
         { label: 'خرجت', value: String(outCount) },
         ...Object.entries(
