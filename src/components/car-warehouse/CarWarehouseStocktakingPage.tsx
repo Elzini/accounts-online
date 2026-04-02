@@ -152,18 +152,21 @@ export function CarWarehouseStocktakingPage() {
 
   async function handleExportExcel() {
     const { createSimpleExcel, downloadExcelBuffer } = await import('@/lib/excelUtils');
-    const fmtCur = (v: number | null) => v ? new Intl.NumberFormat('en-SA').format(v) : '-';
+    const getBuyerName = (e: WarehouseCarEntry) => {
+      const match = e.notes?.match(/المشتري:\s*(.+?)(?:\s*\||$)/);
+      return match ? match[1].trim() : '-';
+    };
     const rows: any[][] = [
       ['#', 'نوع السيارة', 'اللون', 'رقم الهيكل', 'تاريخ الدخول', 'تاريخ الخروج', 'المكان', 'اسم المشتري', 'الحالة'],
       ...entries.map((e, i) => [
         i + 1, e.car_type, e.car_color || '-', e.chassis_number,
         e.entry_date, e.exit_date || '-',
         e.location === 'warehouse' || !e.location ? 'المستودع' : e.location,
-        e.price || '-',
+        getBuyerName(e),
         e.exit_date ? 'خرجت' : 'في المستودع',
       ]),
     ];
-    const buffer = await createSimpleExcel('جرد المستودع', rows, { rtl: true, columnWidths: [6, 20, 12, 25, 14, 14, 14, 14] });
+    const buffer = await createSimpleExcel('جرد المستودع', rows, { rtl: true, columnWidths: [6, 20, 12, 25, 14, 14, 14, 20] });
     downloadExcelBuffer(buffer, 'تقرير_جرد_المستودع.xlsx');
     toast.success('تم تصدير التقرير بنجاح');
   }
