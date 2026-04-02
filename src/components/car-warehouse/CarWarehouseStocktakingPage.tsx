@@ -250,7 +250,7 @@ export function CarWarehouseStocktakingPage() {
             return acc;
           }, {})
         ).map(([type, count]) => ({ label: type, value: `${count} سيارة`, color: '#f59e0b', group: `توزيع حسب النوع (${distLabel})` }));
-        return [...generalCards, ...locationCards, ...typeCards];
+        return [...(filter === 'exited' ? [] : generalCards), ...locationCards, ...typeCards];
       })(),
     });
     setShowPrintOptions(false);
