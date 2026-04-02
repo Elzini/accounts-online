@@ -11,10 +11,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare, FileSpreadsheet, MapPin, Search, LogOut, Pencil } from 'lucide-react';
+import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare, FileSpreadsheet, MapPin, Search, LogOut, Pencil, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { WarehouseReconciliation } from './WarehouseReconciliation';
+import { WarehouseDailyReport } from './WarehouseDailyReport';
 import { usePartnerDealerships } from '@/hooks/useTransfers';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { supabase } from '@/integrations/supabase/client';
@@ -573,8 +574,9 @@ export function CarWarehouseStocktakingPage() {
       </div>
 
       <Tabs defaultValue="inventory" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
+        <TabsList className="grid w-full grid-cols-3 max-w-lg">
           <TabsTrigger value="inventory" className="gap-2"><Warehouse className="w-4 h-4" />جرد المستودع</TabsTrigger>
+          <TabsTrigger value="daily-report" className="gap-2"><CalendarDays className="w-4 h-4" />التقرير اليومي</TabsTrigger>
           <TabsTrigger value="reconciliation" className="gap-2"><GitCompare className="w-4 h-4" />مطابقة المخزون</TabsTrigger>
         </TabsList>
 
@@ -687,6 +689,10 @@ export function CarWarehouseStocktakingPage() {
           </div>
         )}
       </CardContent></Card>
+        </TabsContent>
+
+        <TabsContent value="daily-report" className="mt-4">
+          <WarehouseDailyReport />
         </TabsContent>
 
         <TabsContent value="reconciliation" className="mt-4">
