@@ -574,8 +574,9 @@ export function CarWarehouseStocktakingPage() {
       </div>
 
       <Tabs defaultValue="inventory" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
+        <TabsList className="grid w-full grid-cols-3 max-w-lg">
           <TabsTrigger value="inventory" className="gap-2"><Warehouse className="w-4 h-4" />جرد المستودع</TabsTrigger>
+          <TabsTrigger value="daily-report" className="gap-2"><CalendarDays className="w-4 h-4" />التقرير اليومي</TabsTrigger>
           <TabsTrigger value="reconciliation" className="gap-2"><GitCompare className="w-4 h-4" />مطابقة المخزون</TabsTrigger>
         </TabsList>
 
