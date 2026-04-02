@@ -227,26 +227,30 @@ export function CarWarehouseStocktakingPage() {
           const loc = (e.location || '').trim().toLowerCase();
           return !loc || loc === 'warehouse' || loc === 'المستودع';
         });
-        return [
+        const generalCards = [
           { label: 'إجمالي المسجلة', value: String(entries.length), color: '#3b82f6', group: 'الإحصائيات العامة' },
           { label: 'إجمالي المتاحة', value: String(allNotExited.length), color: '#22c55e', group: 'الإحصائيات العامة' },
           { label: 'داخل المستودع', value: String(allInWarehouse.length), color: '#0ea5e9', group: 'الإحصائيات العامة' },
           { label: 'خرجت', value: String(allExited.length), color: '#ef4444', group: 'الإحصائيات العامة' },
-          ...Object.entries(
-            allNotExited.reduce<Record<string, number>>((acc, e) => {
-              const loc = (!e.location || e.location === 'warehouse') ? 'المستودع' : e.location.trim();
-              acc[loc] = (acc[loc] || 0) + 1;
-              return acc;
-            }, {})
-          ).map(([loc, count]) => ({ label: loc, value: `${count} سيارة`, color: '#8b5cf6', group: 'توزيع الأماكن (المتاحة)' })),
-          ...Object.entries(
-            allNotExited.reduce<Record<string, number>>((acc, e) => {
-              const type = e.car_type?.trim() || 'غير محدد';
-              acc[type] = (acc[type] || 0) + 1;
-              return acc;
-            }, {})
-          ).map(([type, count]) => ({ label: type, value: `${count} سيارة`, color: '#f59e0b', group: 'توزيع حسب النوع (المتاحة)' })),
         ];
+        // Use reportEntries for distribution cards so they match the selected filter
+        const distLabel = filter === 'exited' ? 'التي خرجت' : filter === 'available' ? 'المتاحة' : 'المتاحة';
+        const distEntries = filter === 'exited' ? allExited : filter === 'available' ? allNotExited : allNotExited;
+        const locationCards = Object.entries(
+          distEntries.reduce<Record<string, number>>((acc, e) => {
+            const loc = (!e.location || e.location === 'warehouse') ? 'المستودع' : e.location.trim();
+            acc[loc] = (acc[loc] || 0) + 1;
+            return acc;
+          }, {})
+        ).map(([loc, count]) => ({ label: loc, value: `${count} سيارة`, color: '#8b5cf6', group: `توزيع الأماكن (${distLabel})` }));
+        const typeCards = Object.entries(
+          distEntries.reduce<Record<string, number>>((acc, e) => {
+            const type = e.car_type?.trim() || 'غير محدد';
+            acc[type] = (acc[type] || 0) + 1;
+            return acc;
+          }, {})
+        ).map(([type, count]) => ({ label: type, value: `${count} سيارة`, color: '#f59e0b', group: `توزيع حسب النوع (${distLabel})` }));
+        return [...generalCards, ...locationCards, ...typeCards];
       })(),
     });
     setShowPrintOptions(false);
