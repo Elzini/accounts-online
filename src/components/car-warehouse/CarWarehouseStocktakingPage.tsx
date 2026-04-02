@@ -188,7 +188,7 @@ export function CarWarehouseStocktakingPage() {
     const fmtCur = (v: number | null) => v ? new Intl.NumberFormat('en-SA').format(v) : '-';
     printReport({
       title: 'تقرير جرد مستودع السيارات',
-      subtitle: `إجمالي: ${entries.length} سيارة | داخل المستودع: ${inCount} | خرجت: ${outCount}`,
+      subtitle: `إجمالي: ${entries.length} سيارة | متاحة: ${notExitedEntries.length} | داخل المستودع: ${inCount} | خرجت: ${outCount}`,
       columns: [
         { header: '#', key: 'index' },
         { header: 'نوع السيارة', key: 'car_type' },
