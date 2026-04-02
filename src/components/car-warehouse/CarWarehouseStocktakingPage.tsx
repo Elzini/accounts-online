@@ -63,7 +63,8 @@ export function CarWarehouseStocktakingPage() {
   const [extracting, setExtracting] = useState(false);
   const [bulkExtracting, setBulkExtracting] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
-
+  const [printFilter, setPrintFilter] = useState<'all' | 'available' | 'exited'>('all');
+  const [showPrintOptions, setShowPrintOptions] = useState(false);
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['warehouse-car-inventory', companyId],
     queryFn: () => fetchWarehouseCarInventory(companyId!),
