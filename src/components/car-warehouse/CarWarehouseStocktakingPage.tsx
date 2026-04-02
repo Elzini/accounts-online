@@ -152,7 +152,7 @@ export function CarWarehouseStocktakingPage() {
 
   async function handleExportExcel() {
     const { createSimpleExcel, downloadExcelBuffer } = await import('@/lib/excelUtils');
-    const getBuyerName = (e: WarehouseCarEntry) => {
+    const getBuyerName = (e: typeof entries[number]) => {
       const match = e.notes?.match(/المشتري:\s*(.+?)(?:\s*\||$)/);
       return match ? match[1].trim() : '-';
     };
