@@ -130,6 +130,19 @@ export function CarWarehouseStocktakingPage() {
     },
   });
 
+  const editBuyerMutation = useMutation({
+    mutationFn: async ({ id, buyer, oldNotes }: { id: string; buyer: string; oldNotes: string }) => {
+      const cleanedNotes = oldNotes.replace(/\s*\|?\s*المشتري:\s*.+?(?:\s*\||$)/, '').trim();
+      const newNotes = buyer ? (cleanedNotes ? `${cleanedNotes} | المشتري: ${buyer}` : `المشتري: ${buyer}`) : cleanedNotes;
+      return updateWarehouseCarEntry(id, { notes: newNotes || undefined } as any);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['warehouse-car-inventory'] });
+      toast.success('تم تحديث اسم المشتري');
+      setEditBuyer(null);
+    },
+  });
+
   function resetForm() {
     setForm({ car_type: '', car_color: '', chassis_number: '', entry_date: new Date().toISOString().split('T')[0], exit_date: '', price: '', notes: '', location: 'warehouse' });
     setImageFile(null);
