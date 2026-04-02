@@ -662,6 +662,28 @@ export function CarWarehouseStocktakingPage() {
         </TabsContent>
       </Tabs>
 
+      {/* Exit Dialog */}
+      <Dialog open={!!exitForm} onOpenChange={(v) => { if (!v) setExitForm(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>تسجيل خروج السيارة</DialogTitle></DialogHeader>
+          {exitForm && (
+            <div className="space-y-4">
+              <div>
+                <Label>تاريخ الخروج</Label>
+                <Input type="date" value={exitForm.date} onChange={e => setExitForm(p => p ? { ...p, date: e.target.value } : p)} />
+              </div>
+              <div>
+                <Label>اسم المشتري / جهة الخروج</Label>
+                <Input value={exitForm.buyer} onChange={e => setExitForm(p => p ? { ...p, buyer: e.target.value } : p)} placeholder="اسم المشتري أو جهة الاستلام" />
+              </div>
+              <Button className="w-full" onClick={() => exitMutation.mutate({ id: exitForm.id, date: exitForm.date, buyer: exitForm.buyer })} disabled={exitMutation.isPending || !exitForm.date}>
+                {exitMutation.isPending ? 'جاري التسجيل...' : 'تسجيل الخروج'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Image Preview Dialog */}
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
         <DialogContent className="max-w-2xl">
