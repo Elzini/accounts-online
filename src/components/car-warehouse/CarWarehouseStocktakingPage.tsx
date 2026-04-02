@@ -109,10 +109,22 @@ export function CarWarehouseStocktakingPage() {
     onError: () => toast.error('حدث خطأ أثناء الحذف'),
   });
 
+  const [exitForm, setExitForm] = useState<{ id: string; date: string; buyer: string; existingNotes: string } | null>(null);
+
   const exitMutation = useMutation({
-    mutationFn: ({ id, date }: { id: string; date: string }) => updateWarehouseCarEntry(id, { exit_date: date }),
+    mutationFn: async ({ id, date, buyer }: { id: string; date: string; buyer: string }) => {
+      const updates: any = { exit_date: date };
+      if (buyer) {
+        // Find existing entry to get current notes
+        const entry = entries.find(e => e.id === id);
+        const existingNotes = entry?.notes || '';
+        updates.notes = existingNotes ? `${existingNotes} | المشتري: ${buyer}` : `المشتري: ${buyer}`;
+      }
+      return updateWarehouseCarEntry(id, updates);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['warehouse-car-inventory'] });
+      setExitForm(null);
       toast.success('تم تسجيل خروج السيارة');
     },
   });
@@ -170,10 +182,9 @@ export function CarWarehouseStocktakingPage() {
         status: e.exit_date ? 'خرجت' : 'في المستودع',
       })),
       summaryCards: [
-        { label: 'إجمالي السيارات', value: String(entries.length) },
-        { label: 'داخل المستودع', value: String(inCount) },
+        { label: 'إجمالي السيارات (في المستودع)', value: String(inCount) },
+        { label: 'إجمالي المسجلة', value: String(entries.length) },
         { label: 'خرجت', value: String(outCount) },
-        { label: 'إجمالي القيمة', value: fmtCur(entries.reduce((s, e) => s + (e.price || 0), 0)) },
         ...Object.entries(
           entries.reduce<Record<string, number>>((acc, e) => {
             const loc = (!e.location || e.location === 'warehouse') ? 'المستودع' : e.location.trim();
@@ -559,10 +570,11 @@ export function CarWarehouseStocktakingPage() {
             />
           </div>
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
-            <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{filteredEntries.length}</div><p className="text-sm text-muted-foreground">إجمالي السيارات</p></CardContent></Card>
-            <Card><CardContent className="pt-4 text-center"><Warehouse className="w-8 h-8 mx-auto mb-2 text-green-600" /><div className="text-2xl font-bold">{inCount}</div><p className="text-sm text-muted-foreground">داخل المستودع</p></CardContent></Card>
-            <Card><CardContent className="pt-4 text-center"><Calendar className="w-8 h-8 mx-auto mb-2 text-orange-600" /><div className="text-2xl font-bold">{outCount}</div><p className="text-sm text-muted-foreground">خرجت من المستودع</p></CardContent></Card>
+          <div className="grid grid-cols-4 gap-4">
+            <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{inCount}</div><p className="text-sm text-muted-foreground">إجمالي السيارات (في المستودع)</p></CardContent></Card>
+            <Card><CardContent className="pt-4 text-center"><Warehouse className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{filteredEntries.length}</div><p className="text-sm text-muted-foreground">إجمالي المسجلة</p></CardContent></Card>
+            <Card><CardContent className="pt-4 text-center"><Calendar className="w-8 h-8 mx-auto mb-2 text-destructive" /><div className="text-2xl font-bold">{outCount}</div><p className="text-sm text-muted-foreground">خرجت من المستودع</p></CardContent></Card>
+            <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-muted-foreground" /><div className="text-2xl font-bold">{inCount + outCount > 0 ? Math.round((inCount / (inCount + outCount)) * 100) : 0}%</div><p className="text-sm text-muted-foreground">نسبة المتبقي</p></CardContent></Card>
           </div>
 
       {/* Table */}
@@ -614,7 +626,7 @@ export function CarWarehouseStocktakingPage() {
                         {entry.location === 'warehouse' || !entry.location ? 'المستودع' : entry.location}
                       </Badge>
                     </TableCell>
-                    <TableCell>{entry.price ? new Intl.NumberFormat('en-SA').format(entry.price) : '-'}</TableCell>
+                    <TableCell>{(() => { const buyerMatch = entry.notes?.match(/المشتري:\s*(.+?)(?:\s*\||$)/); return buyerMatch ? buyerMatch[1].trim() : (entry.price ? String(entry.price) : '-'); })()}</TableCell>
                     <TableCell>
                       <Badge variant={entry.exit_date ? 'secondary' : 'default'}>
                         {entry.exit_date ? 'خرجت' : 'في المستودع'}
@@ -624,27 +636,9 @@ export function CarWarehouseStocktakingPage() {
                     <TableCell>
                       <div className="flex gap-1">
                         {!entry.exit_date && (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button size="sm" variant="outline" title="تسجيل خروج">
-                                <LogOut className="w-3 h-3" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <div className="p-2 text-center text-sm font-medium text-muted-foreground">اختر تاريخ الخروج</div>
-                              <CalendarComponent
-                                mode="single"
-                                selected={new Date()}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    exitMutation.mutate({ id: entry.id, date: format(date, 'yyyy-MM-dd') });
-                                  }
-                                }}
-                                initialFocus
-                                className={cn("p-3 pointer-events-auto")}
-                              />
-                            </PopoverContent>
-                          </Popover>
+                          <Button size="sm" variant="outline" title="تسجيل خروج" onClick={() => setExitForm({ id: entry.id, date: format(new Date(), 'yyyy-MM-dd'), buyer: '', existingNotes: entry.notes || '' })}>
+                            <LogOut className="w-3 h-3" />
+                          </Button>
                         )}
                         <Button size="sm" variant="ghost" className="text-destructive" onClick={() => {
                           if (confirm('هل أنت متأكد من الحذف؟')) deleteMutation.mutate(entry.id);
@@ -666,6 +660,28 @@ export function CarWarehouseStocktakingPage() {
           <WarehouseReconciliation />
         </TabsContent>
       </Tabs>
+
+      {/* Exit Dialog */}
+      <Dialog open={!!exitForm} onOpenChange={(v) => { if (!v) setExitForm(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>تسجيل خروج السيارة</DialogTitle></DialogHeader>
+          {exitForm && (
+            <div className="space-y-4">
+              <div>
+                <Label>تاريخ الخروج</Label>
+                <Input type="date" value={exitForm.date} onChange={e => setExitForm(p => p ? { ...p, date: e.target.value } : p)} />
+              </div>
+              <div>
+                <Label>اسم المشتري / جهة الخروج</Label>
+                <Input value={exitForm.buyer} onChange={e => setExitForm(p => p ? { ...p, buyer: e.target.value } : p)} placeholder="اسم المشتري أو جهة الاستلام" />
+              </div>
+              <Button className="w-full" onClick={() => exitMutation.mutate({ id: exitForm.id, date: exitForm.date, buyer: exitForm.buyer })} disabled={exitMutation.isPending || !exitForm.date}>
+                {exitMutation.isPending ? 'جاري التسجيل...' : 'تسجيل الخروج'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Image Preview Dialog */}
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
