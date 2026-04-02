@@ -627,7 +627,20 @@ export function CarWarehouseStocktakingPage() {
                         {entry.location === 'warehouse' || !entry.location ? 'المستودع' : entry.location}
                       </Badge>
                     </TableCell>
-                    <TableCell>{(() => { const buyerMatch = entry.notes?.match(/المشتري:\s*(.+?)(?:\s*\||$)/); return buyerMatch ? buyerMatch[1].trim() : (entry.price ? String(entry.price) : '-'); })()}</TableCell>
+                    <TableCell>
+                      {(() => {
+                        const buyerMatch = entry.notes?.match(/المشتري:\s*(.+?)(?:\s*\||$)/);
+                        const buyerName = buyerMatch ? buyerMatch[1].trim() : (entry.price ? String(entry.price) : '-');
+                        return (
+                          <div className="flex items-center gap-1">
+                            <span>{buyerName}</span>
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="تعديل اسم المشتري" onClick={() => setEditBuyer({ id: entry.id, buyer: buyerMatch ? buyerMatch[1].trim() : (entry.price ? String(entry.price) : ''), notes: entry.notes || '' })}>
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={entry.exit_date ? 'secondary' : 'default'}>
                         {entry.exit_date ? 'خرجت' : 'في المستودع'}
