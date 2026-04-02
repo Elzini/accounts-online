@@ -182,10 +182,9 @@ export function CarWarehouseStocktakingPage() {
         status: e.exit_date ? 'خرجت' : 'في المستودع',
       })),
       summaryCards: [
-        { label: 'إجمالي السيارات', value: String(entries.length) },
-        { label: 'داخل المستودع', value: String(inCount) },
+        { label: 'إجمالي السيارات (في المستودع)', value: String(inCount) },
+        { label: 'إجمالي المسجلة', value: String(entries.length) },
         { label: 'خرجت', value: String(outCount) },
-        { label: 'إجمالي القيمة', value: fmtCur(entries.reduce((s, e) => s + (e.price || 0), 0)) },
         ...Object.entries(
           entries.reduce<Record<string, number>>((acc, e) => {
             const loc = (!e.location || e.location === 'warehouse') ? 'المستودع' : e.location.trim();
