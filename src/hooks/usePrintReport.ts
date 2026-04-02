@@ -8,7 +8,7 @@ interface PrintReportOptions {
   subtitle?: string;
   columns: TableColumn[];
   data: Record<string, any>[];
-  summaryCards?: { label: string; value: string }[];
+  summaryCards?: { label: string; value: string; color?: string; group?: string }[];
   columnGroups?: { label: string; colSpan: number }[];
 }
 
