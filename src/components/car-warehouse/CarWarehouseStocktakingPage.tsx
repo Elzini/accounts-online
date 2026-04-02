@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare, FileSpreadsheet, MapPin, Search, LogOut } from 'lucide-react';
+import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loader2, ScanLine, Printer, GitCompare, FileSpreadsheet, MapPin, Search, LogOut, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { WarehouseReconciliation } from './WarehouseReconciliation';
@@ -109,6 +109,7 @@ export function CarWarehouseStocktakingPage() {
     onError: () => toast.error('حدث خطأ أثناء الحذف'),
   });
 
+  const [editBuyer, setEditBuyer] = useState<{ id: string; buyer: string; notes: string } | null>(null);
   const [exitForm, setExitForm] = useState<{ id: string; date: string; buyer: string; existingNotes: string } | null>(null);
 
   const exitMutation = useMutation({
@@ -126,6 +127,19 @@ export function CarWarehouseStocktakingPage() {
       queryClient.invalidateQueries({ queryKey: ['warehouse-car-inventory'] });
       setExitForm(null);
       toast.success('تم تسجيل خروج السيارة');
+    },
+  });
+
+  const editBuyerMutation = useMutation({
+    mutationFn: async ({ id, buyer, oldNotes }: { id: string; buyer: string; oldNotes: string }) => {
+      const cleanedNotes = oldNotes.replace(/\s*\|?\s*المشتري:\s*.+?(?:\s*\||$)/, '').trim();
+      const newNotes = buyer ? (cleanedNotes ? `${cleanedNotes} | المشتري: ${buyer}` : `المشتري: ${buyer}`) : cleanedNotes;
+      return updateWarehouseCarEntry(id, { notes: newNotes || undefined } as any);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['warehouse-car-inventory'] });
+      toast.success('تم تحديث اسم المشتري');
+      setEditBuyer(null);
     },
   });
 
@@ -626,7 +640,20 @@ export function CarWarehouseStocktakingPage() {
                         {entry.location === 'warehouse' || !entry.location ? 'المستودع' : entry.location}
                       </Badge>
                     </TableCell>
-                    <TableCell>{(() => { const buyerMatch = entry.notes?.match(/المشتري:\s*(.+?)(?:\s*\||$)/); return buyerMatch ? buyerMatch[1].trim() : (entry.price ? String(entry.price) : '-'); })()}</TableCell>
+                    <TableCell>
+                      {(() => {
+                        const buyerMatch = entry.notes?.match(/المشتري:\s*(.+?)(?:\s*\||$)/);
+                        const buyerName = buyerMatch ? buyerMatch[1].trim() : (entry.price ? String(entry.price) : '-');
+                        return (
+                          <div className="flex items-center gap-1">
+                            <span>{buyerName}</span>
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="تعديل اسم المشتري" onClick={() => setEditBuyer({ id: entry.id, buyer: buyerMatch ? buyerMatch[1].trim() : (entry.price ? String(entry.price) : ''), notes: entry.notes || '' })}>
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={entry.exit_date ? 'secondary' : 'default'}>
                         {entry.exit_date ? 'خرجت' : 'في المستودع'}
@@ -677,6 +704,24 @@ export function CarWarehouseStocktakingPage() {
               </div>
               <Button className="w-full" onClick={() => exitMutation.mutate({ id: exitForm.id, date: exitForm.date, buyer: exitForm.buyer })} disabled={exitMutation.isPending || !exitForm.date}>
                 {exitMutation.isPending ? 'جاري التسجيل...' : 'تسجيل الخروج'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Buyer Dialog */}
+      <Dialog open={!!editBuyer} onOpenChange={(v) => { if (!v) setEditBuyer(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>تعديل اسم المشتري</DialogTitle></DialogHeader>
+          {editBuyer && (
+            <div className="space-y-4">
+              <div>
+                <Label>اسم المشتري / جهة الخروج</Label>
+                <Input value={editBuyer.buyer} onChange={e => setEditBuyer(p => p ? { ...p, buyer: e.target.value } : p)} placeholder="اسم المشتري" />
+              </div>
+              <Button className="w-full" onClick={() => editBuyerMutation.mutate({ id: editBuyer.id, buyer: editBuyer.buyer, oldNotes: editBuyer.notes })} disabled={editBuyerMutation.isPending}>
+                {editBuyerMutation.isPending ? 'جاري الحفظ...' : 'حفظ'}
               </Button>
             </div>
           )}
