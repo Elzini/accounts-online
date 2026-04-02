@@ -37,18 +37,27 @@ export function usePrintReport() {
   }: PrintReportOptions) => {
     const currentDate = new Date().toLocaleDateString('ar-SA');
 
-    // Create summary cards HTML with escaped values
+    // Create summary cards HTML with escaped values, grouped by 'group'
     const summaryCardsHtml = summaryCards && summaryCards.length > 0
-      ? `
-        <div class="summary-cards">
-          ${summaryCards.map(card => `
-            <div class="summary-card">
-              <div class="card-label">${escapeHtml(card.label)}</div>
-              <div class="card-value">${escapeHtml(card.value)}</div>
+      ? (() => {
+          const groups: Record<string, typeof summaryCards> = {};
+          summaryCards.forEach(card => {
+            const g = card.group || '';
+            if (!groups[g]) groups[g] = [];
+            groups[g].push(card);
+          });
+          return Object.entries(groups).map(([groupLabel, cards]) => `
+            ${groupLabel ? `<div class="summary-group-label">${escapeHtml(groupLabel)}</div>` : ''}
+            <div class="summary-cards">
+              ${cards.map(card => `
+                <div class="summary-card" style="${card.color ? `border-right: 4px solid ${card.color}; background: ${card.color}11;` : ''}">
+                  <div class="card-label">${escapeHtml(card.label)}</div>
+                  <div class="card-value" style="${card.color ? `color: ${card.color};` : ''}">${escapeHtml(card.value)}</div>
+                </div>
+              `).join('')}
             </div>
-          `).join('')}
-        </div>
-      `
+          `).join('');
+        })()
       : '';
 
     // Build thead with optional column groups
