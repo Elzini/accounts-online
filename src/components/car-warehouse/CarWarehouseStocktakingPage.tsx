@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,7 +64,8 @@ export function CarWarehouseStocktakingPage() {
   const [extracting, setExtracting] = useState(false);
   const [bulkExtracting, setBulkExtracting] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
-
+  const [printFilter, setPrintFilter] = useState<'all' | 'available' | 'exited'>('all');
+  const [showPrintOptions, setShowPrintOptions] = useState(false);
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['warehouse-car-inventory', companyId],
     queryFn: () => fetchWarehouseCarInventory(companyId!),
@@ -184,11 +186,14 @@ export function CarWarehouseStocktakingPage() {
     toast.success('تم تصدير التقرير بنجاح');
   }
 
-  function handlePrintReport() {
+  function handlePrintReport(filter: 'all' | 'available' | 'exited' = 'all') {
     const fmtCur = (v: number | null) => v ? new Intl.NumberFormat('en-SA').format(v) : '-';
+    const filterLabel = filter === 'available' ? 'السيارات المتاحة' : filter === 'exited' ? 'السيارات التي خرجت' : 'جميع السيارات';
+    const reportEntries = filter === 'available' ? entries.filter(e => !e.exit_date) :
+                          filter === 'exited' ? entries.filter(e => !!e.exit_date) : entries;
     printReport({
-      title: 'تقرير جرد مستودع السيارات',
-      subtitle: `إجمالي: ${entries.length} سيارة | متاحة: ${notExitedEntries.length} | داخل المستودع: ${inCount} | خرجت: ${outCount}`,
+      title: `تقرير جرد مستودع السيارات - ${filterLabel}`,
+      subtitle: `عدد السيارات: ${reportEntries.length}`,
       columns: [
         { header: '#', key: 'index' },
         { header: 'نوع السيارة', key: 'car_type' },
@@ -200,20 +205,21 @@ export function CarWarehouseStocktakingPage() {
         { header: 'اسم المشتري', key: 'buyer' },
         { header: 'الحالة', key: 'status' },
       ],
-      data: entries.map((e, i) => {
+      data: reportEntries.map((e, i) => {
         const buyerMatch = e.notes?.match(/المشتري:\s*(.+?)(?:\s*\||$)/);
         const buyerName = buyerMatch ? buyerMatch[1].trim() : '-';
         return {
-        index: i + 1,
-        car_type: e.car_type,
-        car_color: e.car_color || '-',
-        chassis_number: e.chassis_number,
-        entry_date: e.entry_date,
-        exit_date: e.exit_date || '-',
-        location: e.location === 'warehouse' || !e.location ? 'المستودع' : e.location,
-        buyer: buyerName,
-        status: e.exit_date ? 'خرجت' : 'في المستودع',
-      }}),
+          index: i + 1,
+          car_type: e.car_type,
+          car_color: e.car_color || '-',
+          chassis_number: e.chassis_number,
+          entry_date: e.entry_date,
+          exit_date: e.exit_date || '-',
+          location: e.location === 'warehouse' || !e.location ? 'المستودع' : e.location,
+          buyer: buyerName,
+          status: e.exit_date ? 'خرجت' : 'في المستودع',
+        };
+      }),
       summaryCards: (() => {
         const allNotExited = entries.filter(e => !e.exit_date);
         const allExited = entries.filter(e => !!e.exit_date);
@@ -243,6 +249,7 @@ export function CarWarehouseStocktakingPage() {
         ];
       })(),
     });
+    setShowPrintOptions(false);
   }
 
   async function fileToBase64(file: File): Promise<string> {
@@ -425,9 +432,18 @@ export function CarWarehouseStocktakingPage() {
           <Button variant="outline" className="gap-2" onClick={handleExportExcel} disabled={entries.length === 0}>
             <FileSpreadsheet className="w-4 h-4" />تصدير Excel
           </Button>
-          <Button variant="outline" className="gap-2" onClick={handlePrintReport} disabled={entries.length === 0}>
-            <Printer className="w-4 h-4" />طباعة تقرير
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2" disabled={entries.length === 0}>
+                <Printer className="w-4 h-4" />طباعة تقرير
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handlePrintReport('all')}>جميع السيارات</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePrintReport('available')}>السيارات المتاحة فقط</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePrintReport('exited')}>السيارات التي خرجت فقط</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {/* Bulk Import Button */}
           <Dialog open={showBulk} onOpenChange={v => { if (!v) { bulkEntries.forEach(e => URL.revokeObjectURL(e.preview)); setBulkEntries([]); } setShowBulk(v); }}>
             <DialogTrigger asChild>
