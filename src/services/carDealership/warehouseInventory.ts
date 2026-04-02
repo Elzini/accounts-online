@@ -57,6 +57,7 @@ export async function updateWarehouseCarEntry(id: string, updates: Partial<{
   chassis_image_url: string;
   entry_date: string;
   exit_date: string;
+  sale_date: string;
   price: number;
   notes: string;
   location: string;
