@@ -188,7 +188,7 @@ export function CarWarehouseStocktakingPage() {
     const fmtCur = (v: number | null) => v ? new Intl.NumberFormat('en-SA').format(v) : '-';
     printReport({
       title: 'تقرير جرد مستودع السيارات',
-      subtitle: `إجمالي: ${entries.length} سيارة | داخل المستودع: ${inCount} | خرجت: ${outCount}`,
+      subtitle: `إجمالي: ${entries.length} سيارة | متاحة: ${notExitedEntries.length} | داخل المستودع: ${inCount} | خرجت: ${outCount}`,
       columns: [
         { header: '#', key: 'index' },
         { header: 'نوع السيارة', key: 'car_type' },
@@ -216,6 +216,7 @@ export function CarWarehouseStocktakingPage() {
       }}),
       summaryCards: [
         { label: 'إجمالي السيارات (في المستودع)', value: String(inCount) },
+        { label: 'إجمالي المتاحة', value: String(notExitedEntries.length) },
         { label: 'إجمالي المسجلة', value: String(entries.length) },
         { label: 'خرجت', value: String(outCount) },
         ...Object.entries(
@@ -610,8 +611,9 @@ export function CarWarehouseStocktakingPage() {
             />
           </div>
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-5 gap-4">
             <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{inCount}</div><p className="text-sm text-muted-foreground">إجمالي السيارات (في المستودع)</p></CardContent></Card>
+            <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-green-600" /><div className="text-2xl font-bold">{notExitedEntries.length}</div><p className="text-sm text-muted-foreground">إجمالي المتاحة</p></CardContent></Card>
             <Card><CardContent className="pt-4 text-center"><Warehouse className="w-8 h-8 mx-auto mb-2 text-primary" /><div className="text-2xl font-bold">{filteredEntries.length}</div><p className="text-sm text-muted-foreground">إجمالي المسجلة</p></CardContent></Card>
             <Card><CardContent className="pt-4 text-center"><Calendar className="w-8 h-8 mx-auto mb-2 text-destructive" /><div className="text-2xl font-bold">{outCount}</div><p className="text-sm text-muted-foreground">خرجت من المستودع</p></CardContent></Card>
             <Card><CardContent className="pt-4 text-center"><Car className="w-8 h-8 mx-auto mb-2 text-muted-foreground" /><div className="text-2xl font-bold">{inCount + outCount > 0 ? Math.round((inCount / (inCount + outCount)) * 100) : 0}%</div><p className="text-sm text-muted-foreground">نسبة المتبقي</p></CardContent></Card>
