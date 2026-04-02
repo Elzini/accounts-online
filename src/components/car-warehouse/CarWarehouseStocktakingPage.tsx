@@ -242,7 +242,6 @@ export function CarWarehouseStocktakingPage() {
           ).map(([type, count]) => ({ label: type, value: `${count} سيارة`, color: '#f59e0b', group: 'توزيع حسب النوع (المتاحة)' })),
         ];
       })(),
-      ],
     });
   }
 
