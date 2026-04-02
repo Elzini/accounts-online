@@ -185,11 +185,14 @@ export function CarWarehouseStocktakingPage() {
     toast.success('تم تصدير التقرير بنجاح');
   }
 
-  function handlePrintReport() {
+  function handlePrintReport(filter: 'all' | 'available' | 'exited' = 'all') {
     const fmtCur = (v: number | null) => v ? new Intl.NumberFormat('en-SA').format(v) : '-';
+    const filterLabel = filter === 'available' ? 'السيارات المتاحة' : filter === 'exited' ? 'السيارات التي خرجت' : 'جميع السيارات';
+    const reportEntries = filter === 'available' ? entries.filter(e => !e.exit_date) :
+                          filter === 'exited' ? entries.filter(e => !!e.exit_date) : entries;
     printReport({
-      title: 'تقرير جرد مستودع السيارات',
-      subtitle: `إجمالي: ${entries.length} سيارة | متاحة: ${notExitedEntries.length} | داخل المستودع: ${inCount} | خرجت: ${outCount}`,
+      title: `تقرير جرد مستودع السيارات - ${filterLabel}`,
+      subtitle: `عدد السيارات: ${reportEntries.length}`,
       columns: [
         { header: '#', key: 'index' },
         { header: 'نوع السيارة', key: 'car_type' },
@@ -201,20 +204,21 @@ export function CarWarehouseStocktakingPage() {
         { header: 'اسم المشتري', key: 'buyer' },
         { header: 'الحالة', key: 'status' },
       ],
-      data: entries.map((e, i) => {
+      data: reportEntries.map((e, i) => {
         const buyerMatch = e.notes?.match(/المشتري:\s*(.+?)(?:\s*\||$)/);
         const buyerName = buyerMatch ? buyerMatch[1].trim() : '-';
         return {
-        index: i + 1,
-        car_type: e.car_type,
-        car_color: e.car_color || '-',
-        chassis_number: e.chassis_number,
-        entry_date: e.entry_date,
-        exit_date: e.exit_date || '-',
-        location: e.location === 'warehouse' || !e.location ? 'المستودع' : e.location,
-        buyer: buyerName,
-        status: e.exit_date ? 'خرجت' : 'في المستودع',
-      }}),
+          index: i + 1,
+          car_type: e.car_type,
+          car_color: e.car_color || '-',
+          chassis_number: e.chassis_number,
+          entry_date: e.entry_date,
+          exit_date: e.exit_date || '-',
+          location: e.location === 'warehouse' || !e.location ? 'المستودع' : e.location,
+          buyer: buyerName,
+          status: e.exit_date ? 'خرجت' : 'في المستودع',
+        };
+      }),
       summaryCards: (() => {
         const allNotExited = entries.filter(e => !e.exit_date);
         const allExited = entries.filter(e => !!e.exit_date);
@@ -244,6 +248,7 @@ export function CarWarehouseStocktakingPage() {
         ];
       })(),
     });
+    setShowPrintOptions(false);
   }
 
   async function fileToBase64(file: File): Promise<string> {
