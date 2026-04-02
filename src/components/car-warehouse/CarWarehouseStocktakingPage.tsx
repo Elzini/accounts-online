@@ -109,10 +109,14 @@ export function CarWarehouseStocktakingPage() {
     onError: () => toast.error('حدث خطأ أثناء الحذف'),
   });
 
+  const [exitForm, setExitForm] = useState<{ id: string; date: string; buyer: string } | null>(null);
+
   const exitMutation = useMutation({
-    mutationFn: ({ id, date }: { id: string; date: string }) => updateWarehouseCarEntry(id, { exit_date: date }),
+    mutationFn: ({ id, date, buyer }: { id: string; date: string; buyer: string }) => 
+      updateWarehouseCarEntry(id, { exit_date: date, price: buyer ? parseFloat('0') : undefined, notes: buyer || undefined }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['warehouse-car-inventory'] });
+      setExitForm(null);
       toast.success('تم تسجيل خروج السيارة');
     },
   });
