@@ -691,6 +691,10 @@ export function CarWarehouseStocktakingPage() {
       </CardContent></Card>
         </TabsContent>
 
+        <TabsContent value="daily-report" className="mt-4">
+          <WarehouseDailyReport />
+        </TabsContent>
+
         <TabsContent value="reconciliation" className="mt-4">
           <WarehouseReconciliation />
         </TabsContent>
