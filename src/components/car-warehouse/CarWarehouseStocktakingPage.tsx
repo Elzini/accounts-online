@@ -656,6 +656,14 @@ export function CarWarehouseStocktakingPage() {
                     <TableCell>{entry.entry_date}</TableCell>
                     <TableCell>{entry.exit_date || '-'}</TableCell>
                     <TableCell>
+                      <div className="flex items-center gap-1">
+                        <span>{(entry as any).sale_date || '-'}</span>
+                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="تعديل تاريخ البيع" onClick={() => setEditSaleDate({ id: entry.id, saleDate: (entry as any).sale_date || '' })}>
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant="outline" className="gap-1">
                         <MapPin className="w-3 h-3" />
                         {entry.location === 'warehouse' || !entry.location ? 'المستودع' : entry.location}
