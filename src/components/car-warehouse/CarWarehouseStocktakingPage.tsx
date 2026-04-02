@@ -184,10 +184,13 @@ export function CarWarehouseStocktakingPage() {
         { header: 'تاريخ الدخول', key: 'entry_date' },
         { header: 'تاريخ الخروج', key: 'exit_date' },
         { header: 'المكان', key: 'location' },
-        { header: 'اسم المشتري', key: 'price' },
+        { header: 'اسم المشتري', key: 'buyer' },
         { header: 'الحالة', key: 'status' },
       ],
-      data: entries.map((e, i) => ({
+      data: entries.map((e, i) => {
+        const buyerMatch = e.notes?.match(/المشتري:\s*(.+?)(?:\s*\||$)/);
+        const buyerName = buyerMatch ? buyerMatch[1].trim() : '-';
+        return {
         index: i + 1,
         car_type: e.car_type,
         car_color: e.car_color || '-',
@@ -195,7 +198,7 @@ export function CarWarehouseStocktakingPage() {
         entry_date: e.entry_date,
         exit_date: e.exit_date || '-',
         location: e.location === 'warehouse' || !e.location ? 'المستودع' : e.location,
-        price: fmtCur(e.price),
+        buyer: buyerName,
         status: e.exit_date ? 'خرجت' : 'في المستودع',
       })),
       summaryCards: [
