@@ -112,6 +112,18 @@ export function CarWarehouseStocktakingPage() {
 
   const [editBuyer, setEditBuyer] = useState<{ id: string; buyer: string; notes: string } | null>(null);
   const [exitForm, setExitForm] = useState<{ id: string; date: string; buyer: string; existingNotes: string } | null>(null);
+  const [editSaleDate, setEditSaleDate] = useState<{ id: string; saleDate: string } | null>(null);
+
+  const updateSaleDateMutation = useMutation({
+    mutationFn: async ({ id, saleDate }: { id: string; saleDate: string }) => {
+      return updateWarehouseCarEntry(id, { sale_date: saleDate } as any);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['warehouse-car-inventory'] });
+      toast.success('تم تحديث تاريخ البيع');
+      setEditSaleDate(null);
+    },
+  });
 
   const exitMutation = useMutation({
     mutationFn: async ({ id, date, buyer }: { id: string; date: string; buyer: string }) => {
@@ -613,6 +625,7 @@ export function CarWarehouseStocktakingPage() {
                   <TableHead>رقم الهيكل</TableHead>
                   <TableHead>تاريخ الدخول</TableHead>
                   <TableHead>تاريخ الخروج</TableHead>
+                  <TableHead>تاريخ البيع</TableHead>
                   <TableHead>المكان</TableHead>
                   <TableHead>اسم المشتري</TableHead>
                   <TableHead>الحالة</TableHead>
@@ -642,6 +655,14 @@ export function CarWarehouseStocktakingPage() {
                     <TableCell className="font-mono text-xs">{entry.chassis_number}</TableCell>
                     <TableCell>{entry.entry_date}</TableCell>
                     <TableCell>{entry.exit_date || '-'}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <span>{(entry as any).sale_date || '-'}</span>
+                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="تعديل تاريخ البيع" onClick={() => setEditSaleDate({ id: entry.id, saleDate: (entry as any).sale_date || '' })}>
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="gap-1">
                         <MapPin className="w-3 h-3" />
@@ -740,7 +761,23 @@ export function CarWarehouseStocktakingPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Image Preview Dialog */}
+      {/* Edit Sale Date Dialog */}
+      <Dialog open={!!editSaleDate} onOpenChange={(v) => { if (!v) setEditSaleDate(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>تعديل تاريخ البيع</DialogTitle></DialogHeader>
+          {editSaleDate && (
+            <div className="space-y-4">
+              <div>
+                <Label>تاريخ البيع</Label>
+                <Input type="date" value={editSaleDate.saleDate} onChange={e => setEditSaleDate(p => p ? { ...p, saleDate: e.target.value } : p)} />
+              </div>
+              <Button className="w-full" onClick={() => updateSaleDateMutation.mutate({ id: editSaleDate.id, saleDate: editSaleDate.saleDate })} disabled={updateSaleDateMutation.isPending || !editSaleDate.saleDate}>
+                {updateSaleDateMutation.isPending ? 'جاري الحفظ...' : 'حفظ'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>صورة الهيكل</DialogTitle></DialogHeader>

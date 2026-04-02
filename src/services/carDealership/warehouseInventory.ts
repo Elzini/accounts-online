@@ -12,6 +12,7 @@ export interface WarehouseCarEntry {
   chassis_image_url: string | null;
   entry_date: string;
   exit_date: string | null;
+  sale_date: string | null;
   price: number | null;
   notes: string | null;
   location: string | null;
@@ -56,6 +57,7 @@ export async function updateWarehouseCarEntry(id: string, updates: Partial<{
   chassis_image_url: string;
   entry_date: string;
   exit_date: string;
+  sale_date: string;
   price: number;
   notes: string;
   location: string;

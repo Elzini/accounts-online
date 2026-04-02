@@ -1,0 +1,1 @@
+ALTER TABLE public.warehouse_car_inventory ADD COLUMN sale_date DATE;
