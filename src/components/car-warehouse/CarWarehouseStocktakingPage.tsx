@@ -15,6 +15,7 @@ import { Plus, Warehouse, Car, Image, Trash2, Upload, Calendar, Images, X, Loade
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { WarehouseReconciliation } from './WarehouseReconciliation';
+import { WarehouseDailyReport } from './WarehouseDailyReport';
 import { usePartnerDealerships } from '@/hooks/useTransfers';
 import { usePrintReport } from '@/hooks/usePrintReport';
 import { supabase } from '@/integrations/supabase/client';
