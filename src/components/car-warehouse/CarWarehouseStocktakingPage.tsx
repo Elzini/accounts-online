@@ -625,6 +625,7 @@ export function CarWarehouseStocktakingPage() {
                   <TableHead>رقم الهيكل</TableHead>
                   <TableHead>تاريخ الدخول</TableHead>
                   <TableHead>تاريخ الخروج</TableHead>
+                  <TableHead>تاريخ البيع</TableHead>
                   <TableHead>المكان</TableHead>
                   <TableHead>اسم المشتري</TableHead>
                   <TableHead>الحالة</TableHead>
