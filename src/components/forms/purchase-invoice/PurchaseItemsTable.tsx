@@ -31,7 +31,7 @@ export function PurchaseItemsTable({ hook }: PurchaseItemsTableProps) {
 }
 
 function CarItemsTable({ hook }: PurchaseItemsTableProps) {
-  const { cars, calculations, handleAddCar, handleRemoveCar, handleCarChange, formatCurrency, t } = hook;
+  const { cars, calculations, warehouseEntries, handleAddCar, handleRemoveCar, handleCarChange, handleSelectWarehouseCar, formatCurrency, t } = hook;
 
   return (
     <div className="overflow-x-auto">
