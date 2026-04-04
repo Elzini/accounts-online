@@ -143,6 +143,32 @@ export function usePurchaseInvoice() {
   const handleCarChange = (id: string, field: keyof CarItem, value: string | number) => {
     setCars(cars.map(car => car.id === id ? { ...car, [field]: value } : car));
   };
+  const handleSelectWarehouseCar = (warehouseId: string) => {
+    const entry = warehouseEntries.find(e => e.id === warehouseId);
+    if (!entry) return;
+    // Check if already added by chassis number
+    const alreadyAdded = cars.some(c => c.chassis_number === entry.chassis_number);
+    if (alreadyAdded) { toast.error('هذه السيارة مضافة بالفعل في الفاتورة'); return; }
+    const newCar: CarItem = {
+      id: crypto.randomUUID(),
+      chassis_number: entry.chassis_number,
+      plate_number: '',
+      name: entry.car_type,
+      model: '',
+      color: entry.car_color || '',
+      purchase_price: entry.price ? String(entry.price) : '',
+      quantity: 1,
+      unit: t.inv_car_unit,
+      car_condition: 'new',
+    };
+    // Replace the empty first car or append
+    if (cars.length === 1 && !cars[0].name && !cars[0].chassis_number) {
+      setCars([newCar]);
+    } else {
+      setCars([...cars, newCar]);
+    }
+    toast.success(`تمت إضافة: ${entry.car_type} - ${entry.chassis_number}`);
+  };
   const handleAddInventoryItem = () => setPurchaseInventoryItems([...purchaseInventoryItems, createEmptyInventoryItem()]);
   const handleSelectExistingItem = (itemId: string) => {
     const item = (inventoryItems || []).find((i: any) => i.id === itemId) as any;
