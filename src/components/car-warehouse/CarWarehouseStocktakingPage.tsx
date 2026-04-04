@@ -115,6 +115,18 @@ export function CarWarehouseStocktakingPage() {
   const [editBuyer, setEditBuyer] = useState<{ id: string; buyer: string; notes: string } | null>(null);
   const [exitForm, setExitForm] = useState<{ id: string; date: string; buyer: string; existingNotes: string } | null>(null);
   const [editSaleDate, setEditSaleDate] = useState<{ id: string; saleDate: string } | null>(null);
+  const [editLocation, setEditLocation] = useState<{ id: string; location: string } | null>(null);
+
+  const updateLocationMutation = useMutation({
+    mutationFn: async ({ id, location }: { id: string; location: string }) => {
+      return updateWarehouseCarEntry(id, { location } as any);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['warehouse-car-inventory'] });
+      toast.success('تم تحديث مكان السيارة');
+      setEditLocation(null);
+    },
+  });
 
   const updateSaleDateMutation = useMutation({
     mutationFn: async ({ id, saleDate }: { id: string; saleDate: string }) => {
@@ -700,10 +712,15 @@ export function CarWarehouseStocktakingPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {entry.location === 'warehouse' || !entry.location ? 'المستودع' : entry.location}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {entry.location === 'warehouse' || !entry.location ? 'المستودع' : entry.location}
+                        </Badge>
+                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="تعديل المكان" onClick={() => setEditLocation({ id: entry.id, location: entry.location === 'warehouse' || !entry.location ? '' : entry.location })}>
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {(() => {
@@ -814,6 +831,25 @@ export function CarWarehouseStocktakingPage() {
           )}
         </DialogContent>
       </Dialog>
+      {/* Edit Location Dialog */}
+      <Dialog open={!!editLocation} onOpenChange={(v) => { if (!v) setEditLocation(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>تعديل مكان السيارة</DialogTitle></DialogHeader>
+          {editLocation && (
+            <div className="space-y-4">
+              <div>
+                <Label>المكان</Label>
+                <Input value={editLocation.location} onChange={e => setEditLocation(p => p ? { ...p, location: e.target.value } : p)} placeholder="المستودع" />
+              </div>
+              <p className="text-xs text-muted-foreground">اتركه فارغاً ليكون "المستودع" افتراضياً</p>
+              <Button className="w-full" onClick={() => updateLocationMutation.mutate({ id: editLocation.id, location: editLocation.location || 'warehouse' })} disabled={updateLocationMutation.isPending}>
+                {updateLocationMutation.isPending ? 'جاري الحفظ...' : 'حفظ'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>صورة الهيكل</DialogTitle></DialogHeader>
