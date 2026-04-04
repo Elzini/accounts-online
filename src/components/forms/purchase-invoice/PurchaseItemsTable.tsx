@@ -2,12 +2,15 @@
  * Purchase Invoice - Items Table (Cars or Inventory)
  * Renders car-specific or general inventory table based on company type.
  */
-import { Plus, X, Package, Warehouse, MapPin } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, X, Package, Warehouse, MapPin, Search, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import type { usePurchaseInvoice } from '@/hooks/usePurchaseInvoice';
 
 type HookReturn = ReturnType<typeof usePurchaseInvoice>;
