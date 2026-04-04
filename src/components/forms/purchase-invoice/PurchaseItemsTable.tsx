@@ -2,12 +2,15 @@
  * Purchase Invoice - Items Table (Cars or Inventory)
  * Renders car-specific or general inventory table based on company type.
  */
-import { Plus, X, Package, Warehouse, MapPin } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, X, Package, Warehouse, MapPin, Search, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import type { usePurchaseInvoice } from '@/hooks/usePurchaseInvoice';
 
 type HookReturn = ReturnType<typeof usePurchaseInvoice>;
@@ -90,29 +93,7 @@ function CarItemsTable({ hook }: PurchaseItemsTableProps) {
       <div className="p-3 border-t bg-muted/20 flex gap-2 flex-wrap">
         <Button type="button" variant="outline" size="sm" onClick={handleAddCar} className="gap-1.5 text-xs h-9 rounded-lg"><Plus className="w-3.5 h-3.5" />{t.inv_add_car}</Button>
         {(warehouseEntries || []).length > 0 && (
-          <Select onValueChange={handleSelectWarehouseCar}>
-            <SelectTrigger className="h-9 text-xs w-[300px] rounded-lg gap-1">
-              <Warehouse className="w-3.5 h-3.5 shrink-0" />
-              <SelectValue placeholder="اختر من المستودع..." />
-            </SelectTrigger>
-            <SelectContent className="max-h-[300px]">
-              {(warehouseEntries || []).map((entry: any) => (
-                <SelectItem key={entry.id} value={entry.id}>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="font-medium">{entry.car_type}</span>
-                    {entry.car_color && <span className="text-muted-foreground">({entry.car_color})</span>}
-                    <span className="font-mono text-[10px] text-muted-foreground" dir="ltr">{entry.chassis_number}</span>
-                    {entry.location && entry.location !== 'warehouse' && (
-                      <Badge variant="outline" className="text-[9px] h-4 gap-0.5 px-1">
-                        <MapPin className="w-2.5 h-2.5" />{entry.location}
-                      </Badge>
-                    )}
-                    {entry.exit_date && <Badge variant="secondary" className="text-[9px] h-4 px-1">خرجت</Badge>}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <WarehouseCarSearch entries={warehouseEntries || []} onSelect={handleSelectWarehouseCar} />
         )}
       </div>
     </div>
@@ -182,5 +163,58 @@ function InventoryItemsTable({ hook }: PurchaseItemsTableProps) {
         )}
       </div>
     </div>
+  );
+}
+
+function WarehouseCarSearch({ entries, onSelect }: { entries: any[]; onSelect: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-9 text-xs w-[300px] rounded-lg gap-1.5 justify-start">
+          <Search className="w-3.5 h-3.5 shrink-0" />
+          <Warehouse className="w-3.5 h-3.5 shrink-0" />
+          <span>بحث في المستودع برقم الهيكل...</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[350px] p-0" align="start">
+        <Command dir="rtl">
+          <CommandInput placeholder="ابحث برقم الهيكل أو نوع السيارة..." />
+          <CommandList>
+            <CommandEmpty>لا توجد نتائج</CommandEmpty>
+            <CommandGroup>
+              {entries.map((entry: any) => (
+                <CommandItem
+                  key={entry.id}
+                  value={`${entry.chassis_number} ${entry.car_type} ${entry.car_color || ''}`}
+                  onSelect={() => {
+                    onSelect(entry.id);
+                    setOpen(false);
+                  }}
+                  className="flex items-center gap-2 text-xs cursor-pointer"
+                >
+                  <div className="flex flex-col gap-0.5 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{entry.car_type}</span>
+                      {entry.car_color && <span className="text-muted-foreground">({entry.car_color})</span>}
+                    </div>
+                    <span className="font-mono text-[10px] text-muted-foreground" dir="ltr">{entry.chassis_number}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {entry.location && entry.location !== 'warehouse' && (
+                      <Badge variant="outline" className="text-[9px] h-4 gap-0.5 px-1">
+                        <MapPin className="w-2.5 h-2.5" />{entry.location}
+                      </Badge>
+                    )}
+                    {entry.exit_date && <Badge variant="secondary" className="text-[9px] h-4 px-1">خرجت</Badge>}
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
