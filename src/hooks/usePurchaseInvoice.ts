@@ -60,7 +60,6 @@ export function usePurchaseInvoice() {
     enabled: !!companyId && isCarDealership,
     staleTime: 1000 * 60 * 2,
   });
-  const currency = t.inv_sar;
 
   // ===== Helpers =====
   const createEmptyCar = useCallback((): CarItem => ({
