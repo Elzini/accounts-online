@@ -14,6 +14,7 @@ import { calculatePurchaseInvoice } from './purchase-invoice/calculations';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useSuppliers, useCars, usePurchaseBatches } from '@/hooks/useDatabase';
+import { fetchWarehouseCarInventory } from '@/services/carDealership/warehouseInventory';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
