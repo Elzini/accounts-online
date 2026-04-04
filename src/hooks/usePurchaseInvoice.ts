@@ -333,7 +333,7 @@ export function usePurchaseInvoice() {
   return {
     // Data sources
     suppliers, accounts, taxSettings, costCenters, inventoryItems, company,
-    selectedFiscalYear, purchaseBatches, existingCars,
+    selectedFiscalYear, purchaseBatches, existingCars, warehouseEntries,
     // State
     invoiceData, setInvoiceData, cars, setCars, purchaseInventoryItems,
     invoiceOpen, setInvoiceOpen, savedBatchData, discount, setDiscount,
