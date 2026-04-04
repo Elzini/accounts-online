@@ -831,6 +831,25 @@ export function CarWarehouseStocktakingPage() {
           )}
         </DialogContent>
       </Dialog>
+      {/* Edit Location Dialog */}
+      <Dialog open={!!editLocation} onOpenChange={(v) => { if (!v) setEditLocation(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>تعديل مكان السيارة</DialogTitle></DialogHeader>
+          {editLocation && (
+            <div className="space-y-4">
+              <div>
+                <Label>المكان</Label>
+                <Input value={editLocation.location} onChange={e => setEditLocation(p => p ? { ...p, location: e.target.value } : p)} placeholder="المستودع" />
+              </div>
+              <p className="text-xs text-muted-foreground">اتركه فارغاً ليكون "المستودع" افتراضياً</p>
+              <Button className="w-full" onClick={() => updateLocationMutation.mutate({ id: editLocation.id, location: editLocation.location || 'warehouse' })} disabled={updateLocationMutation.isPending}>
+                {updateLocationMutation.isPending ? 'جاري الحفظ...' : 'حفظ'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>صورة الهيكل</DialogTitle></DialogHeader>
