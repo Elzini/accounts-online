@@ -165,3 +165,56 @@ function InventoryItemsTable({ hook }: PurchaseItemsTableProps) {
     </div>
   );
 }
+
+function WarehouseCarSearch({ entries, onSelect }: { entries: any[]; onSelect: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-9 text-xs w-[300px] rounded-lg gap-1.5 justify-start">
+          <Search className="w-3.5 h-3.5 shrink-0" />
+          <Warehouse className="w-3.5 h-3.5 shrink-0" />
+          <span>بحث في المستودع برقم الهيكل...</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[350px] p-0" align="start">
+        <Command dir="rtl">
+          <CommandInput placeholder="ابحث برقم الهيكل أو نوع السيارة..." />
+          <CommandList>
+            <CommandEmpty>لا توجد نتائج</CommandEmpty>
+            <CommandGroup>
+              {entries.map((entry: any) => (
+                <CommandItem
+                  key={entry.id}
+                  value={`${entry.chassis_number} ${entry.car_type} ${entry.car_color || ''}`}
+                  onSelect={() => {
+                    onSelect(entry.id);
+                    setOpen(false);
+                  }}
+                  className="flex items-center gap-2 text-xs cursor-pointer"
+                >
+                  <div className="flex flex-col gap-0.5 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{entry.car_type}</span>
+                      {entry.car_color && <span className="text-muted-foreground">({entry.car_color})</span>}
+                    </div>
+                    <span className="font-mono text-[10px] text-muted-foreground" dir="ltr">{entry.chassis_number}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {entry.location && entry.location !== 'warehouse' && (
+                      <Badge variant="outline" className="text-[9px] h-4 gap-0.5 px-1">
+                        <MapPin className="w-2.5 h-2.5" />{entry.location}
+                      </Badge>
+                    )}
+                    {entry.exit_date && <Badge variant="secondary" className="text-[9px] h-4 px-1">خرجت</Badge>}
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
