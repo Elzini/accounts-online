@@ -9,10 +9,12 @@
  */
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { calculatePurchaseInvoice } from './purchase-invoice/calculations';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useSuppliers, useCars, usePurchaseBatches } from '@/hooks/useDatabase';
+import { fetchWarehouseCarInventory } from '@/services/carDealership/warehouseInventory';
 import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
@@ -50,6 +52,14 @@ export function usePurchaseInvoice() {
   const isCarDealership = useIndustryFeatures().hasCarInventory;
   const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
   const currency = t.inv_sar;
+
+  // === Warehouse car inventory ===
+  const { data: warehouseEntries = [] } = useQuery({
+    queryKey: ['warehouse-car-inventory', companyId],
+    queryFn: () => fetchWarehouseCarInventory(companyId!),
+    enabled: !!companyId && isCarDealership,
+    staleTime: 1000 * 60 * 2,
+  });
 
   // ===== Helpers =====
   const createEmptyCar = useCallback((): CarItem => ({
@@ -132,6 +142,32 @@ export function usePurchaseInvoice() {
   };
   const handleCarChange = (id: string, field: keyof CarItem, value: string | number) => {
     setCars(cars.map(car => car.id === id ? { ...car, [field]: value } : car));
+  };
+  const handleSelectWarehouseCar = (warehouseId: string) => {
+    const entry = warehouseEntries.find(e => e.id === warehouseId);
+    if (!entry) return;
+    // Check if already added by chassis number
+    const alreadyAdded = cars.some(c => c.chassis_number === entry.chassis_number);
+    if (alreadyAdded) { toast.error('هذه السيارة مضافة بالفعل في الفاتورة'); return; }
+    const newCar: CarItem = {
+      id: crypto.randomUUID(),
+      chassis_number: entry.chassis_number,
+      plate_number: '',
+      name: entry.car_type,
+      model: '',
+      color: entry.car_color || '',
+      purchase_price: entry.price ? String(entry.price) : '',
+      quantity: 1,
+      unit: t.inv_car_unit,
+      car_condition: 'new',
+    };
+    // Replace the empty first car or append
+    if (cars.length === 1 && !cars[0].name && !cars[0].chassis_number) {
+      setCars([newCar]);
+    } else {
+      setCars([...cars, newCar]);
+    }
+    toast.success(`تمت إضافة: ${entry.car_type} - ${entry.chassis_number}`);
   };
   const handleAddInventoryItem = () => setPurchaseInventoryItems([...purchaseInventoryItems, createEmptyInventoryItem()]);
   const handleSelectExistingItem = (itemId: string) => {
@@ -297,7 +333,7 @@ export function usePurchaseInvoice() {
   return {
     // Data sources
     suppliers, accounts, taxSettings, costCenters, inventoryItems, company,
-    selectedFiscalYear, purchaseBatches, existingCars,
+    selectedFiscalYear, purchaseBatches, existingCars, warehouseEntries,
     // State
     invoiceData, setInvoiceData, cars, setCars, purchaseInventoryItems,
     invoiceOpen, setInvoiceOpen, savedBatchData, discount, setDiscount,
@@ -317,7 +353,7 @@ export function usePurchaseInvoice() {
     invoicePreviewData, fiscalYearFilteredCars,
     locale, currency, language, t, decimals, companyId,
     // Handlers
-    handleAddCar, handleRemoveCar, handleCarChange,
+    handleAddCar, handleRemoveCar, handleCarChange, handleSelectWarehouseCar,
     handleAddInventoryItem, handleSelectExistingItem, handleRemoveInventoryItem, handleInventoryItemChange,
     handleFirstPurchase: nav.handleFirstPurchase,
     handlePreviousPurchase: nav.handlePreviousPurchase,

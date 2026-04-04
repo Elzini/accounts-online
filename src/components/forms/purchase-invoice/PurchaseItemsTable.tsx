@@ -2,11 +2,12 @@
  * Purchase Invoice - Items Table (Cars or Inventory)
  * Renders car-specific or general inventory table based on company type.
  */
-import { Plus, X, Package } from 'lucide-react';
+import { Plus, X, Package, Warehouse, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import type { usePurchaseInvoice } from '@/hooks/usePurchaseInvoice';
 
 type HookReturn = ReturnType<typeof usePurchaseInvoice>;
@@ -30,7 +31,7 @@ export function PurchaseItemsTable({ hook }: PurchaseItemsTableProps) {
 }
 
 function CarItemsTable({ hook }: PurchaseItemsTableProps) {
-  const { cars, calculations, handleAddCar, handleRemoveCar, handleCarChange, formatCurrency, t } = hook;
+  const { cars, calculations, warehouseEntries, handleAddCar, handleRemoveCar, handleCarChange, handleSelectWarehouseCar, formatCurrency, t } = hook;
 
   return (
     <div className="overflow-x-auto">
@@ -86,8 +87,33 @@ function CarItemsTable({ hook }: PurchaseItemsTableProps) {
           ))}
         </TableBody>
       </Table>
-      <div className="p-3 border-t bg-muted/20">
+      <div className="p-3 border-t bg-muted/20 flex gap-2 flex-wrap">
         <Button type="button" variant="outline" size="sm" onClick={handleAddCar} className="gap-1.5 text-xs h-9 rounded-lg"><Plus className="w-3.5 h-3.5" />{t.inv_add_car}</Button>
+        {(warehouseEntries || []).length > 0 && (
+          <Select onValueChange={handleSelectWarehouseCar}>
+            <SelectTrigger className="h-9 text-xs w-[300px] rounded-lg gap-1">
+              <Warehouse className="w-3.5 h-3.5 shrink-0" />
+              <SelectValue placeholder="اختر من المستودع..." />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px]">
+              {(warehouseEntries || []).map((entry: any) => (
+                <SelectItem key={entry.id} value={entry.id}>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-medium">{entry.car_type}</span>
+                    {entry.car_color && <span className="text-muted-foreground">({entry.car_color})</span>}
+                    <span className="font-mono text-[10px] text-muted-foreground" dir="ltr">{entry.chassis_number}</span>
+                    {entry.location && entry.location !== 'warehouse' && (
+                      <Badge variant="outline" className="text-[9px] h-4 gap-0.5 px-1">
+                        <MapPin className="w-2.5 h-2.5" />{entry.location}
+                      </Badge>
+                    )}
+                    {entry.exit_date && <Badge variant="secondary" className="text-[9px] h-4 px-1">خرجت</Badge>}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
     </div>
   );
