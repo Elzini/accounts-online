@@ -16,9 +16,9 @@ import { useNumberFormat } from "@/hooks/useNumberFormat";
 import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { SystemChangeAlertProvider } from "@/components/system-alerts/SystemChangeAlertProvider";
+import Index from "./pages/Index";
 
-// Lazy load heavy pages
-const Index = lazy(() => import("./pages/Index"));
+// Lazy load secondary pages
 const AuthChoice = lazy(() => import("./pages/AuthChoice"));
 const Auth = lazy(() => import("./pages/Auth"));
 const SuperAdminAuth = lazy(() => import("./pages/SuperAdminAuth"));
