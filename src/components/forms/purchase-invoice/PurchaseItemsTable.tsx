@@ -2,7 +2,7 @@
  * Purchase Invoice - Items Table (Cars or Inventory)
  * Renders car-specific or general inventory table based on company type.
  */
-import { Plus, X, Package } from 'lucide-react';
+import { Plus, X, Package, Warehouse, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
