@@ -53,6 +53,15 @@ export function usePurchaseInvoice() {
   const locale = language === 'ar' ? 'ar-SA' : 'en-SA';
   const currency = t.inv_sar;
 
+  // === Warehouse car inventory ===
+  const { data: warehouseEntries = [] } = useQuery({
+    queryKey: ['warehouse-car-inventory', companyId],
+    queryFn: () => fetchWarehouseCarInventory(companyId!),
+    enabled: !!companyId && isCarDealership,
+    staleTime: 1000 * 60 * 2,
+  });
+  const currency = t.inv_sar;
+
   // ===== Helpers =====
   const createEmptyCar = useCallback((): CarItem => ({
     id: crypto.randomUUID(),
