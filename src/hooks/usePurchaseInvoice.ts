@@ -353,7 +353,7 @@ export function usePurchaseInvoice() {
     invoicePreviewData, fiscalYearFilteredCars,
     locale, currency, language, t, decimals, companyId,
     // Handlers
-    handleAddCar, handleRemoveCar, handleCarChange,
+    handleAddCar, handleRemoveCar, handleCarChange, handleSelectWarehouseCar,
     handleAddInventoryItem, handleSelectExistingItem, handleRemoveInventoryItem, handleInventoryItemChange,
     handleFirstPurchase: nav.handleFirstPurchase,
     handlePreviousPurchase: nav.handlePreviousPurchase,
