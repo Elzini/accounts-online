@@ -115,6 +115,18 @@ export function CarWarehouseStocktakingPage() {
   const [editBuyer, setEditBuyer] = useState<{ id: string; buyer: string; notes: string } | null>(null);
   const [exitForm, setExitForm] = useState<{ id: string; date: string; buyer: string; existingNotes: string } | null>(null);
   const [editSaleDate, setEditSaleDate] = useState<{ id: string; saleDate: string } | null>(null);
+  const [editLocation, setEditLocation] = useState<{ id: string; location: string } | null>(null);
+
+  const updateLocationMutation = useMutation({
+    mutationFn: async ({ id, location }: { id: string; location: string }) => {
+      return updateWarehouseCarEntry(id, { location } as any);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['warehouse-car-inventory'] });
+      toast.success('تم تحديث مكان السيارة');
+      setEditLocation(null);
+    },
+  });
 
   const updateSaleDateMutation = useMutation({
     mutationFn: async ({ id, saleDate }: { id: string; saleDate: string }) => {
