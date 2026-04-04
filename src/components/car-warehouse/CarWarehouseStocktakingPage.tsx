@@ -712,10 +712,15 @@ export function CarWarehouseStocktakingPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {entry.location === 'warehouse' || !entry.location ? 'المستودع' : entry.location}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {entry.location === 'warehouse' || !entry.location ? 'المستودع' : entry.location}
+                        </Badge>
+                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0" title="تعديل المكان" onClick={() => setEditLocation({ id: entry.id, location: entry.location === 'warehouse' || !entry.location ? '' : entry.location })}>
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {(() => {
