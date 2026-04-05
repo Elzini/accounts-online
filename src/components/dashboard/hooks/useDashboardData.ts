@@ -113,7 +113,6 @@ export function useDashboardData() {
   }, []);
 
   const formatCurrencyWithMode = useCallback((value: number) => {
-    const { calculateDisplayAmount } = require('@/components/dashboard/AmountDisplaySelector');
     return formatCurrency(calculateDisplayAmount(value, amountDisplayMode));
   }, [formatCurrency, amountDisplayMode]);
   const getCurrencySubtitle = useCallback(() => t.currency_sar_label, [t]);
