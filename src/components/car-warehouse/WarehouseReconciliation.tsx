@@ -44,24 +44,44 @@ export function WarehouseReconciliation() {
   const { printReport } = usePrintReport();
 
   const reconciliation = useMemo(() => {
-    const warehouseMap = new Map<string, WarehouseCarEntry>();
     // Only compare warehouse cars still in stock (no exit_date)
     const inStockWarehouse = warehouseEntries.filter(e => !e.exit_date);
-    inStockWarehouse.forEach(e => warehouseMap.set(e.chassis_number.trim().toUpperCase(), e));
+    
+    // Build warehouse map with exact keys
+    const warehouseMapExact = new Map<string, WarehouseCarEntry>();
+    inStockWarehouse.forEach(e => warehouseMapExact.set(e.chassis_number.trim().toUpperCase(), e));
+
+    // Helper: find warehouse entry by exact match OR partial match (endsWith / startsWith)
+    const findWarehouseMatch = (chassisKey: string): WarehouseCarEntry | undefined => {
+      // 1. Exact match
+      const exact = warehouseMapExact.get(chassisKey);
+      if (exact) return exact;
+      
+      // 2. Partial match: car chassis ends with warehouse chassis or vice versa (min 4 chars)
+      for (const wh of inStockWarehouse) {
+        const whKey = wh.chassis_number.trim().toUpperCase();
+        if (whKey.length < 4 || chassisKey.length < 4) continue;
+        if (chassisKey.endsWith(whKey) || whKey.endsWith(chassisKey)) return wh;
+      }
+      return undefined;
+    };
 
     // Only compare available cars (exclude sold/transferred)
     const availableCars = cars.filter(c => c.status === 'available');
 
     const rows: ReconciliationRow[] = [];
-    const processed = new Set<string>();
+    const processedCarKeys = new Set<string>();
+    const matchedWhIds = new Set<string>();
 
     // Cars in inventory (available only)
     availableCars.forEach(car => {
       const key = car.chassis_number.trim().toUpperCase();
-      if (processed.has(key)) return;
-      processed.add(key);
+      if (processedCarKeys.has(key)) return;
+      processedCarKeys.add(key);
 
-      const wh = warehouseMap.get(key);
+      const wh = findWarehouseMatch(key);
+      if (wh) matchedWhIds.add(wh.id);
+      
       rows.push({
         chassis_number: car.chassis_number,
         status: wh ? 'matched' : 'missing_from_warehouse',
@@ -77,11 +97,11 @@ export function WarehouseReconciliation() {
       });
     });
 
-    // Extra in warehouse (not in cars table)
+    // Extra in warehouse (not matched to any car)
     inStockWarehouse.forEach(wh => {
+      if (matchedWhIds.has(wh.id)) return;
       const key = wh.chassis_number.trim().toUpperCase();
-      if (processed.has(key)) return;
-      processed.add(key);
+      if (processedCarKeys.has(key)) return;
 
       rows.push({
         chassis_number: wh.chassis_number,
