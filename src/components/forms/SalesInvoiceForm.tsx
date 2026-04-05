@@ -34,7 +34,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     approveDialogOpen, setApproveDialogOpen, handleApproveSale, approveSale,
     handleFirstSale, handlePreviousSale, handleNextSale, handleLastSale,
     loadSaleData, customers, t,
-    aiImportOpen, setAiImportOpen, handleAISalesImport,
+    aiImportOpen, setAiImportOpen, handleAISalesImport, handleAIBatchImport,
   } = hook;
 
   return (
@@ -161,7 +161,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
       </AlertDialog>
       {/* AI Import */}
       {aiImportOpen && (
-        <SalesInvoiceAIImport open={aiImportOpen} onOpenChange={setAiImportOpen} onImport={handleAISalesImport} />
+        <SalesInvoiceAIImport open={aiImportOpen} onOpenChange={setAiImportOpen} onImport={handleAISalesImport} onBatchImport={handleAIBatchImport} />
       )}
     </>
   );
