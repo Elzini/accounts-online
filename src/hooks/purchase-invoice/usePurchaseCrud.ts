@@ -39,6 +39,7 @@ interface CrudDeps {
   setIsEditing: (v: boolean) => void;
   setSavedBatchData: (v: any) => void;
   setInvoiceOpen: (v: boolean) => void;
+  loadRecordData?: (record: any) => void;
 }
 
 export function usePurchaseCrud(deps: CrudDeps) {
