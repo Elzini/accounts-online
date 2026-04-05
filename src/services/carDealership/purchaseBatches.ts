@@ -20,6 +20,13 @@ export async function addPurchaseBatch(
       notes: batchData.notes,
       company_id: companyId,
       price_includes_tax: (batchData as any).price_includes_tax ?? false,
+      invoice_number: (batchData as any).invoice_number || null,
+      due_date: (batchData as any).due_date || null,
+      payment_status: (batchData as any).payment_status || 'unpaid',
+      supplier_invoice_number: (batchData as any).supplier_invoice_number || null,
+      payment_account_id: (batchData as any).payment_account_id || null,
+      project_id: (batchData as any).project_id || null,
+      cost_center_id: (batchData as any).cost_center_id || null,
     })
     .select()
     .single();
