@@ -94,7 +94,7 @@ export function usePurchaseCrud(deps: CrudDeps) {
           car_condition: deps.cars[index].car_condition || 'new',
         }));
         const result = await addPurchaseBatch.mutateAsync({
-          batch: { supplier_id: deps.invoiceData.supplier_id, purchase_date: deps.invoiceData.purchase_date, notes: deps.invoiceData.notes || null, payment_account_id: deps.invoiceData.payment_account_id || undefined },
+          batch: { supplier_id: deps.invoiceData.supplier_id, purchase_date: deps.invoiceData.purchase_date, notes: deps.invoiceData.notes || null, payment_account_id: deps.invoiceData.payment_account_id || undefined, price_includes_tax: deps.invoiceData.price_includes_tax || false },
           cars: carsWithPrices,
         });
         deps.setSavedBatchData({ ...result, supplier: deps.selectedSupplier, cars: deps.cars });
@@ -133,6 +133,7 @@ export function usePurchaseCrud(deps: CrudDeps) {
             project_id: deps.invoiceData.project_id || null,
             supplier_invoice_number: deps.invoiceData.supplier_invoice_number || null,
             payment_account_id: deps.invoiceData.payment_account_id || null,
+            price_includes_tax: deps.invoiceData.price_includes_tax || false,
           })
           .select().single();
         if (invoiceError) throw invoiceError;
@@ -247,6 +248,13 @@ export function usePurchaseCrud(deps: CrudDeps) {
             }
           });
         }
+        // Update batch-level fields
+        await supabase.from('purchase_batches').update({
+          supplier_id: deps.invoiceData.supplier_id,
+          purchase_date: deps.invoiceData.purchase_date,
+          notes: deps.invoiceData.notes || null,
+          price_includes_tax: deps.invoiceData.price_includes_tax || false,
+        }).eq('id', deps.currentBatchId);
         invalidateAll();
         deps.setIsEditing(false);
         toast.success(t.inv_toast_purchase_update_success);
@@ -277,6 +285,7 @@ export function usePurchaseCrud(deps: CrudDeps) {
         amount_paid: deps.invoiceData.payment_status === 'paid' ? deps.calculations.finalTotal : 0,
         supplier_invoice_number: deps.invoiceData.supplier_invoice_number || null,
         payment_account_id: deps.invoiceData.payment_account_id || null,
+        price_includes_tax: deps.invoiceData.price_includes_tax || false,
       };
       if (!isProtected) {
         updatePayload.subtotal = deps.calculations.subtotal;
