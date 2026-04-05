@@ -265,15 +265,11 @@ export function usePurchaseCrud(deps: CrudDeps) {
         }).eq('id', deps.currentBatchId);
         if (batchUpdateError) throw batchUpdateError;
 
-        // Invalidate and wait for refetch to complete
-        await Promise.all(
-          PURCHASE_QUERY_KEYS.flatMap(key => [
-            queryClient.invalidateQueries({ queryKey: [key] }),
-            queryClient.invalidateQueries({ queryKey: [key, companyId] }),
-          ])
-        );
+        // Refetch fresh data and reload
+        await queryClient.refetchQueries({ queryKey: ['purchase-batches', companyId] });
+        invalidateAll();
         
-        // Reload the current record from fresh data
+        // Reload from fresh cache after refetch completes
         const freshBatches = queryClient.getQueryData<any[]>(['purchase-batches', companyId]);
         const freshRecord = freshBatches?.find((b: any) => b.id === deps.currentBatchId);
         if (freshRecord && deps.loadRecordData) {
