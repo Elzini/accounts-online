@@ -159,6 +159,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* AI Import */}
+      {aiImportOpen && (
+        <SalesInvoiceAIImport open={aiImportOpen} onOpenChange={setAiImportOpen} onImport={handleAISalesImport} />
+      )}
     </>
   );
 }
