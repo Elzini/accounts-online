@@ -300,11 +300,21 @@ export async function fetchAllTimeDashboardStats() {
     return { allTimePurchases: purchases, allTimeSales: sales, allTimeSalesCount: sRes.data?.length || 0, allTimeProfit: sales - purchases };
   }
 
-  const [carsRes, salesRes] = await Promise.all([
-    supabase.from('cars').select('purchase_price').eq('company_id', companyId),
+  const [carsRes, salesRes, batchesRes] = await Promise.all([
+    supabase.from('cars').select('purchase_price, car_condition, batch_id').eq('company_id', companyId),
     supabase.from('sales').select('sale_price, profit').eq('company_id', companyId),
+    supabase.from('purchase_batches').select('id, price_includes_tax').eq('company_id', companyId),
   ]);
-  const purchases = Math.round((carsRes.data || []).reduce((s, c) => s + (Number(c.purchase_price) || 0), 0));
+  const batchTaxMap = new Map<string, boolean>();
+  (batchesRes.data || []).forEach((b: any) => batchTaxMap.set(b.id, b.price_includes_tax === true));
+  const VAT_RATE = 0.15;
+  const purchases = Math.round((carsRes.data || []).reduce((s, c: any) => {
+    const price = Number(c.purchase_price) || 0;
+    const batchIncludesTax = c.batch_id ? batchTaxMap.get(c.batch_id) : false;
+    if (batchIncludesTax) return s + price;
+    const vatMultiplier = c.car_condition === 'used' ? 1 : (1 + VAT_RATE);
+    return s + (price * vatMultiplier);
+  }, 0));
   const sales = (salesRes.data || []).reduce((s, sale) => s + (Number(sale.sale_price) || 0), 0);
   const profit = (salesRes.data || []).reduce((s, sale) => s + (Number(sale.profit) || 0), 0);
   return {
