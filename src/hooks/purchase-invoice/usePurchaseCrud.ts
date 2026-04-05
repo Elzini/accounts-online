@@ -249,12 +249,19 @@ export function usePurchaseCrud(deps: CrudDeps) {
             }
           });
         }
-        // Update batch-level fields
+        // Update batch-level fields (all header fields)
         const { error: batchUpdateError } = await supabase.from('purchase_batches').update({
           supplier_id: deps.invoiceData.supplier_id,
           purchase_date: deps.invoiceData.purchase_date,
           notes: deps.invoiceData.notes || null,
           price_includes_tax: deps.invoiceData.price_includes_tax || false,
+          invoice_number: deps.invoiceData.invoice_number || null,
+          due_date: deps.invoiceData.due_date || null,
+          payment_status: deps.invoiceData.payment_status || 'unpaid',
+          supplier_invoice_number: deps.invoiceData.supplier_invoice_number || null,
+          payment_account_id: deps.invoiceData.payment_account_id || null,
+          project_id: deps.invoiceData.project_id || null,
+          cost_center_id: deps.invoiceData.cost_center_id || null,
         }).eq('id', deps.currentBatchId);
         if (batchUpdateError) throw batchUpdateError;
 
