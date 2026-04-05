@@ -6,9 +6,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/hooks/modules/useMiscServices';
-import { useSuppliers, useAddPurchaseBatch, useUpdateCar, useDeleteCar, usePurchaseBatches } from '@/hooks/useDatabase';
-import { useTaxSettings, useAccounts } from '@/hooks/useAccounting';
-import { useCompany } from '@/contexts/CompanyContext';
+import { useAddPurchaseBatch, useUpdateCar, useDeleteCar, usePurchaseBatches } from '@/hooks/useDatabase';
 import { useFiscalYear } from '@/contexts/FiscalYearContext';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -233,20 +231,34 @@ export function usePurchaseCrud(deps: CrudDeps) {
       const batch = purchaseBatches.find(b => b.id === deps.currentBatchId);
       if (!batch) return;
       const batchCars = batch.cars || [];
-      if (deps.cars.length === 0 || !deps.cars[0].chassis_number || !deps.cars[0].name) { toast.error(t.inv_toast_fill_fields); return; }
+      if (!companyId) { toast.error(t.inv_toast_company_not_found); return; }
+      const invalidCar = deps.cars.find(car => !car.chassis_number || !car.name || !car.purchase_price);
+      if (deps.cars.length === 0 || invalidCar) { toast.error(t.inv_toast_fill_fields); return; }
+      const chassisNumbers = deps.cars.map(car => car.chassis_number.trim());
+      const duplicates = chassisNumbers.filter((item, index) => item && chassisNumbers.indexOf(item) !== index);
+      if (duplicates.length > 0) { toast.error(`رقم الهيكل ${duplicates[0]} مكرر داخل الفاتورة`); return; }
       try {
         const batchCarsById = new Map(batchCars.map((car: any) => [car.id, car]));
-        const remainingBatchCars = [...batchCars];
+        const batchCarIds = new Set(batchCars.map((car: any) => car.id));
+        const existingEditedCars = deps.cars.filter(car => batchCarsById.has(car.id));
+        const newCars = deps.cars.filter(car => !batchCarsById.has(car.id));
 
-        for (const editedCar of deps.cars) {
-          const matchedBatchCar = editedCar.id
-            ? batchCarsById.get(editedCar.id) || null
-            : null;
-          const targetCar = matchedBatchCar || remainingBatchCars.shift();
-          if (!targetCar) continue;
+        const { data: existingCars, error: existingCarsError } = await supabase
+          .from('cars')
+          .select('id, chassis_number')
+          .eq('company_id', companyId)
+          .in('chassis_number', chassisNumbers);
+        if (existingCarsError) throw existingCarsError;
 
+        const conflictingCar = existingCars?.find((car: any) => !batchCarIds.has(car.id));
+        if (conflictingCar) {
+          toast.error(`رقم الهيكل ${conflictingCar.chassis_number} موجود مسبقاً في المخزون`);
+          return;
+        }
+
+        for (const editedCar of existingEditedCars) {
           await updateCar.mutateAsync({
-            id: targetCar.id,
+            id: editedCar.id,
             car: {
               name: editedCar.name,
               model: editedCar.model || null,
@@ -261,6 +273,28 @@ export function usePurchaseCrud(deps: CrudDeps) {
             }
           });
         }
+
+        if (newCars.length > 0) {
+          const carsToInsert = newCars.map(car => ({
+            batch_id: deps.currentBatchId,
+            company_id: companyId,
+            supplier_id: deps.invoiceData.supplier_id || null,
+            purchase_date: deps.invoiceData.purchase_date,
+            payment_account_id: deps.invoiceData.payment_account_id || null,
+            fiscal_year_id: selectedFiscalYear?.id ?? batchCars[0]?.fiscal_year_id ?? null,
+            name: car.name,
+            model: car.model || null,
+            chassis_number: car.chassis_number,
+            plate_number: car.plate_number || null,
+            color: car.color || null,
+            purchase_price: parseFloat(car.purchase_price),
+            car_condition: car.car_condition || 'new',
+          }));
+
+          const { error: insertCarsError } = await supabase.from('cars').insert(carsToInsert);
+          if (insertCarsError) throw insertCarsError;
+        }
+
         // Update batch-level fields (all header fields)
         const { error: batchUpdateError } = await supabase.from('purchase_batches').update({
           supplier_id: deps.invoiceData.supplier_id,
@@ -290,7 +324,13 @@ export function usePurchaseCrud(deps: CrudDeps) {
         
         deps.setIsEditing(false);
         toast.success(t.inv_toast_purchase_update_success);
-      } catch (error) {
+      } catch (error: any) {
+        if (error.message?.includes('duplicate')) {
+          const match = error.message.match(/\(chassis_number\)=\(([^)]+)\)/);
+          const chassisNum = match?.[1];
+          toast.error(chassisNum ? `رقم الهيكل ${chassisNum} موجود مسبقاً في المخزون` : t.inv_toast_duplicate_exists);
+          return;
+        }
         console.error('Purchase batch update error:', error);
         toast.error(t.inv_toast_purchase_update_error);
       }
