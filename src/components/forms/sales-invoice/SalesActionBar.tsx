@@ -20,6 +20,7 @@ export function SalesActionBar({ hook, setActivePage }: SalesActionBarProps) {
     isViewingExisting, isApproved, isEditing, setIsEditing, currentSaleStatus,
     handleSubmit, handleUpdateSale, handleNewInvoice, handlePrintExisting,
     setDeleteDialogOpen, setReverseDialogOpen, setApproveDialogOpen,
+    setAiImportOpen,
     addMultiCarSale, updateSale, deleteSale, approveSale, searchBarRef, t,
   } = hook;
 
