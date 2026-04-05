@@ -11052,6 +11052,10 @@ export type Database = {
         Args: { _company_id: string; _plaintext: string }
         Returns: string
       }
+      force_delete_invoice: {
+        Args: { p_invoice_id: string }
+        Returns: undefined
+      }
       generate_tenant_encryption_key: {
         Args: { p_company_id: string }
         Returns: undefined

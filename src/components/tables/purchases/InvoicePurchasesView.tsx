@@ -130,16 +130,10 @@ export function InvoicePurchasesView({ setActivePage, hook }: Props) {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {isDraftInvoiceStatus(inv.status) && (
-                            <>
-                              <DropdownMenuItem onClick={() => handleApproveInvoice(inv.id)}>
-                                <CheckCircle className="w-4 h-4 ml-2 text-green-600" />
-                                {language === 'ar' ? 'اعتماد الفاتورة' : 'Approve Invoice'}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setDeleteInvoiceId(inv.id)} className="text-destructive">
-                                <Trash2 className="w-4 h-4 ml-2" />
-                                {language === 'ar' ? 'حذف' : 'Delete'}
-                              </DropdownMenuItem>
-                            </>
+                            <DropdownMenuItem onClick={() => handleApproveInvoice(inv.id)}>
+                              <CheckCircle className="w-4 h-4 ml-2 text-green-600" />
+                              {language === 'ar' ? 'اعتماد الفاتورة' : 'Approve Invoice'}
+                            </DropdownMenuItem>
                           )}
                           {!isDraftInvoiceStatus(inv.status) && (
                             <DropdownMenuItem onClick={() => {
@@ -150,6 +144,10 @@ export function InvoicePurchasesView({ setActivePage, hook }: Props) {
                               {language === 'ar' ? 'عرض' : 'View'}
                             </DropdownMenuItem>
                           )}
+                          <DropdownMenuItem onClick={() => setDeleteInvoiceId(inv.id)} className="text-destructive">
+                            <Trash2 className="w-4 h-4 ml-2" />
+                            {language === 'ar' ? 'حذف' : 'Delete'}
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

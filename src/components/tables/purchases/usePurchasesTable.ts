@@ -135,20 +135,10 @@ export function usePurchasesTable() {
 
   const handleDeleteInvoice = useCallback(async (invoiceId: string) => {
     try {
-      const { data: linkedEntries } = await supabase
-        .from('journal_entries').select('id')
-        .eq('reference_id', invoiceId)
-        .in('reference_type', ['invoice_purchase', 'invoice_sale']);
-      if (linkedEntries && linkedEntries.length > 0) {
-        const entryIds = linkedEntries.map(e => e.id);
-        await supabase.from('journal_entry_lines').delete().in('journal_entry_id', entryIds);
-        for (const eid of entryIds) {
-          await (supabase.rpc as any)('delete_orphan_journal_entry', { entry_id: eid });
-        }
-      }
-      await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
-      const { error } = await supabase.from('invoices').delete().eq('id', invoiceId);
+      // Use force_delete_invoice RPC to handle all triggers safely
+      const { error } = await (supabase.rpc as any)('force_delete_invoice', { p_invoice_id: invoiceId });
       if (error) throw error;
+      // Renumber remaining purchase invoices
       if (companyId) {
         const { data: remaining } = await (supabase as any)
           .from('invoices').select('id, invoice_number')
