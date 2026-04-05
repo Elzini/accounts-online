@@ -81,6 +81,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   const [currentSaleStatus, setCurrentSaleStatus] = useState<'draft' | 'approved'>('draft');
   const [isEditing, setIsEditing] = useState(false);
   const [storedHeaderTotals, setStoredHeaderTotals] = useState<StoredHeaderTotals | null>(null);
+  const [aiImportOpen, setAiImportOpen] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
 
   const isApproved = isViewingExisting && currentSaleStatus === 'approved';
