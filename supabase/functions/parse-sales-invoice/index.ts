@@ -72,6 +72,13 @@ async function parseSalesInvoice(fileContent: string, fileName: string, apiKey: 
 9. subtotal: المجموع الكلي قبل الضريبة.
 10. total_amount: الإجمالي النهائي شامل الضريبة.
 11. طريقة الدفع: إن وجدت (نقدي، شبكة، تحويل بنكي، آجل).
+12. بيانات السيارات (مهم جداً):
+   - استخرج رقم الهيكل/الشاصي (chassis_number) لكل سيارة في البنود.
+   - استخرج رقم اللوحة (plate_number) إن وجد.
+   - استخرج لون السيارة (color) إن وجد.
+   - استخرج الموديل/سنة الصنع (model) إن وجد.
+   - حدد حالة السيارة (car_condition): "new" للجديدة أو "used" للمستعملة.
+   - رقم الهيكل عادةً يكون رقم طويل من 17 حرف/رقم.
 
 أعد النتائج كـ JSON فقط بدون أي تنسيق markdown.`;
 
@@ -123,10 +130,15 @@ ${isPDF ? 'الملف مرفق كصورة/PDF.' : `المحتوى:\n${fileConten
                   items: {
                     type: "object",
                     properties: {
-                      description: { type: "string", description: "وصف البند" },
+                      description: { type: "string", description: "وصف البند (اسم السيارة أو المنتج)" },
                       quantity: { type: "number", description: "الكمية" },
                       unit_price: { type: "number", description: "سعر الوحدة قبل الضريبة" },
                       total: { type: "number", description: "الإجمالي قبل الضريبة" },
+                      chassis_number: { type: "string", description: "رقم الهيكل/الشاصي إن وجد" },
+                      plate_number: { type: "string", description: "رقم اللوحة إن وجد" },
+                      color: { type: "string", description: "لون السيارة إن وجد" },
+                      model: { type: "string", description: "الموديل/سنة الصنع إن وجد" },
+                      car_condition: { type: "string", description: "حالة السيارة: new أو used إن وجد" },
                     },
                     required: ["description", "quantity", "unit_price", "total"],
                   },

@@ -434,19 +434,90 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
       seller_name: data.seller_name || prev.seller_name,
     }));
 
-    // Set items as inventory items
-    if (data.items && data.items.length > 0) {
+    // For car dealerships: match items to available cars
+    if (data.items && data.items.length > 0 && isCarDealership) {
+      const matchedCars: SelectedCarItem[] = [];
+      const unmatchedItems: any[] = [];
+
+      for (const item of data.items) {
+        const chassisFromItem = (item.chassis_number || '').trim().toUpperCase();
+        const descLower = (item.description || '').toLowerCase();
+
+        // Try to find matching available car
+        let matchedCar = null;
+
+        // 1. Match by chassis number (most reliable)
+        if (chassisFromItem) {
+          matchedCar = availableCars.find(c =>
+            (c.chassis_number || '').trim().toUpperCase() === chassisFromItem &&
+            !matchedCars.some(mc => mc.car_id === c.id)
+          );
+        }
+
+        // 2. Match by chassis number in description
+        if (!matchedCar) {
+          matchedCar = availableCars.find(c => {
+            const chassis = (c.chassis_number || '').trim().toLowerCase();
+            return chassis && chassis.length > 5 && descLower.includes(chassis) &&
+              !matchedCars.some(mc => mc.car_id === c.id);
+          });
+        }
+
+        // 3. Match by car name
+        if (!matchedCar) {
+          matchedCar = availableCars.find(c => {
+            const name = (c.name || '').trim().toLowerCase();
+            return name && name.length > 3 && descLower.includes(name) &&
+              !matchedCars.some(mc => mc.car_id === c.id);
+          });
+        }
+
+        if (matchedCar) {
+          matchedCars.push({
+            id: crypto.randomUUID(),
+            car_id: matchedCar.id,
+            sale_price: String(item.unit_price || item.total || 0),
+            purchase_price: Number(matchedCar.purchase_price),
+            car_name: matchedCar.name,
+            model: matchedCar.model || item.model || '',
+            color: matchedCar.color || item.color || '',
+            chassis_number: matchedCar.chassis_number,
+            plate_number: (matchedCar as any).plate_number || item.plate_number || '',
+            quantity: 1,
+            car_condition: ((matchedCar as any).car_condition === 'used' || item.car_condition === 'used') ? 'used' : 'new',
+            pendingTransfer: null,
+          });
+        } else {
+          unmatchedItems.push(item);
+        }
+      }
+
+      if (matchedCars.length > 0) {
+        setSelectedCars(matchedCars);
+        setSelectedInventoryItems([]);
+        toast.success(`تم مطابقة ${matchedCars.length} سيارة من المخزون`);
+        if (unmatchedItems.length > 0) {
+          toast.warning(`${unmatchedItems.length} بند لم يتم مطابقته مع سيارات في المخزون`);
+        }
+      } else {
+        // No cars matched - add as inventory items as fallback
+        toast.warning('لم يتم العثور على سيارات مطابقة في المخزون - تمت إضافة البنود كأصناف');
+        const importedItems: SelectedInventoryItem[] = data.items.map((item: any) => ({
+          id: crypto.randomUUID(), item_id: '', item_name: item.description || '',
+          barcode: '', unit_name: 'وحدة', unit_id: null,
+          sale_price: String(item.unit_price || 0), cost_price: 0,
+          quantity: item.quantity || 1, available_quantity: 0,
+        }));
+        setSelectedInventoryItems(importedItems);
+        setSelectedCars([]);
+      }
+    } else if (data.items && data.items.length > 0) {
+      // Non-car dealership: add as inventory items
       const importedItems: SelectedInventoryItem[] = data.items.map((item: any) => ({
-        id: crypto.randomUUID(),
-        item_id: '',
-        item_name: item.description || '',
-        barcode: '',
-        unit_name: 'وحدة',
-        unit_id: null,
-        sale_price: String(item.unit_price || 0),
-        cost_price: 0,
-        quantity: item.quantity || 1,
-        available_quantity: 0,
+        id: crypto.randomUUID(), item_id: '', item_name: item.description || '',
+        barcode: '', unit_name: 'وحدة', unit_id: null,
+        sale_price: String(item.unit_price || 0), cost_price: 0,
+        quantity: item.quantity || 1, available_quantity: 0,
       }));
       setSelectedInventoryItems(importedItems);
       setSelectedCars([]);
