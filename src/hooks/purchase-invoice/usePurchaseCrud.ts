@@ -89,8 +89,11 @@ export function usePurchaseCrud(deps: CrudDeps) {
         toast.success(t.inv_toast_purchase_success);
         deps.setInvoiceOpen(true);
       } catch (error: any) {
-        if (error.message?.includes('duplicate')) toast.error(t.inv_toast_duplicate_exists);
-        else { console.error('Purchase batch error:', error); toast.error(t.inv_toast_purchase_error); }
+        if (error.message?.includes('duplicate')) {
+          const match = error.message?.match(/\(chassis_number\)=\(([^)]+)\)/);
+          const chassisNum = match?.[1];
+          toast.error(chassisNum ? `رقم الهيكل ${chassisNum} موجود مسبقاً في المخزون` : t.inv_toast_duplicate_exists);
+        } else { console.error('Purchase batch error:', error); toast.error(t.inv_toast_purchase_error); }
       }
     } else {
       if (deps.purchaseInventoryItems.length === 0) { toast.error(t.inv_toast_add_item); return; }
