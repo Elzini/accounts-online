@@ -5458,6 +5458,7 @@ export type Database = {
           payment_account_id: string | null
           payment_method: string | null
           payment_status: string | null
+          price_includes_tax: boolean
           project_id: string | null
           sale_id: string | null
           status: string
@@ -5497,6 +5498,7 @@ export type Database = {
           payment_account_id?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          price_includes_tax?: boolean
           project_id?: string | null
           sale_id?: string | null
           status?: string
@@ -5536,6 +5538,7 @@ export type Database = {
           payment_account_id?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          price_includes_tax?: boolean
           project_id?: string | null
           sale_id?: string | null
           status?: string
@@ -7340,6 +7343,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          price_includes_tax: boolean
           purchase_date: string
           supplier_id: string | null
           updated_at: string
@@ -7349,6 +7353,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          price_includes_tax?: boolean
           purchase_date?: string
           supplier_id?: string | null
           updated_at?: string
@@ -7358,6 +7363,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          price_includes_tax?: boolean
           purchase_date?: string
           supplier_id?: string | null
           updated_at?: string
