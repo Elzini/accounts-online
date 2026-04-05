@@ -166,14 +166,15 @@ async function fetchCarDealershipStats(
 
   let carsQ = supabase.from('cars').select('*', { count: 'exact', head: true })
     .eq('status', 'available').eq('company_id', companyId);
-  let salesQ = supabase.from('sales').select('profit, car_id, sale_date, sale_price')
+  let salesQ = supabase.from('sales').select('profit, car_id, sale_date, sale_price, vat_amount')
     .eq('company_id', companyId);
   let expensesQ = supabase.from('expenses').select('amount, car_id, expense_date, payment_method')
     .eq('company_id', companyId);
   let payrollQ = supabase.from('payroll_records')
     .select('month, year, total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences')
     .eq('status', 'approved').eq('company_id', companyId);
-  let purchasesQ = supabase.from('cars').select('purchase_price').eq('company_id', companyId);
+  let purchasesQ = supabase.from('cars').select('purchase_price, car_condition, batch_id').eq('company_id', companyId);
+  const batchesQ = supabase.from('purchase_batches').select('id, price_includes_tax').eq('company_id', companyId);
 
   if (fyStart && fyEnd) {
     carsQ = carsQ.gte('purchase_date', fyStart).lte('purchase_date', fyEnd);
@@ -186,8 +187,8 @@ async function fetchCarDealershipStats(
     }
   }
 
-  const [carsRes, salesRes, expRes, prRes, purRes] = await Promise.all([
-    carsQ, salesQ, expensesQ, payrollQ, purchasesQ
+  const [carsRes, salesRes, expRes, prRes, purRes, batchesRes] = await Promise.all([
+    carsQ, salesQ, expensesQ, payrollQ, purchasesQ, batchesQ
   ]);
 
   const salesData = salesRes.data || [];
