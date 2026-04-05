@@ -7340,32 +7340,53 @@ export type Database = {
       purchase_batches: {
         Row: {
           company_id: string | null
+          cost_center_id: string | null
           created_at: string
+          due_date: string | null
           id: string
+          invoice_number: string | null
           notes: string | null
+          payment_account_id: string | null
+          payment_status: string | null
           price_includes_tax: boolean
+          project_id: string | null
           purchase_date: string
           supplier_id: string | null
+          supplier_invoice_number: string | null
           updated_at: string
         }
         Insert: {
           company_id?: string | null
+          cost_center_id?: string | null
           created_at?: string
+          due_date?: string | null
           id?: string
+          invoice_number?: string | null
           notes?: string | null
+          payment_account_id?: string | null
+          payment_status?: string | null
           price_includes_tax?: boolean
+          project_id?: string | null
           purchase_date?: string
           supplier_id?: string | null
+          supplier_invoice_number?: string | null
           updated_at?: string
         }
         Update: {
           company_id?: string | null
+          cost_center_id?: string | null
           created_at?: string
+          due_date?: string | null
           id?: string
+          invoice_number?: string | null
           notes?: string | null
+          payment_account_id?: string | null
+          payment_status?: string | null
           price_includes_tax?: boolean
+          project_id?: string | null
           purchase_date?: string
           supplier_id?: string | null
+          supplier_invoice_number?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -7374,6 +7395,27 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_batches_cost_center_id_fkey"
+            columns: ["cost_center_id"]
+            isOneToOne: false
+            referencedRelation: "cost_centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_batches_payment_account_id_fkey"
+            columns: ["payment_account_id"]
+            isOneToOne: false
+            referencedRelation: "account_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_batches_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "advanced_projects"
             referencedColumns: ["id"]
           },
           {
