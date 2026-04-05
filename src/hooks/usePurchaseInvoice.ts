@@ -240,6 +240,7 @@ export function usePurchaseInvoice() {
     setDeleteDialogOpen, setReverseDialogOpen,
     setIsEditing: nav.setIsEditing,
     setSavedBatchData, setInvoiceOpen,
+    loadRecordData: nav.loadRecordData,
   });
 
   // ===== Print =====
