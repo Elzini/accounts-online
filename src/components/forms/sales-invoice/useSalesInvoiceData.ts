@@ -387,6 +387,40 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
 
   // === AI Import handler ===
   const handleAISalesImport = (data: any) => {
+    // Check for duplicate invoice number
+    const allSalesData = isCarDealership ? existingSales : existingInvoices;
+    const existingInvoiceNum = allSalesData.find((s: any) => {
+      const num = isCarDealership ? s.sale_number : s.invoice_number;
+      return num && data.invoice_number && num === data.invoice_number;
+    });
+    if (existingInvoiceNum) {
+      toast.warning(`فاتورة برقم ${data.invoice_number} موجودة بالفعل - سيتم استيراد البيانات مع تغيير الرقم`);
+      data.invoice_number = `${data.invoice_number}-نسخة`;
+    }
+
+    // Check for already sold cars in items (match by chassis number or description)
+    if (data.items && data.items.length > 0 && isCarDealership) {
+      const soldCars = allCars.filter(c => c.status === 'sold');
+      const duplicateItems: string[] = [];
+      data.items = data.items.filter((item: any) => {
+        const desc = (item.description || '').toLowerCase();
+        const isSold = soldCars.some(c => {
+          const chassis = (c.chassis_number || '').toLowerCase();
+          const name = (c.name || '').toLowerCase();
+          return (chassis && desc.includes(chassis)) || (name && desc.includes(name));
+        });
+        if (isSold) { duplicateItems.push(item.description); return false; }
+        return true;
+      });
+      if (duplicateItems.length > 0) {
+        toast.warning(`تم استبعاد ${duplicateItems.length} سيارة مباعة مسبقاً: ${duplicateItems.join('، ')}`);
+      }
+      if (data.items.length === 0) {
+        toast.error('جميع السيارات في هذه الفاتورة مباعة مسبقاً');
+        return;
+      }
+    }
+
     // Fill form with AI-parsed data
     const customer = data.customer_name ? customers.find(c => c.name?.includes(data.customer_name)) : null;
     setInvoiceData(prev => ({
@@ -428,6 +462,113 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
     setIsEditing(false);
     setStoredHeaderTotals(null);
     toast.success('تم استيراد بيانات الفاتورة بنجاح');
+  };
+
+  // === AI Batch Import handler - save all invoices at once ===
+  const handleAIBatchImport = async (results: SalesBatchParsedResult[]) => {
+    if (!companyId) { toast.error('لم يتم العثور على الشركة'); return; }
+    
+    const allSalesData = isCarDealership ? existingSales : existingInvoices;
+    const soldCars = allCars.filter(c => c.status === 'sold');
+    const soldChassisSet = new Set(soldCars.map(c => (c.chassis_number || '').toLowerCase()));
+    const existingInvoiceNums = new Set(allSalesData.map((s: any) => isCarDealership ? s.sale_number : s.invoice_number).filter(Boolean));
+    
+    let savedCount = 0;
+    let skippedCount = 0;
+    const errors: string[] = [];
+
+    for (const result of results) {
+      if (!result.success || !result.data) continue;
+      const data = { ...result.data };
+
+      // Skip duplicate invoice numbers
+      if (data.invoice_number && existingInvoiceNums.has(data.invoice_number)) {
+        skippedCount++;
+        continue;
+      }
+
+      // Filter out sold cars
+      if (data.items && isCarDealership) {
+        data.items = data.items.filter((item: any) => {
+          const desc = (item.description || '').toLowerCase();
+          return !Array.from(soldChassisSet).some(chassis => chassis && desc.includes(chassis));
+        });
+        if (data.items.length === 0) { skippedCount++; continue; }
+      }
+
+      try {
+        const customer = data.customer_name ? customers.find(c => c.name?.includes(data.customer_name)) : null;
+        const invoiceNum = data.invoice_number || `AI-${Date.now()}-${savedCount}`;
+
+        if (isCarDealership) {
+          // For car dealerships - create as draft sale via addMultiCarSale is complex,
+          // so we import one by one into the form. User should use single import for car dealerships.
+          // For non-car dealerships, save directly as invoice
+        }
+
+        // Save as invoice for non-car dealerships
+        if (!isCarDealership) {
+          const subtotal = data.subtotal || data.items.reduce((s: number, i: any) => s + (i.total || 0), 0);
+          const vatAmount = data.vat_amount || subtotal * 0.15;
+          const total = data.total_amount || subtotal + vatAmount;
+
+          const { data: invoice, error: invErr } = await supabase.from('invoices').insert({
+            company_id: companyId,
+            invoice_type: 'sales',
+            invoice_number: invoiceNum,
+            invoice_date: data.invoice_date || new Date().toISOString().split('T')[0],
+            customer_id: customer?.id || null,
+            subtotal, vat_amount: vatAmount, vat_rate: data.vat_rate || 15,
+            total, discount_amount: data.discount || 0,
+            status: 'draft',
+            notes: data.notes || null,
+            seller_name: data.seller_name || null,
+            fiscal_year_id: selectedFiscalYear?.id || null,
+            payment_account_id: accounts.find(a => a.code === '1101')?.id || null,
+          }).select().single();
+
+          if (invErr) throw invErr;
+
+          // Save invoice items
+          if (invoice && data.items.length > 0) {
+            const items = data.items.map((item: any, idx: number) => ({
+              invoice_id: invoice.id,
+              company_id: companyId,
+              item_description: item.description || '',
+              quantity: item.quantity || 1,
+              unit_price: item.unit_price || 0,
+              total: item.total || 0,
+              vat_rate: data.vat_rate || 15,
+              vat_amount: (item.total || 0) * ((data.vat_rate || 15) / 100),
+              sort_order: idx,
+            }));
+            const { error: itemsErr } = await supabase.from('invoice_items').insert(items);
+            if (itemsErr) {
+              // Rollback - delete the invoice header
+              await supabase.from('invoices').delete().eq('id', invoice.id);
+              throw itemsErr;
+            }
+          }
+
+          existingInvoiceNums.add(invoiceNum);
+          savedCount++;
+        }
+      } catch (err: any) {
+        console.error(`Error saving invoice ${data.invoice_number}:`, err);
+        errors.push(data.invoice_number || result.fileName);
+      }
+    }
+
+    if (savedCount > 0) {
+      toast.success(`تم حفظ ${savedCount} فاتورة بنجاح`);
+      // Refresh invoices list
+      if (!isCarDealership && companyId) {
+        const { data: refreshed } = await supabase.from('invoices').select('*, invoice_items(*)').eq('company_id', companyId).eq('invoice_type', 'sales').order('created_at', { ascending: true });
+        setExistingInvoices(refreshed || []);
+      }
+    }
+    if (skippedCount > 0) toast.warning(`تم تخطي ${skippedCount} فاتورة مكررة أو بدون بنود`);
+    if (errors.length > 0) toast.error(`فشل حفظ ${errors.length} فاتورة`);
   };
 
   return {
