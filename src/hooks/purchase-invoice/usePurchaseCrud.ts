@@ -265,15 +265,11 @@ export function usePurchaseCrud(deps: CrudDeps) {
         }).eq('id', deps.currentBatchId);
         if (batchUpdateError) throw batchUpdateError;
 
-        // Invalidate and wait for refetch to complete
-        await Promise.all(
-          PURCHASE_QUERY_KEYS.flatMap(key => [
-            queryClient.invalidateQueries({ queryKey: [key] }),
-            queryClient.invalidateQueries({ queryKey: [key, companyId] }),
-          ])
-        );
+        // Refetch fresh data and reload
+        await queryClient.refetchQueries({ queryKey: ['purchase-batches', companyId] });
+        invalidateAll();
         
-        // Reload the current record from fresh data
+        // Reload from fresh cache after refetch completes
         const freshBatches = queryClient.getQueryData<any[]>(['purchase-batches', companyId]);
         const freshRecord = freshBatches?.find((b: any) => b.id === deps.currentBatchId);
         if (freshRecord && deps.loadRecordData) {
@@ -341,19 +337,15 @@ export function usePurchaseCrud(deps: CrudDeps) {
         if (insertItemsError) throw insertItemsError;
       }
 
-      await Promise.all(
-        PURCHASE_QUERY_KEYS.flatMap(key => [
-          queryClient.invalidateQueries({ queryKey: [key] }),
-          queryClient.invalidateQueries({ queryKey: [key, companyId] }),
-        ])
-      );
+        // Refetch fresh data and reload
+        await queryClient.refetchQueries({ queryKey: ['purchase-invoices-nav', companyId] });
+        invalidateAll();
 
-      // Reload from fresh data
-      const freshInvoices = queryClient.getQueryData<any[]>(['purchase-invoices-nav', companyId]);
-      const freshRecord = freshInvoices?.find((inv: any) => inv.id === deps.currentBatchId);
-      if (freshRecord && deps.loadRecordData) {
-        deps.loadRecordData(freshRecord);
-      }
+        const freshInvoices = queryClient.getQueryData<any[]>(['purchase-invoices-nav', companyId]);
+        const freshRecord = freshInvoices?.find((inv: any) => inv.id === deps.currentBatchId);
+        if (freshRecord && deps.loadRecordData) {
+          deps.loadRecordData(freshRecord);
+        }
 
       deps.setSavedBatchData({ batch: { id: deps.currentBatchId }, supplier: deps.selectedSupplier, inventoryItems: deps.purchaseInventoryItems });
       deps.setIsEditing(false);
