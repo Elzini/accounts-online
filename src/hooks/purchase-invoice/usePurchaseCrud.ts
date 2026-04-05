@@ -249,16 +249,27 @@ export function usePurchaseCrud(deps: CrudDeps) {
           });
         }
         // Update batch-level fields
-        await supabase.from('purchase_batches').update({
+        const { error: batchUpdateError } = await supabase.from('purchase_batches').update({
           supplier_id: deps.invoiceData.supplier_id,
           purchase_date: deps.invoiceData.purchase_date,
           notes: deps.invoiceData.notes || null,
           price_includes_tax: deps.invoiceData.price_includes_tax || false,
         }).eq('id', deps.currentBatchId);
-        invalidateAll();
+        if (batchUpdateError) throw batchUpdateError;
+
+        // Invalidate and wait for refetch to complete
+        await Promise.all(
+          PURCHASE_QUERY_KEYS.flatMap(key => [
+            queryClient.invalidateQueries({ queryKey: [key] }),
+            queryClient.invalidateQueries({ queryKey: [key, companyId] }),
+          ])
+        );
         deps.setIsEditing(false);
         toast.success(t.inv_toast_purchase_update_success);
-      } catch { toast.error(t.inv_toast_purchase_update_error); }
+      } catch (error) {
+        console.error('Purchase batch update error:', error);
+        toast.error(t.inv_toast_purchase_update_error);
+      }
       return;
     }
 
