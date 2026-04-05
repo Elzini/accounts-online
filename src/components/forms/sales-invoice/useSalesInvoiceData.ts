@@ -24,6 +24,7 @@ import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 import { SelectedCarItem, SelectedInventoryItem, InvoiceFormData, StoredHeaderTotals } from './types';
+import type { SalesBatchParsedResult } from '../sales-invoice-ai/types';
 import { ActivePage } from '@/types';
 import { useSalesInvoiceCalculations, useDisplayTotals } from './useSalesInvoiceCalculations';
 import { createSalesInvoiceActions } from './useSalesInvoiceActions';
