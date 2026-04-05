@@ -109,7 +109,9 @@ export function PurchaseForm({ setActivePage }: PurchaseFormProps) {
       setInvoiceOpen(true);
     } catch (error: any) {
       if (error.message?.includes('duplicate')) {
-        toast.error('رقم الهيكل موجود مسبقاً');
+        const match = error.message?.match(/\(chassis_number\)=\(([^)]+)\)/);
+        const chassisNum = match?.[1];
+        toast.error(chassisNum ? `رقم الهيكل ${chassisNum} موجود مسبقاً` : 'رقم الهيكل موجود مسبقاً');
       } else {
         toast.error('حدث خطأ أثناء إضافة السيارة');
       }

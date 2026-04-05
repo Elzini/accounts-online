@@ -59,7 +59,12 @@ export function usePurchaseInvoiceCrud(deps: CrudDeps) {
       onSuccess({ ...result, supplier: selectedSupplier, cars });
       toast.success(t.inv_toast_purchase_success);
     } catch (error: any) {
-      if (error.message?.includes('duplicate')) toast.error(t.inv_toast_duplicate_exists);
+      if (error.message?.includes('duplicate')) {
+        // Try to extract the duplicate chassis number from the error
+        const match = error.message.match(/\(chassis_number\)=\(([^)]+)\)/);
+        const chassisNum = match?.[1];
+        toast.error(chassisNum ? `رقم الهيكل ${chassisNum} موجود مسبقاً` : t.inv_toast_duplicate_exists);
+      }
       else { console.error('Purchase batch error:', error); toast.error(t.inv_toast_purchase_error); }
     }
   }, [addPurchaseBatch, selectedFiscalYear, selectedSupplier, t]);
