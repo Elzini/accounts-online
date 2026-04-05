@@ -81,6 +81,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   const [currentSaleStatus, setCurrentSaleStatus] = useState<'draft' | 'approved'>('draft');
   const [isEditing, setIsEditing] = useState(false);
   const [storedHeaderTotals, setStoredHeaderTotals] = useState<StoredHeaderTotals | null>(null);
+  const [aiImportOpen, setAiImportOpen] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
 
   const isApproved = isViewingExisting && currentSaleStatus === 'approved';
@@ -384,6 +385,51 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
     };
   }, [savedSaleData, invoiceData, selectedCustomer, calculations, taxSettings, company, taxRate, nextInvoiceNumber, accounts]);
 
+  // === AI Import handler ===
+  const handleAISalesImport = (data: any) => {
+    // Fill form with AI-parsed data
+    const customer = data.customer_name ? customers.find(c => c.name?.includes(data.customer_name)) : null;
+    setInvoiceData(prev => ({
+      ...prev,
+      invoice_number: data.invoice_number || prev.invoice_number,
+      sale_date: data.invoice_date || prev.sale_date,
+      customer_id: customer?.id || prev.customer_id,
+      notes: data.notes || prev.notes,
+      price_includes_tax: data.price_includes_tax ?? prev.price_includes_tax,
+      seller_name: data.seller_name || prev.seller_name,
+    }));
+
+    // Set items as inventory items
+    if (data.items && data.items.length > 0) {
+      const importedItems: SelectedInventoryItem[] = data.items.map((item: any) => ({
+        id: crypto.randomUUID(),
+        item_id: '',
+        item_name: item.description || '',
+        barcode: '',
+        unit_name: 'وحدة',
+        unit_id: null,
+        sale_price: String(item.unit_price || 0),
+        cost_price: 0,
+        quantity: item.quantity || 1,
+        available_quantity: 0,
+      }));
+      setSelectedInventoryItems(importedItems);
+      setSelectedCars([]);
+    }
+
+    if (data.discount) {
+      setDiscount(data.discount);
+      setDiscountType('amount');
+    }
+
+    setIsViewingExisting(false);
+    setCurrentSaleId(null);
+    setCurrentSaleStatus('draft');
+    setIsEditing(false);
+    setStoredHeaderTotals(null);
+    toast.success('تم استيراد بيانات الفاتورة بنجاح');
+  };
+
   return {
     customers, accounts, taxSettings, company, isCarDealership, t, language, dir, decimals, permissions, currency, locale,
     taxRate, nextInvoiceNumber, savedTemplates,
@@ -393,6 +439,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
     deleteDialogOpen, setDeleteDialogOpen, reverseDialogOpen, setReverseDialogOpen,
     approveDialogOpen, setApproveDialogOpen, currentSaleStatus, isEditing, setIsEditing,
     isApproved, isReadOnly, selectedCustomer, searchBarRef,
+    aiImportOpen, setAiImportOpen, handleAISalesImport,
     fiscalYearFilteredSales, remainingCars, availableInventoryItems,
     calculations, displayTotals, invoicePreviewData,
     formatCurrency, handleAddCar, handleRemoveCar, handleCarChange,

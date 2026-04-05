@@ -3,7 +3,7 @@
  */
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Save, Plus, X, Printer, FileText, Trash2, FileSpreadsheet, ChevronDown, MessageSquare, RotateCcw, CheckCircle, FileEdit, Search } from 'lucide-react';
+import { Save, Plus, X, Printer, FileText, Trash2, FileSpreadsheet, ChevronDown, MessageSquare, RotateCcw, CheckCircle, FileEdit, Search, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { ActivePage } from '@/types';
 import type { useSalesInvoiceData } from './useSalesInvoiceData';
@@ -20,6 +20,7 @@ export function SalesActionBar({ hook, setActivePage }: SalesActionBarProps) {
     isViewingExisting, isApproved, isEditing, setIsEditing, currentSaleStatus,
     handleSubmit, handleUpdateSale, handleNewInvoice, handlePrintExisting,
     setDeleteDialogOpen, setReverseDialogOpen, setApproveDialogOpen,
+    setAiImportOpen,
     addMultiCarSale, updateSale, deleteSale, approveSale, searchBarRef, t,
   } = hook;
 
@@ -113,6 +114,10 @@ export function SalesActionBar({ hook, setActivePage }: SalesActionBarProps) {
 
         <Button variant="outline" onClick={handleNewInvoice} size="sm" className="gap-1.5 text-xs h-9 rounded-lg shadow-sm">
           <FileText className="w-3.5 h-3.5 text-emerald-600" /> جديد
+        </Button>
+
+        <Button variant="outline" onClick={() => setAiImportOpen(true)} size="sm" className="gap-1.5 text-xs h-9 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 shadow-sm">
+          <Sparkles className="w-3.5 h-3.5" /> استيراد بالذكاء الاصطناعي
         </Button>
 
         <Button variant="outline" size="sm"

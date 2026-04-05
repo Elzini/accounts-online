@@ -11,6 +11,7 @@ import { RotateCcw, CheckCircle } from 'lucide-react';
 import { ActivePage } from '@/types';
 import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 import { InvoiceSearchBar } from './InvoiceSearchBar';
+import { SalesInvoiceAIImport } from './sales-invoice-ai/SalesInvoiceAIImport';
 
 import { useSalesInvoiceData } from './sales-invoice/useSalesInvoiceData';
 import { SalesHeaderFields } from './sales-invoice/SalesHeaderFields';
@@ -33,6 +34,7 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
     approveDialogOpen, setApproveDialogOpen, handleApproveSale, approveSale,
     handleFirstSale, handlePreviousSale, handleNextSale, handleLastSale,
     loadSaleData, customers, t,
+    aiImportOpen, setAiImportOpen, handleAISalesImport,
   } = hook;
 
   return (
@@ -157,6 +159,10 @@ export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* AI Import */}
+      {aiImportOpen && (
+        <SalesInvoiceAIImport open={aiImportOpen} onOpenChange={setAiImportOpen} onImport={handleAISalesImport} />
+      )}
     </>
   );
 }
