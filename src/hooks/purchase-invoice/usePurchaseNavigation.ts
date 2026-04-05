@@ -126,15 +126,15 @@ export function usePurchaseNavigation(callbacks: NavigationCallbacks) {
         invoice_number: String(currentInvoiceIndex + 1),
         supplier_id: record.supplier_id || '',
         purchase_date: record.purchase_date,
-        due_date: record.purchase_date,
-        payment_account_id: firstCarPaymentAccount,
+        due_date: record.due_date || record.purchase_date,
+        payment_account_id: record.payment_account_id || firstCarPaymentAccount,
         warehouse: 'main',
         notes: record.notes || '',
         price_includes_tax: record.price_includes_tax ?? false,
-        project_id: null,
-        cost_center_id: null,
-        payment_status: 'unpaid',
-        supplier_invoice_number: '',
+        project_id: record.project_id || null,
+        cost_center_id: record.cost_center_id || null,
+        payment_status: record.payment_status || 'unpaid',
+        supplier_invoice_number: record.supplier_invoice_number || '',
       }));
       if (batchCars.length > 0) {
         callbacks.setCars(batchCars.map((car: any) => ({
