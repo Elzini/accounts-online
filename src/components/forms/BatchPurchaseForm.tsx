@@ -170,7 +170,9 @@ export function BatchPurchaseForm({ setActivePage }: BatchPurchaseFormProps) {
       setInvoiceOpen(true);
     } catch (error: any) {
       if (error.message?.includes('duplicate')) {
-        toast.error('أحد أرقام الهيكل موجود مسبقاً');
+        const match = error.message?.match(/\(chassis_number\)=\(([^)]+)\)/);
+        const chassisNum = match?.[1];
+        toast.error(chassisNum ? `رقم الهيكل ${chassisNum} موجود مسبقاً` : 'أحد أرقام الهيكل موجود مسبقاً');
       } else {
         console.error('Purchase batch error:', error);
         toast.error('حدث خطأ أثناء إضافة السيارات');
