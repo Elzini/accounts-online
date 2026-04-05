@@ -120,12 +120,14 @@ export function usePurchaseNavigation(callbacks: NavigationCallbacks) {
     setIsEditing(false);
 
     if (isCarDealership) {
+      const batchCars = record.cars || [];
+      const firstCarPaymentAccount = batchCars.length > 0 ? (batchCars[0].payment_account_id || '') : '';
       callbacks.setInvoiceData(() => ({
         invoice_number: String(currentInvoiceIndex + 1),
         supplier_id: record.supplier_id || '',
         purchase_date: record.purchase_date,
         due_date: record.purchase_date,
-        payment_account_id: record.payment_account_id || '',
+        payment_account_id: firstCarPaymentAccount,
         warehouse: 'main',
         notes: record.notes || '',
         price_includes_tax: record.price_includes_tax ?? false,
