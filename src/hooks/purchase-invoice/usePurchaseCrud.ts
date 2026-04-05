@@ -265,6 +265,14 @@ export function usePurchaseCrud(deps: CrudDeps) {
             queryClient.invalidateQueries({ queryKey: [key, companyId] }),
           ])
         );
+        
+        // Reload the current record from fresh data
+        const freshBatches = queryClient.getQueryData<any[]>(['purchase-batches', companyId]);
+        const freshRecord = freshBatches?.find((b: any) => b.id === deps.currentBatchId);
+        if (freshRecord && deps.loadRecordData) {
+          deps.loadRecordData(freshRecord);
+        }
+        
         deps.setIsEditing(false);
         toast.success(t.inv_toast_purchase_update_success);
       } catch (error) {
