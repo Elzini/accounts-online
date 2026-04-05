@@ -248,6 +248,13 @@ export function usePurchaseCrud(deps: CrudDeps) {
             }
           });
         }
+        // Update batch-level fields
+        await supabase.from('purchase_batches').update({
+          supplier_id: deps.invoiceData.supplier_id,
+          purchase_date: deps.invoiceData.purchase_date,
+          notes: deps.invoiceData.notes || null,
+          price_includes_tax: deps.invoiceData.price_includes_tax || false,
+        }).eq('id', deps.currentBatchId);
         invalidateAll();
         deps.setIsEditing(false);
         toast.success(t.inv_toast_purchase_update_success);
