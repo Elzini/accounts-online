@@ -532,17 +532,23 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
 
           // Save invoice items
           if (invoice && data.items.length > 0) {
-            const items = data.items.map((item: any, idx: number) => ({
-              invoice_id: invoice.id,
-              company_id: companyId,
-              item_description: item.description || '',
-              quantity: item.quantity || 1,
-              unit_price: item.unit_price || 0,
-              total: item.total || 0,
-              vat_rate: data.vat_rate || 15,
-              vat_amount: (item.total || 0) * ((data.vat_rate || 15) / 100),
-              sort_order: idx,
-            }));
+            const items = data.items.map((item: any, idx: number) => {
+              const unitPrice = item.unit_price || 0;
+              const qty = item.quantity || 1;
+              const taxableAmount = unitPrice * qty;
+              return {
+                invoice_id: invoice.id,
+                company_id: companyId,
+                item_description: item.description || '',
+                quantity: qty,
+                unit_price: unitPrice,
+                taxable_amount: taxableAmount,
+                total: item.total || taxableAmount,
+                vat_rate: data.vat_rate || 15,
+                vat_amount: taxableAmount * ((data.vat_rate || 15) / 100),
+                sort_order: idx,
+              };
+            });
             const { error: itemsErr } = await supabase.from('invoice_items').insert(items);
             if (itemsErr) {
               // Rollback - delete the invoice header
