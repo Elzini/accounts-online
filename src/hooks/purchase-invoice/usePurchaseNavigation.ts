@@ -136,7 +136,6 @@ export function usePurchaseNavigation(callbacks: NavigationCallbacks) {
         payment_status: 'unpaid',
         supplier_invoice_number: '',
       }));
-      const batchCars = record.cars || [];
       if (batchCars.length > 0) {
         callbacks.setCars(batchCars.map((car: any) => ({
           id: crypto.randomUUID(),
