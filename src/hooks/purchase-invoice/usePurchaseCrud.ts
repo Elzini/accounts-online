@@ -17,7 +17,7 @@ import { CarItem, PurchaseInventoryItem } from '@/components/forms/purchase-invo
 import { getNextInvoiceNumber } from '@/utils/invoiceNumberGenerator';
 
 const PURCHASE_QUERY_KEYS = [
-  'purchase-invoices', 'purchase-invoices-nav', 'company-purchases-report',
+  'purchase-batches', 'purchase-invoices', 'purchase-invoices-nav', 'company-purchases-report',
   'invoices', 'purchases-report', 'journal-entries', 'stats',
   'advanced-analytics', 'monthly-chart-data', 'dashboard-recent-invoices',
 ];
