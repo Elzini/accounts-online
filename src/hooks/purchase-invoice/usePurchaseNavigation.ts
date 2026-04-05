@@ -128,7 +128,7 @@ export function usePurchaseNavigation(callbacks: NavigationCallbacks) {
         payment_account_id: record.payment_account_id || '',
         warehouse: 'main',
         notes: record.notes || '',
-        price_includes_tax: false,
+        price_includes_tax: record.price_includes_tax ?? false,
         project_id: null,
         cost_center_id: null,
         payment_status: 'unpaid',
