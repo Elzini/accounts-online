@@ -587,7 +587,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
     deleteDialogOpen, setDeleteDialogOpen, reverseDialogOpen, setReverseDialogOpen,
     approveDialogOpen, setApproveDialogOpen, currentSaleStatus, isEditing, setIsEditing,
     isApproved, isReadOnly, selectedCustomer, searchBarRef,
-    aiImportOpen, setAiImportOpen, handleAISalesImport,
+    aiImportOpen, setAiImportOpen, handleAISalesImport, handleAIBatchImport,
     fiscalYearFilteredSales, remainingCars, availableInventoryItems,
     calculations, displayTotals, invoicePreviewData,
     formatCurrency, handleAddCar, handleRemoveCar, handleCarChange,
