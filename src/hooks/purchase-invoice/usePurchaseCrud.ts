@@ -319,7 +319,8 @@ export function usePurchaseCrud(deps: CrudDeps) {
       if (invoiceUpdateError) throw invoiceUpdateError;
 
       if (!isProtected) {
-        await supabase.from('invoice_items').delete().eq('invoice_id', deps.currentBatchId);
+        const { error: deleteItemsError } = await supabase.from('invoice_items').delete().eq('invoice_id', deps.currentBatchId);
+        if (deleteItemsError) throw deleteItemsError;
         const invoiceItems = deps.purchaseInventoryItems.map((item, index) => ({
           invoice_id: deps.currentBatchId,
           item_description: item.item_name, item_code: item.barcode || '',
@@ -329,10 +330,24 @@ export function usePurchaseCrud(deps: CrudDeps) {
           vat_rate: deps.taxRate, vat_amount: deps.calculations.inventoryItems[index].vatAmount,
           total: deps.calculations.inventoryItems[index].total, inventory_item_id: item.item_id || null,
         }));
-        await supabase.from('invoice_items').insert(invoiceItems);
+        const { error: insertItemsError } = await supabase.from('invoice_items').insert(invoiceItems);
+        if (insertItemsError) throw insertItemsError;
       }
 
-      invalidateAll();
+      await Promise.all(
+        PURCHASE_QUERY_KEYS.flatMap(key => [
+          queryClient.invalidateQueries({ queryKey: [key] }),
+          queryClient.invalidateQueries({ queryKey: [key, companyId] }),
+        ])
+      );
+
+      // Reload from fresh data
+      const freshInvoices = queryClient.getQueryData<any[]>(['purchase-invoices-nav', companyId]);
+      const freshRecord = freshInvoices?.find((inv: any) => inv.id === deps.currentBatchId);
+      if (freshRecord && deps.loadRecordData) {
+        deps.loadRecordData(freshRecord);
+      }
+
       deps.setSavedBatchData({ batch: { id: deps.currentBatchId }, supplier: deps.selectedSupplier, inventoryItems: deps.purchaseInventoryItems });
       deps.setIsEditing(false);
       toast.success(t.inv_toast_purchase_update_success);
