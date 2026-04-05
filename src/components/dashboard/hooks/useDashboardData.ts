@@ -24,7 +24,7 @@ import { useInstallmentStats } from '@/components/dashboard/widgets/Installments
 import { useDashboardDisplay } from '@/hooks/useUserPreferences';
 import { useCardAccountBalances } from '@/hooks/useAccountBalances';
 import { CardConfig, DEFAULT_STAT_CARDS } from '@/components/dashboard/DashboardCustomizer';
-import { AmountDisplayMode } from '@/components/dashboard/AmountDisplaySelector';
+import { AmountDisplayMode, calculateDisplayAmount } from '@/components/dashboard/AmountDisplaySelector';
 import { CarDetailItem } from '@/components/dashboard/StatCardDetailDialog';
 
 export function useDashboardData() {
