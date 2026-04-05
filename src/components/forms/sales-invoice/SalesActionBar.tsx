@@ -3,7 +3,7 @@
  */
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Save, Plus, X, Printer, FileText, Trash2, FileSpreadsheet, ChevronDown, MessageSquare, RotateCcw, CheckCircle, FileEdit, Search } from 'lucide-react';
+import { Save, Plus, X, Printer, FileText, Trash2, FileSpreadsheet, ChevronDown, MessageSquare, RotateCcw, CheckCircle, FileEdit, Search, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { ActivePage } from '@/types';
 import type { useSalesInvoiceData } from './useSalesInvoiceData';
