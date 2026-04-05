@@ -150,16 +150,37 @@ export function usePurchaseCrud(deps: CrudDeps) {
   // ===== Delete =====
   const handleDeletePurchase = async () => {
     if (!deps.currentBatchId) return;
-    const batch = purchaseBatches.find(b => b.id === deps.currentBatchId);
-    if (!batch) return;
-    const batchCars = batch.cars || [];
-    if (batchCars.some((car: any) => car.status === 'sold')) { toast.error(t.inv_toast_cannot_delete_sold); return; }
-    try {
-      for (const car of batchCars) await deleteCar.mutateAsync(car.id);
-      toast.success(t.inv_toast_purchase_delete_success);
-      deps.setDeleteDialogOpen(false);
-      deps.handleNewInvoice();
-    } catch { toast.error(t.inv_toast_delete_error); }
+
+    if (isCarDealership) {
+      const batch = purchaseBatches.find(b => b.id === deps.currentBatchId);
+      if (!batch) return;
+      const batchCars = batch.cars || [];
+      if (batchCars.some((car: any) => car.status === 'sold')) { toast.error(t.inv_toast_cannot_delete_sold); return; }
+      try {
+        for (const car of batchCars) await deleteCar.mutateAsync(car.id);
+        // Also delete associated invoice if exists
+        const { data: linkedInvoice } = await supabase
+          .from('invoices').select('id')
+          .eq('company_id', companyId).eq('invoice_type', 'purchase')
+          .or(`notes.ilike.%batch_id:${deps.currentBatchId}%`);
+        // Try force delete via RPC for any linked invoice
+        await (supabase.rpc as any)('force_delete_invoice', { p_invoice_id: deps.currentBatchId }).catch(() => {});
+        invalidateAll();
+        toast.success(t.inv_toast_purchase_delete_success);
+        deps.setDeleteDialogOpen(false);
+        deps.handleNewInvoice();
+      } catch { toast.error(t.inv_toast_delete_error); }
+    } else {
+      // Invoice-based purchase - use force_delete_invoice RPC
+      try {
+        const { error } = await (supabase.rpc as any)('force_delete_invoice', { p_invoice_id: deps.currentBatchId });
+        if (error) throw error;
+        invalidateAll();
+        toast.success(t.inv_toast_purchase_delete_success);
+        deps.setDeleteDialogOpen(false);
+        deps.handleNewInvoice();
+      } catch { toast.error(t.inv_toast_delete_error); }
+    }
   };
 
   // ===== Reverse =====
