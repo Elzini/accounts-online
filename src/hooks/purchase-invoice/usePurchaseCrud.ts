@@ -133,6 +133,7 @@ export function usePurchaseCrud(deps: CrudDeps) {
             project_id: deps.invoiceData.project_id || null,
             supplier_invoice_number: deps.invoiceData.supplier_invoice_number || null,
             payment_account_id: deps.invoiceData.payment_account_id || null,
+            price_includes_tax: deps.invoiceData.price_includes_tax || false,
           })
           .select().single();
         if (invoiceError) throw invoiceError;

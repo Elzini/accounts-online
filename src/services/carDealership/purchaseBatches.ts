@@ -19,6 +19,7 @@ export async function addPurchaseBatch(
       purchase_date: batchData.purchase_date,
       notes: batchData.notes,
       company_id: companyId,
+      price_includes_tax: (batchData as any).price_includes_tax ?? false,
     })
     .select()
     .single();
