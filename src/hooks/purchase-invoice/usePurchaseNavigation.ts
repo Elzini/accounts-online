@@ -122,8 +122,9 @@ export function usePurchaseNavigation(callbacks: NavigationCallbacks) {
     if (isCarDealership) {
       const batchCars = record.cars || [];
       const firstCarPaymentAccount = batchCars.length > 0 ? (batchCars[0].payment_account_id || '') : '';
+      callbacks.setStoredHeaderTotals(null);
       callbacks.setInvoiceData(() => ({
-        invoice_number: String(currentInvoiceIndex + 1),
+        invoice_number: String(record.invoice_number || currentInvoiceIndex + 1),
         supplier_id: record.supplier_id || '',
         purchase_date: record.purchase_date,
         due_date: record.due_date || record.purchase_date,
@@ -138,7 +139,7 @@ export function usePurchaseNavigation(callbacks: NavigationCallbacks) {
       }));
       if (batchCars.length > 0) {
         callbacks.setCars(batchCars.map((car: any) => ({
-          id: crypto.randomUUID(),
+          id: car.id,
           chassis_number: car.chassis_number,
           plate_number: car.plate_number || '',
           name: car.name,
