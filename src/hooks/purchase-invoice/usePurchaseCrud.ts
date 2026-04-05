@@ -89,7 +89,7 @@ export function usePurchaseCrud(deps: CrudDeps) {
           name: deps.cars[index].name,
           model: deps.cars[index].model || null,
           color: deps.cars[index].color || null,
-          purchase_price: car.baseAmount / (deps.cars[index].quantity || 1),
+          purchase_price: parseFloat(deps.cars[index].purchase_price),
           fiscal_year_id: selectedFiscalYear?.id ?? null,
           car_condition: deps.cars[index].car_condition || 'new',
         }));
