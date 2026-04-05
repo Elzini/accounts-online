@@ -194,6 +194,26 @@ async function fetchCarDealershipStats(
   const salesData = salesRes.data || [];
   const expensesData = expRes.data || [];
   const payroll = filterPayrollByFiscalYear(prRes.data || [], fyStart, fyEnd);
+  const batchesData = batchesRes.data || [];
+
+  // Build batch lookup for price_includes_tax
+  const batchTaxMap = new Map<string, boolean>();
+  batchesData.forEach((b: any) => batchTaxMap.set(b.id, b.price_includes_tax === true));
+
+  // Calculate tax-inclusive purchase totals
+  const VAT_RATE = 0.15;
+  const totalPurchases = Math.round((purRes.data || []).reduce((s, c: any) => {
+    const price = Number(c.purchase_price) || 0;
+    const batchIncludesTax = c.batch_id ? batchTaxMap.get(c.batch_id) : false;
+    if (batchIncludesTax) {
+      // Price was entered as tax-inclusive, use as-is
+      return s + price;
+    } else {
+      // Price is without tax, add VAT for new cars
+      const vatMultiplier = c.car_condition === 'used' ? 1 : (1 + VAT_RATE);
+      return s + (price * vatMultiplier);
+    }
+  }, 0));
 
   const totalGrossProfit = salesData.reduce((s, sale) => s + (Number(sale.profit) || 0), 0);
   const soldCarIds = salesData.map(s => s.car_id);
@@ -204,7 +224,6 @@ async function fetchCarDealershipStats(
     .filter(e => !e.car_id && e.payment_method !== 'prepaid')
     .reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const payrollExp = sumPayroll(payroll);
-  const totalPurchases = Math.round((purRes.data || []).reduce((s, c) => s + (Number(c.purchase_price) || 0), 0));
 
   const monthSalesData = salesData.filter(s => s.sale_date >= startOfMonth && s.sale_date <= endOfMonth);
   const totalSalesAmount = salesData.reduce((s, sale) => s + (Number(sale.sale_price) || 0), 0);
