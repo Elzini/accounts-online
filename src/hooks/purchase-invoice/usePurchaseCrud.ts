@@ -235,17 +235,29 @@ export function usePurchaseCrud(deps: CrudDeps) {
       const batchCars = batch.cars || [];
       if (deps.cars.length === 0 || !deps.cars[0].chassis_number || !deps.cars[0].name) { toast.error(t.inv_toast_fill_fields); return; }
       try {
-        for (let i = 0; i < deps.cars.length && i < batchCars.length; i++) {
+        const batchCarsById = new Map(batchCars.map((car: any) => [car.id, car]));
+        const remainingBatchCars = [...batchCars];
+
+        for (const editedCar of deps.cars) {
+          const matchedBatchCar = editedCar.id
+            ? batchCarsById.get(editedCar.id) || null
+            : null;
+          const targetCar = matchedBatchCar || remainingBatchCars.shift();
+          if (!targetCar) continue;
+
           await updateCar.mutateAsync({
-            id: batchCars[i].id,
+            id: targetCar.id,
             car: {
-              name: deps.cars[i].name, model: deps.cars[i].model || null,
-              chassis_number: deps.cars[i].chassis_number, plate_number: deps.cars[i].plate_number || null,
-              color: deps.cars[i].color || null, purchase_price: parseFloat(deps.cars[i].purchase_price),
+              name: editedCar.name,
+              model: editedCar.model || null,
+              chassis_number: editedCar.chassis_number,
+              plate_number: editedCar.plate_number || null,
+              color: editedCar.color || null,
+              purchase_price: parseFloat(editedCar.purchase_price),
               purchase_date: deps.invoiceData.purchase_date,
               payment_account_id: deps.invoiceData.payment_account_id || null,
               supplier_id: deps.invoiceData.supplier_id || null,
-              car_condition: deps.cars[i].car_condition || 'new',
+              car_condition: editedCar.car_condition || 'new',
             }
           });
         }
