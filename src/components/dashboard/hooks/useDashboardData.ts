@@ -24,7 +24,7 @@ import { useInstallmentStats } from '@/components/dashboard/widgets/Installments
 import { useDashboardDisplay } from '@/hooks/useUserPreferences';
 import { useCardAccountBalances } from '@/hooks/useAccountBalances';
 import { CardConfig, DEFAULT_STAT_CARDS } from '@/components/dashboard/DashboardCustomizer';
-import { AmountDisplayMode } from '@/components/dashboard/AmountDisplaySelector';
+import { AmountDisplayMode, calculateDisplayAmount } from '@/components/dashboard/AmountDisplaySelector';
 import { CarDetailItem } from '@/components/dashboard/StatCardDetailDialog';
 
 export function useDashboardData() {
@@ -112,7 +112,9 @@ export function useDashboardData() {
     }).format(value);
   }, []);
 
-  const formatCurrencyWithMode = useCallback((value: number) => formatCurrency(value), [formatCurrency]);
+  const formatCurrencyWithMode = useCallback((value: number) => {
+    return formatCurrency(calculateDisplayAmount(value, amountDisplayMode));
+  }, [formatCurrency, amountDisplayMode]);
   const getCurrencySubtitle = useCallback(() => t.currency_sar_label, [t]);
   const formatChartValue = useCallback((value: number) => {
     if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;

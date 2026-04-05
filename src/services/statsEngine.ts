@@ -173,7 +173,8 @@ async function fetchCarDealershipStats(
   let payrollQ = supabase.from('payroll_records')
     .select('month, year, total_base_salaries, total_allowances, total_bonuses, total_overtime, total_absences')
     .eq('status', 'approved').eq('company_id', companyId);
-  let purchasesQ = supabase.from('cars').select('purchase_price').eq('company_id', companyId);
+  let purchasesQ = supabase.from('cars').select('purchase_price, car_condition, batch_id').eq('company_id', companyId);
+  const batchesQ = supabase.from('purchase_batches').select('id, price_includes_tax').eq('company_id', companyId);
 
   if (fyStart && fyEnd) {
     carsQ = carsQ.gte('purchase_date', fyStart).lte('purchase_date', fyEnd);
@@ -186,13 +187,33 @@ async function fetchCarDealershipStats(
     }
   }
 
-  const [carsRes, salesRes, expRes, prRes, purRes] = await Promise.all([
-    carsQ, salesQ, expensesQ, payrollQ, purchasesQ
+  const [carsRes, salesRes, expRes, prRes, purRes, batchesRes] = await Promise.all([
+    carsQ, salesQ, expensesQ, payrollQ, purchasesQ, batchesQ
   ]);
 
   const salesData = salesRes.data || [];
   const expensesData = expRes.data || [];
   const payroll = filterPayrollByFiscalYear(prRes.data || [], fyStart, fyEnd);
+  const batchesData = batchesRes.data || [];
+
+  // Build batch lookup for price_includes_tax
+  const batchTaxMap = new Map<string, boolean>();
+  batchesData.forEach((b: any) => batchTaxMap.set(b.id, b.price_includes_tax === true));
+
+  // Calculate tax-inclusive purchase totals
+  const VAT_RATE = 0.15;
+  const totalPurchases = Math.round((purRes.data || []).reduce((s, c: any) => {
+    const price = Number(c.purchase_price) || 0;
+    const batchIncludesTax = c.batch_id ? batchTaxMap.get(c.batch_id) : false;
+    if (batchIncludesTax) {
+      // Price was entered as tax-inclusive, use as-is
+      return s + price;
+    } else {
+      // Price is without tax, add VAT for new cars
+      const vatMultiplier = c.car_condition === 'used' ? 1 : (1 + VAT_RATE);
+      return s + (price * vatMultiplier);
+    }
+  }, 0));
 
   const totalGrossProfit = salesData.reduce((s, sale) => s + (Number(sale.profit) || 0), 0);
   const soldCarIds = salesData.map(s => s.car_id);
@@ -203,7 +224,6 @@ async function fetchCarDealershipStats(
     .filter(e => !e.car_id && e.payment_method !== 'prepaid')
     .reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const payrollExp = sumPayroll(payroll);
-  const totalPurchases = Math.round((purRes.data || []).reduce((s, c) => s + (Number(c.purchase_price) || 0), 0));
 
   const monthSalesData = salesData.filter(s => s.sale_date >= startOfMonth && s.sale_date <= endOfMonth);
   const totalSalesAmount = salesData.reduce((s, sale) => s + (Number(sale.sale_price) || 0), 0);
@@ -280,11 +300,21 @@ export async function fetchAllTimeDashboardStats() {
     return { allTimePurchases: purchases, allTimeSales: sales, allTimeSalesCount: sRes.data?.length || 0, allTimeProfit: sales - purchases };
   }
 
-  const [carsRes, salesRes] = await Promise.all([
-    supabase.from('cars').select('purchase_price').eq('company_id', companyId),
+  const [carsRes, salesRes, batchesRes] = await Promise.all([
+    supabase.from('cars').select('purchase_price, car_condition, batch_id').eq('company_id', companyId),
     supabase.from('sales').select('sale_price, profit').eq('company_id', companyId),
+    supabase.from('purchase_batches').select('id, price_includes_tax').eq('company_id', companyId),
   ]);
-  const purchases = Math.round((carsRes.data || []).reduce((s, c) => s + (Number(c.purchase_price) || 0), 0));
+  const batchTaxMap = new Map<string, boolean>();
+  (batchesRes.data || []).forEach((b: any) => batchTaxMap.set(b.id, b.price_includes_tax === true));
+  const VAT_RATE = 0.15;
+  const purchases = Math.round((carsRes.data || []).reduce((s, c: any) => {
+    const price = Number(c.purchase_price) || 0;
+    const batchIncludesTax = c.batch_id ? batchTaxMap.get(c.batch_id) : false;
+    if (batchIncludesTax) return s + price;
+    const vatMultiplier = c.car_condition === 'used' ? 1 : (1 + VAT_RATE);
+    return s + (price * vatMultiplier);
+  }, 0));
   const sales = (salesRes.data || []).reduce((s, sale) => s + (Number(sale.sale_price) || 0), 0);
   const profit = (salesRes.data || []).reduce((s, sale) => s + (Number(sale.profit) || 0), 0);
   return {
