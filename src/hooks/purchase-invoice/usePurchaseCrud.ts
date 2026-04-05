@@ -278,6 +278,7 @@ export function usePurchaseCrud(deps: CrudDeps) {
         amount_paid: deps.invoiceData.payment_status === 'paid' ? deps.calculations.finalTotal : 0,
         supplier_invoice_number: deps.invoiceData.supplier_invoice_number || null,
         payment_account_id: deps.invoiceData.payment_account_id || null,
+        price_includes_tax: deps.invoiceData.price_includes_tax || false,
       };
       if (!isProtected) {
         updatePayload.subtotal = deps.calculations.subtotal;
