@@ -123,10 +123,15 @@ ${isPDF ? 'الملف مرفق كصورة/PDF.' : `المحتوى:\n${fileConten
                   items: {
                     type: "object",
                     properties: {
-                      description: { type: "string", description: "وصف البند" },
+                      description: { type: "string", description: "وصف البند (اسم السيارة أو المنتج)" },
                       quantity: { type: "number", description: "الكمية" },
                       unit_price: { type: "number", description: "سعر الوحدة قبل الضريبة" },
                       total: { type: "number", description: "الإجمالي قبل الضريبة" },
+                      chassis_number: { type: "string", description: "رقم الهيكل/الشاصي إن وجد" },
+                      plate_number: { type: "string", description: "رقم اللوحة إن وجد" },
+                      color: { type: "string", description: "لون السيارة إن وجد" },
+                      model: { type: "string", description: "الموديل/سنة الصنع إن وجد" },
+                      car_condition: { type: "string", description: "حالة السيارة: new أو used إن وجد" },
                     },
                     required: ["description", "quantity", "unit_price", "total"],
                   },
