@@ -166,7 +166,7 @@ async function fetchCarDealershipStats(
 
   let carsQ = supabase.from('cars').select('*', { count: 'exact', head: true })
     .eq('status', 'available').eq('company_id', companyId);
-  let salesQ = supabase.from('sales').select('profit, car_id, sale_date, sale_price, vat_amount')
+  let salesQ = supabase.from('sales').select('profit, car_id, sale_date, sale_price')
     .eq('company_id', companyId);
   let expensesQ = supabase.from('expenses').select('amount, car_id, expense_date, payment_method')
     .eq('company_id', companyId);
