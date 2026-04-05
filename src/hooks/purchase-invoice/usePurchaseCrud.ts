@@ -68,7 +68,19 @@ export function usePurchaseCrud(deps: CrudDeps) {
       if (invalidCar) { toast.error(t.inv_toast_fill_fields); return; }
       const chassisNumbers = deps.cars.map(car => car.chassis_number);
       const duplicates = chassisNumbers.filter((item, index) => chassisNumbers.indexOf(item) !== index);
-      if (duplicates.length > 0) { toast.error(t.inv_toast_duplicate_chassis); return; }
+      if (duplicates.length > 0) { toast.error(`رقم الهيكل ${duplicates[0]} مكرر داخل الفاتورة`); return; }
+
+      // Check for existing chassis numbers in DB before submitting
+      const { data: existingCars } = await supabase
+        .from('cars')
+        .select('chassis_number')
+        .eq('company_id', companyId)
+        .in('chassis_number', chassisNumbers);
+      if (existingCars && existingCars.length > 0) {
+        const existingNumbers = existingCars.map(c => c.chassis_number);
+        toast.error(`رقم الهيكل ${existingNumbers[0]} موجود مسبقاً في المخزون`);
+        return;
+      }
 
       try {
         const carsWithPrices = deps.calculations.items.map((car: any, index: number) => ({
