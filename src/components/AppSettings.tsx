@@ -145,8 +145,16 @@ export function AppSettingsPage({ setActivePage }: AppSettingsProps) {
 
   const handleResetDatabase = async () => {
     if (confirmText !== t.settings_reset_db_confirm_text) { toast.error(t.settings_reset_db_confirm_label); return; }
-    try { await resetDb.mutateAsync(); toast.success(t.settings_save_success); setResetDialogOpen(false); setConfirmText(''); }
-    catch { toast.error(t.settings_save_error); }
+    try {
+      const result = await resetDb.mutateAsync();
+      toast.success(`✅ تم تصفير البيانات بنجاح - تم حذف ${result?.deleted_rows || 0} سجل`);
+      setResetDialogOpen(false);
+      setConfirmText('');
+      window.location.reload();
+    } catch (err: any) {
+      console.error('Reset database error:', err);
+      toast.error(`❌ فشل التصفير: ${err?.message || 'خطأ غير معروف'}`);
+    }
   };
 
   const handleLogoClick = () => fileInputRef.current?.click();
