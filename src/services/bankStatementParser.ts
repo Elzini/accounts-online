@@ -149,7 +149,7 @@ async function excelToCSV(arrayBuffer: ArrayBuffer): Promise<string> {
 /**
  * Parse PDF/complex files using AI
  */
-export async function parseWithAI(file: File, excelCsvFallback?: string): Promise<ParsedTransaction[]> {
+export async function parseWithAI(file: File, excelCsvFallback?: string): Promise<{ transactions: ParsedTransaction[]; opening_balance?: number | null; closing_balance?: number | null }> {
   let content: string;
   let fileType = file.type;
 
@@ -175,7 +175,11 @@ export async function parseWithAI(file: File, excelCsvFallback?: string): Promis
 
   if (error) throw new Error(error.message || 'فشل في تحليل الملف');
   if (data?.error) throw new Error(data.error);
-  return (data?.transactions || []) as ParsedTransaction[];
+  return {
+    transactions: (data?.transactions || []) as ParsedTransaction[],
+    opening_balance: data?.opening_balance ?? null,
+    closing_balance: data?.closing_balance ?? null,
+  };
 }
 
 /**
