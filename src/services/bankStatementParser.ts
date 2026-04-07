@@ -10,6 +10,13 @@ export interface ParsedTransaction {
   balance?: number;
 }
 
+export interface ParsedStatementResult {
+  transactions: ParsedTransaction[];
+  method: 'csv' | 'excel' | 'ai';
+  opening_balance?: number | null;
+  closing_balance?: number | null;
+}
+
 /**
  * Parse CSV bank statement
  */
