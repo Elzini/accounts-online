@@ -96,7 +96,7 @@ export function useBankingPage() {
       if (importData.opening_balance != null && importData.opening_balance !== 0) {
         const account = bankAccounts.find(a => a.id === importForm.bank_account_id);
         if (account && (account.opening_balance === 0 || account.opening_balance === null)) {
-          await updateBankAccount.mutateAsync({ id: importForm.bank_account_id, updates: { opening_balance: importData.opening_balance } });
+          await updateBankAccount.mutateAsync({ id: importForm.bank_account_id, data: { opening_balance: importData.opening_balance } });
         }
       }
       
