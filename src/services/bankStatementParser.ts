@@ -185,7 +185,39 @@ export async function parseWithAI(file: File, excelCsvFallback?: string): Promis
 /**
  * Auto-detect file type and parse accordingly
  */
-export async function parseBankStatementFile(file: File): Promise<{ transactions: ParsedTransaction[]; method: 'csv' | 'excel' | 'ai' }> {
+export async function parseBankStatementFile(file: File): Promise<ParsedStatementResult> {
+  const ext = file.name.split('.').pop()?.toLowerCase();
+
+  if (ext === 'csv' || ext === 'txt') {
+    const text = await file.text();
+    const transactions = parseCSV(text);
+    if (transactions.length > 0) return { transactions, method: 'csv' };
+    const aiResult = await parseWithAI(file);
+    return { transactions: aiResult.transactions, method: 'ai', opening_balance: aiResult.opening_balance, closing_balance: aiResult.closing_balance };
+  }
+
+  if (ext === 'xlsx' || ext === 'xls') {
+    try {
+      const buffer = await file.arrayBuffer();
+      const transactions = await parseExcel(buffer);
+      if (transactions.length > 0) return { transactions, method: 'excel' };
+
+      const csvText = await excelToCSV(buffer);
+      const aiResult = await parseWithAI(file, csvText);
+      return { transactions: aiResult.transactions, method: 'ai', opening_balance: aiResult.opening_balance, closing_balance: aiResult.closing_balance };
+    } catch {
+      const aiResult = await parseWithAI(file);
+      return { transactions: aiResult.transactions, method: 'ai', opening_balance: aiResult.opening_balance, closing_balance: aiResult.closing_balance };
+    }
+  }
+
+  if (ext === 'pdf') {
+    const aiResult = await parseWithAI(file);
+    return { transactions: aiResult.transactions, method: 'ai', opening_balance: aiResult.opening_balance, closing_balance: aiResult.closing_balance };
+  }
+
+  throw new Error('صيغة الملف غير مدعومة');
+}
   const ext = file.name.split('.').pop()?.toLowerCase();
 
   if (ext === 'csv' || ext === 'txt') {
