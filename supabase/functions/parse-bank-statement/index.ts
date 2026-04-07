@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-// Bank statement parser - supports CSV, Excel (as text), and PDF (as base64)
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,7 +10,7 @@ serve(async (req) => {
 
   try {
     const { fileContent, fileName, fileType } = await req.json();
-    
+
     if (!fileContent) {
       return new Response(JSON.stringify({ error: "No file content provided" }), {
         status: 400,
@@ -38,13 +37,52 @@ Rules:
 - If a single "amount" column exists, positive = credit, negative = debit
 - Include ALL transactions, don't skip any
 - Return ONLY the JSON array, no markdown, no explanation
-- If you cannot find transactions, return an empty array []`;
+- If you cannot find transactions, return an empty array []
+- For multi-page statements, extract transactions from ALL pages
+- Do NOT summarize or aggregate - list every single transaction`;
 
-    const userPrompt = `Parse the following bank statement (file: ${fileName}, type: ${fileType}).
+    // Detect if content is a data URL (base64 encoded file like PDF)
+    const isDataUrl = typeof fileContent === 'string' && fileContent.startsWith('data:');
+    const isPdf = fileType === 'application/pdf' || fileName?.toLowerCase().endsWith('.pdf');
+
+    let messages: any[];
+
+    if (isDataUrl && isPdf) {
+      // Extract base64 data from data URL
+      const base64Data = fileContent.split(',')[1] || fileContent;
+      
+      // Send PDF as multimodal image_url content (Gemini supports PDF natively)
+      messages = [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Parse this bank statement PDF (file: ${fileName}). Extract ALL transactions from ALL pages and return them as a JSON array. Make sure you don't miss any transaction.`,
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:application/pdf;base64,${base64Data}`,
+              },
+            },
+          ],
+        },
+      ];
+    } else {
+      // Text-based content (CSV, Excel converted to text)
+      const userPrompt = `Parse the following bank statement (file: ${fileName}, type: ${fileType}).
 Extract all transactions and return them as a JSON array.
 
 Content:
 ${fileContent}`;
+
+      messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ];
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -54,11 +92,9 @@ ${fileContent}`;
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
+        messages,
         temperature: 0.1,
+        max_tokens: 16000,
       }),
     });
 
@@ -85,13 +121,13 @@ ${fileContent}`;
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "[]";
-    
+
     // Extract JSON from response (handle markdown code blocks)
     let jsonStr = content.trim();
     if (jsonStr.startsWith("```")) {
       jsonStr = jsonStr.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
     }
-    
+
     let transactions;
     try {
       transactions = JSON.parse(jsonStr);
@@ -106,6 +142,8 @@ ${fileContent}`;
     if (!Array.isArray(transactions)) {
       transactions = [];
     }
+
+    console.log(`Parsed ${transactions.length} transactions from ${fileName} (PDF multimodal: ${isDataUrl && isPdf})`);
 
     return new Response(JSON.stringify({ transactions }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
