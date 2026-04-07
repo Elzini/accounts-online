@@ -47,7 +47,7 @@ export function useBankingPage() {
   const [deleteAccountId, setDeleteAccountId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [importData, setImportData] = useState<{ transactions: any[]; fileName: string; method?: string } | null>(null);
+  const [importData, setImportData] = useState<{ transactions: any[]; fileName: string; method?: string; opening_balance?: number | null; closing_balance?: number | null } | null>(null);
   const [parsingFile, setParsingFile] = useState(false);
 
   const [accountForm, setAccountForm] = useState({ account_name: '', bank_name: '', account_number_encrypted: '', iban_encrypted: '', account_category_id: '', opening_balance: 0, notes: '' });
@@ -78,7 +78,7 @@ export function useBankingPage() {
         setParsingFile(false);
         return;
       }
-      setImportData({ transactions: result.transactions, fileName: file.name, method: result.method });
+      setImportData({ transactions: result.transactions, fileName: file.name, method: result.method, opening_balance: result.opening_balance, closing_balance: result.closing_balance });
       const methodLabel = result.method === 'ai' ? (language === 'ar' ? ' (بالذكاء الاصطناعي)' : ' (via AI)') : result.method === 'excel' ? ' (Excel)' : ' (CSV)';
       toast.success(`${language === 'ar' ? 'تم قراءة' : 'Read'} ${result.transactions.length} ${language === 'ar' ? 'معاملة' : 'transactions'}${methodLabel}`);
     } catch (e: any) {
@@ -91,6 +91,15 @@ export function useBankingPage() {
     if (!importForm.bank_account_id || !importData || !company?.id) { toast.error(t.voucher_fill_required); return; }
     try {
       await importStatement.mutateAsync({ bankAccountId: importForm.bank_account_id, companyId: company.id, statementDate: importForm.statement_date, transactions: importData.transactions, fileName: importData.fileName });
+      
+      // Update bank account opening_balance if extracted from statement
+      if (importData.opening_balance != null && importData.opening_balance !== 0) {
+        const account = bankAccounts.find(a => a.id === importForm.bank_account_id);
+        if (account && (account.opening_balance === 0 || account.opening_balance === null)) {
+          await updateBankAccount.mutateAsync({ id: importForm.bank_account_id, data: { opening_balance: importData.opening_balance } });
+        }
+      }
+      
       toast.success(language === 'ar' ? 'تم استيراد كشف الحساب بنجاح' : 'Statement imported');
       setShowImportDialog(false);
       setImportData(null);

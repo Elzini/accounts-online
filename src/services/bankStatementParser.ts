@@ -10,6 +10,13 @@ export interface ParsedTransaction {
   balance?: number;
 }
 
+export interface ParsedStatementResult {
+  transactions: ParsedTransaction[];
+  method: 'csv' | 'excel' | 'ai';
+  opening_balance?: number | null;
+  closing_balance?: number | null;
+}
+
 /**
  * Parse CSV bank statement
  */
@@ -142,7 +149,7 @@ async function excelToCSV(arrayBuffer: ArrayBuffer): Promise<string> {
 /**
  * Parse PDF/complex files using AI
  */
-export async function parseWithAI(file: File, excelCsvFallback?: string): Promise<ParsedTransaction[]> {
+export async function parseWithAI(file: File, excelCsvFallback?: string): Promise<{ transactions: ParsedTransaction[]; opening_balance?: number | null; closing_balance?: number | null }> {
   let content: string;
   let fileType = file.type;
 
@@ -168,21 +175,25 @@ export async function parseWithAI(file: File, excelCsvFallback?: string): Promis
 
   if (error) throw new Error(error.message || 'فشل في تحليل الملف');
   if (data?.error) throw new Error(data.error);
-  return (data?.transactions || []) as ParsedTransaction[];
+  return {
+    transactions: (data?.transactions || []) as ParsedTransaction[],
+    opening_balance: data?.opening_balance ?? null,
+    closing_balance: data?.closing_balance ?? null,
+  };
 }
 
 /**
  * Auto-detect file type and parse accordingly
  */
-export async function parseBankStatementFile(file: File): Promise<{ transactions: ParsedTransaction[]; method: 'csv' | 'excel' | 'ai' }> {
+export async function parseBankStatementFile(file: File): Promise<ParsedStatementResult> {
   const ext = file.name.split('.').pop()?.toLowerCase();
 
   if (ext === 'csv' || ext === 'txt') {
     const text = await file.text();
     const transactions = parseCSV(text);
     if (transactions.length > 0) return { transactions, method: 'csv' };
-    const aiTransactions = await parseWithAI(file);
-    return { transactions: aiTransactions, method: 'ai' };
+    const aiResult = await parseWithAI(file);
+    return { transactions: aiResult.transactions, method: 'ai', opening_balance: aiResult.opening_balance, closing_balance: aiResult.closing_balance };
   }
 
   if (ext === 'xlsx' || ext === 'xls') {
@@ -191,19 +202,18 @@ export async function parseBankStatementFile(file: File): Promise<{ transactions
       const transactions = await parseExcel(buffer);
       if (transactions.length > 0) return { transactions, method: 'excel' };
 
-      // Fallback to AI - convert Excel to CSV text first
       const csvText = await excelToCSV(buffer);
-      const aiTransactions = await parseWithAI(file, csvText);
-      return { transactions: aiTransactions, method: 'ai' };
+      const aiResult = await parseWithAI(file, csvText);
+      return { transactions: aiResult.transactions, method: 'ai', opening_balance: aiResult.opening_balance, closing_balance: aiResult.closing_balance };
     } catch {
-      const aiTransactions = await parseWithAI(file);
-      return { transactions: aiTransactions, method: 'ai' };
+      const aiResult = await parseWithAI(file);
+      return { transactions: aiResult.transactions, method: 'ai', opening_balance: aiResult.opening_balance, closing_balance: aiResult.closing_balance };
     }
   }
 
   if (ext === 'pdf') {
-    const transactions = await parseWithAI(file);
-    return { transactions, method: 'ai' };
+    const aiResult = await parseWithAI(file);
+    return { transactions: aiResult.transactions, method: 'ai', opening_balance: aiResult.opening_balance, closing_balance: aiResult.closing_balance };
   }
 
   throw new Error('صيغة الملف غير مدعومة');

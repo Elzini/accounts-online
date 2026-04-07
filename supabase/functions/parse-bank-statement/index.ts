@@ -21,9 +21,18 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `You are a bank statement parser. Extract ALL transactions from the provided bank statement content.
+    const systemPrompt = `You are a bank statement parser. Extract ALL transactions and metadata from the provided bank statement.
 
-Return ONLY a valid JSON array of transactions. Each transaction object must have these fields:
+Return ONLY a valid JSON object with this structure:
+{
+  "opening_balance": number or null,
+  "closing_balance": number or null,
+  "statement_period_from": "YYYY-MM-DD" or null,
+  "statement_period_to": "YYYY-MM-DD" or null,
+  "transactions": [...]
+}
+
+Each transaction in the "transactions" array must have these fields:
 - "transaction_date": string in YYYY-MM-DD format
 - "description": string describing the transaction
 - "reference": string (reference number if available, empty string if not)
@@ -32,26 +41,23 @@ Return ONLY a valid JSON array of transactions. Each transaction object must hav
 - "balance": number or null (running balance if available)
 
 Rules:
+- Extract the opening balance from the statement header/summary (e.g. "Opening Balance", "رصيد الحساب الافتتاحي", "الرصيد الافتتاحي")
+- Extract the closing balance from the statement header/summary (e.g. "Closing Balance", "رصيد الإقفال")
 - Parse dates carefully, convert any format to YYYY-MM-DD
 - Amounts should be plain numbers without currency symbols
 - If a single "amount" column exists, positive = credit, negative = debit
 - Include ALL transactions, don't skip any
-- Return ONLY the JSON array, no markdown, no explanation
-- If you cannot find transactions, return an empty array []
+- Return ONLY the JSON object, no markdown, no explanation
 - For multi-page statements, extract transactions from ALL pages
 - Do NOT summarize or aggregate - list every single transaction`;
 
-    // Detect if content is a data URL (base64 encoded file like PDF)
     const isDataUrl = typeof fileContent === 'string' && fileContent.startsWith('data:');
     const isPdf = fileType === 'application/pdf' || fileName?.toLowerCase().endsWith('.pdf');
 
     let messages: any[];
 
     if (isDataUrl && isPdf) {
-      // Extract base64 data from data URL
       const base64Data = fileContent.split(',')[1] || fileContent;
-      
-      // Send PDF as multimodal image_url content (Gemini supports PDF natively)
       messages = [
         { role: "system", content: systemPrompt },
         {
@@ -59,7 +65,7 @@ Rules:
           content: [
             {
               type: "text",
-              text: `Parse this bank statement PDF (file: ${fileName}). Extract ALL transactions from ALL pages and return them as a JSON array. Make sure you don't miss any transaction.`,
+              text: `Parse this bank statement PDF (file: ${fileName}). Extract the opening balance, closing balance, and ALL transactions from ALL pages. Return them as a JSON object with opening_balance, closing_balance, and transactions array.`,
             },
             {
               type: "image_url",
@@ -71,9 +77,8 @@ Rules:
         },
       ];
     } else {
-      // Text-based content (CSV, Excel converted to text)
       const userPrompt = `Parse the following bank statement (file: ${fileName}, type: ${fileType}).
-Extract all transactions and return them as a JSON array.
+Extract the opening balance, closing balance, and all transactions. Return as a JSON object.
 
 Content:
 ${fileContent}`;
@@ -120,17 +125,16 @@ ${fileContent}`;
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || "[]";
+    const content = data.choices?.[0]?.message?.content || "{}";
 
-    // Extract JSON from response (handle markdown code blocks)
     let jsonStr = content.trim();
     if (jsonStr.startsWith("```")) {
       jsonStr = jsonStr.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
     }
 
-    let transactions;
+    let parsed: any;
     try {
-      transactions = JSON.parse(jsonStr);
+      parsed = JSON.parse(jsonStr);
     } catch {
       console.error("Failed to parse AI response:", content);
       return new Response(JSON.stringify({ error: "لم يتمكن الذكاء الاصطناعي من قراءة الملف بشكل صحيح", raw: content }), {
@@ -139,13 +143,22 @@ ${fileContent}`;
       });
     }
 
-    if (!Array.isArray(transactions)) {
-      transactions = [];
+    // Handle both old format (array) and new format (object with transactions)
+    let transactions: any[];
+    let opening_balance: number | null = null;
+    let closing_balance: number | null = null;
+
+    if (Array.isArray(parsed)) {
+      transactions = parsed;
+    } else {
+      transactions = parsed.transactions || [];
+      opening_balance = typeof parsed.opening_balance === 'number' ? parsed.opening_balance : null;
+      closing_balance = typeof parsed.closing_balance === 'number' ? parsed.closing_balance : null;
     }
 
-    console.log(`Parsed ${transactions.length} transactions from ${fileName} (PDF multimodal: ${isDataUrl && isPdf})`);
+    console.log(`Parsed ${transactions.length} transactions from ${fileName} (PDF: ${isDataUrl && isPdf}, opening: ${opening_balance}, closing: ${closing_balance})`);
 
-    return new Response(JSON.stringify({ transactions }), {
+    return new Response(JSON.stringify({ transactions, opening_balance, closing_balance }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
