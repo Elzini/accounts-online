@@ -91,6 +91,15 @@ export function useBankingPage() {
     if (!importForm.bank_account_id || !importData || !company?.id) { toast.error(t.voucher_fill_required); return; }
     try {
       await importStatement.mutateAsync({ bankAccountId: importForm.bank_account_id, companyId: company.id, statementDate: importForm.statement_date, transactions: importData.transactions, fileName: importData.fileName });
+      
+      // Update bank account opening_balance if extracted from statement
+      if (importData.opening_balance != null && importData.opening_balance !== 0) {
+        const account = bankAccounts.find(a => a.id === importForm.bank_account_id);
+        if (account && (account.opening_balance === 0 || account.opening_balance === null)) {
+          await updateBankAccount.mutateAsync({ id: importForm.bank_account_id, updates: { opening_balance: importData.opening_balance } });
+        }
+      }
+      
       toast.success(language === 'ar' ? 'تم استيراد كشف الحساب بنجاح' : 'Statement imported');
       setShowImportDialog(false);
       setImportData(null);
