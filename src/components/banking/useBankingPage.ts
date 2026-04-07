@@ -78,7 +78,7 @@ export function useBankingPage() {
         setParsingFile(false);
         return;
       }
-      setImportData({ transactions: result.transactions, fileName: file.name, method: result.method });
+      setImportData({ transactions: result.transactions, fileName: file.name, method: result.method, opening_balance: result.opening_balance, closing_balance: result.closing_balance });
       const methodLabel = result.method === 'ai' ? (language === 'ar' ? ' (بالذكاء الاصطناعي)' : ' (via AI)') : result.method === 'excel' ? ' (Excel)' : ' (CSV)';
       toast.success(`${language === 'ar' ? 'تم قراءة' : 'Read'} ${result.transactions.length} ${language === 'ar' ? 'معاملة' : 'transactions'}${methodLabel}`);
     } catch (e: any) {
