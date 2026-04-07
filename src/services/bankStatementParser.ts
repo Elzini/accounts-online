@@ -218,36 +218,3 @@ export async function parseBankStatementFile(file: File): Promise<ParsedStatemen
 
   throw new Error('صيغة الملف غير مدعومة');
 }
-  const ext = file.name.split('.').pop()?.toLowerCase();
-
-  if (ext === 'csv' || ext === 'txt') {
-    const text = await file.text();
-    const transactions = parseCSV(text);
-    if (transactions.length > 0) return { transactions, method: 'csv' };
-    const aiTransactions = await parseWithAI(file);
-    return { transactions: aiTransactions, method: 'ai' };
-  }
-
-  if (ext === 'xlsx' || ext === 'xls') {
-    try {
-      const buffer = await file.arrayBuffer();
-      const transactions = await parseExcel(buffer);
-      if (transactions.length > 0) return { transactions, method: 'excel' };
-
-      // Fallback to AI - convert Excel to CSV text first
-      const csvText = await excelToCSV(buffer);
-      const aiTransactions = await parseWithAI(file, csvText);
-      return { transactions: aiTransactions, method: 'ai' };
-    } catch {
-      const aiTransactions = await parseWithAI(file);
-      return { transactions: aiTransactions, method: 'ai' };
-    }
-  }
-
-  if (ext === 'pdf') {
-    const transactions = await parseWithAI(file);
-    return { transactions, method: 'ai' };
-  }
-
-  throw new Error('صيغة الملف غير مدعومة');
-}
