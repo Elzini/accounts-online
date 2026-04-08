@@ -161,9 +161,12 @@ export function useUnmatchTransaction() {
 
 // Bank Reconciliations Hooks
 export function useBankReconciliations(bankAccountId?: string) {
+  const { company } = useCompany();
+  const companyId = company?.id;
   return useQuery({
-    queryKey: ['bankReconciliations', bankAccountId],
-    queryFn: () => fetchBankReconciliations(bankAccountId),
+    queryKey: ['bankReconciliations', bankAccountId, companyId],
+    queryFn: () => fetchBankReconciliations(bankAccountId, companyId),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 }
