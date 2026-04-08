@@ -99,7 +99,7 @@ ${fileContent}`;
         model: "google/gemini-2.5-flash",
         messages,
         temperature: 0.1,
-        max_tokens: 16000,
+        max_tokens: 64000,
       }),
     });
 
