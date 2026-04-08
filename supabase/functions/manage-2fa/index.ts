@@ -132,7 +132,8 @@ async function sendOtpViaInfobip(phone: string): Promise<{ success: boolean; pin
       pinLength: 6,
     };
 
-    const response = await fetch(`${baseUrl}/2fa/2/pin`, {
+    const normalizedUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
+    const response = await fetch(`${normalizedUrl}/2fa/2/pin`, {
       method: "POST",
       headers: {
         "Accept": "application/json",
