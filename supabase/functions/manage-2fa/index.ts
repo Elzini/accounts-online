@@ -171,7 +171,8 @@ async function verifyOtpViaInfobip(pinId: string, otp: string): Promise<{ succes
   }
 
   try {
-    const response = await fetch(`${baseUrl}/2fa/2/pin/${pinId}/verify`, {
+    const normalizedUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
+    const response = await fetch(`${normalizedUrl}/2fa/2/pin/${pinId}/verify`, {
       method: "POST",
       headers: {
         "Accept": "application/json",
