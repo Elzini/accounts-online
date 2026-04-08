@@ -99,7 +99,7 @@ ${fileContent}`;
         model: "google/gemini-2.5-flash",
         messages,
         temperature: 0.1,
-        max_tokens: 16000,
+        max_tokens: 64000,
       }),
     });
 
@@ -128,19 +128,41 @@ ${fileContent}`;
     const content = data.choices?.[0]?.message?.content || "{}";
 
     let jsonStr = content.trim();
+    // Strip markdown code fences
     if (jsonStr.startsWith("```")) {
-      jsonStr = jsonStr.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+      jsonStr = jsonStr.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?\s*```\s*$/, "");
     }
 
     let parsed: any;
     try {
       parsed = JSON.parse(jsonStr);
     } catch {
-      console.error("Failed to parse AI response:", content);
-      return new Response(JSON.stringify({ error: "لم يتمكن الذكاء الاصطناعي من قراءة الملف بشكل صحيح", raw: content }), {
-        status: 422,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // Try to recover truncated JSON by closing open arrays/objects
+      console.warn("Initial JSON parse failed, attempting truncation recovery...");
+      try {
+        // Find the last complete transaction object (ends with })
+        const lastCompleteObj = jsonStr.lastIndexOf('}');
+        if (lastCompleteObj > 0) {
+          let recovered = jsonStr.substring(0, lastCompleteObj + 1);
+          // Count open brackets to close them
+          const openBrackets = (recovered.match(/\[/g) || []).length - (recovered.match(/\]/g) || []).length;
+          const openBraces = (recovered.match(/\{/g) || []).length - (recovered.match(/\}/g) || []).length;
+          // Remove trailing comma if any
+          recovered = recovered.replace(/,\s*$/, '');
+          for (let i = 0; i < openBrackets; i++) recovered += ']';
+          for (let i = 0; i < openBraces; i++) recovered += '}';
+          parsed = JSON.parse(recovered);
+          console.log("Successfully recovered truncated JSON");
+        } else {
+          throw new Error("No recoverable JSON found");
+        }
+      } catch (recoveryErr) {
+        console.error("Failed to parse AI response:", content.substring(0, 500));
+        return new Response(JSON.stringify({ error: "لم يتمكن الذكاء الاصطناعي من قراءة الملف بشكل صحيح" }), {
+          status: 422,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Handle both old format (array) and new format (object with transactions)
