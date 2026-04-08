@@ -17,12 +17,16 @@ import {
   BankAccountInsert,
   BankTransaction,
 } from '@/services/banking';
+import { useCompany } from '@/contexts/CompanyContext';
 
 // Bank Accounts Hooks
 export function useBankAccounts() {
+  const { company } = useCompany();
+  const companyId = company?.id;
   return useQuery({
-    queryKey: ['bankAccounts'],
-    queryFn: fetchBankAccounts,
+    queryKey: ['bankAccounts', companyId],
+    queryFn: () => fetchBankAccounts(companyId),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 }
