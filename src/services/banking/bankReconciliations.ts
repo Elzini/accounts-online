@@ -1,12 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 import { BankReconciliation } from './types';
 
-export async function fetchBankReconciliations(bankAccountId?: string): Promise<BankReconciliation[]> {
+export async function fetchBankReconciliations(bankAccountId?: string, companyId?: string): Promise<BankReconciliation[]> {
   let query = supabase
     .from('bank_reconciliations')
     .select(`*, bank_account:bank_accounts(id, account_name, bank_name)`)
     .order('reconciliation_date', { ascending: false });
   if (bankAccountId) query = query.eq('bank_account_id', bankAccountId);
+  if (companyId) query = query.eq('company_id', companyId);
   const { data, error } = await query;
   if (error) throw error;
   return (data || []) as BankReconciliation[];

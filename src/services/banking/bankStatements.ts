@@ -2,12 +2,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { BankStatement, BankTransaction } from './types';
 import { toSafeNumber, toISODate } from './utils';
 
-export async function fetchBankStatements(bankAccountId?: string): Promise<BankStatement[]> {
+export async function fetchBankStatements(bankAccountId?: string, companyId?: string): Promise<BankStatement[]> {
   let query = supabase
     .from('bank_statements')
     .select(`*, bank_account:bank_accounts(id, account_name, bank_name)`)
     .order('statement_date', { ascending: false });
   if (bankAccountId) query = query.eq('bank_account_id', bankAccountId);
+  if (companyId) query = query.eq('company_id', companyId);
   const { data, error } = await query;
   if (error) throw error;
   return (data || []) as BankStatement[];
