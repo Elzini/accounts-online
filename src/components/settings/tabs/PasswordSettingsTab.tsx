@@ -27,15 +27,28 @@ export function PasswordSettingsTab() {
     if (newPassword !== confirmPassword) { toast.error(t.settings_password_mismatch); return; }
     setChanging(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) { toast.error(t.settings_save_error); return; }
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword });
-      if (signInError) { toast.error(t.settings_current_password_wrong); return; }
+      // Verify current password via edge function to avoid session interference
+      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-password', {
+        body: { currentPassword },
+      });
+
+      if (verifyError || !verifyData?.valid) {
+        toast.error(t.settings_current_password_wrong);
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) { toast.error(t.settings_save_error); return; }
+      if (error) {
+        console.error('Password update error:', error.message);
+        toast.error(error.message || t.settings_save_error);
+        return;
+      }
       toast.success(t.settings_password_changed);
       setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
-    } catch { toast.error(t.settings_save_error); }
+    } catch (err) {
+      console.error('Password change error:', err);
+      toast.error(t.settings_save_error);
+    }
     finally { setChanging(false); }
   };
 
