@@ -1,11 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
 import { BankAccount, BankAccountInsert } from './types';
 
-export async function fetchBankAccounts(): Promise<BankAccount[]> {
-  const { data, error } = await supabase
+export async function fetchBankAccounts(companyId?: string): Promise<BankAccount[]> {
+  let query = supabase
     .from('bank_accounts_safe')
     .select(`*, account_category:account_categories(id, code, name)`)
     .order('account_name');
+  if (companyId) query = query.eq('company_id', companyId);
+  const { data, error } = await query;
   if (error) throw error;
   return (data || []).map(account => ({
     ...account,
