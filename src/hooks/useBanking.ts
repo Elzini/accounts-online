@@ -64,9 +64,12 @@ export function useDeleteBankAccount() {
 
 // Bank Statements Hooks
 export function useBankStatements(bankAccountId?: string) {
+  const { company } = useCompany();
+  const companyId = company?.id;
   return useQuery({
-    queryKey: ['bankStatements', bankAccountId],
-    queryFn: () => fetchBankStatements(bankAccountId),
+    queryKey: ['bankStatements', bankAccountId, companyId],
+    queryFn: () => fetchBankStatements(bankAccountId, companyId),
+    enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
   });
 }
