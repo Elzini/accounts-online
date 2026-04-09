@@ -195,9 +195,9 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         console.error('2FA check error:', e);
       }
 
-      // No 2FA - remove flag and complete login normally
-      sessionStorage.removeItem('pending_2fa_verification');
+      // No 2FA - complete login first, THEN remove flag
       await completeLogin(data);
+      sessionStorage.removeItem('pending_2fa_verification');
     } catch {
       toast.error(t.unexpected_error || 'حدث خطأ غير متوقع');
     } finally {
