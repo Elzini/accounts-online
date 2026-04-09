@@ -26,8 +26,9 @@ export function SetupGuard({ children, setActivePage }: SetupGuardProps) {
   const isAr = language === 'ar';
   const { companyId } = useCompany();
 
-  if (isLoading) return null; // Don't block while checking
-  if (!readiness || readiness.isReady) return <>{children}</>;
+  // While loading or if no data yet, show children (don't block)
+  if (isLoading || !readiness) return <>{children}</>;
+  if (readiness.isReady) return <>{children}</>;
 
   const handleCreateAccounts = async () => {
     setIsCreating(true);
