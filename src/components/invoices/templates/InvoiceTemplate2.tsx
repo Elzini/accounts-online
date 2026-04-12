@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { QRCodeSVG } from 'qrcode.react';
 import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import logoImage from '@/assets/logo.png';
-import { InvoiceTemplateData } from './types';
+import { InvoiceTemplateData, defaultInvoiceLabels } from './types';
 
 interface Props { data: InvoiceTemplateData; }
 
@@ -15,6 +15,7 @@ export const InvoiceTemplate2 = forwardRef<HTMLDivElement, Props>(({ data }, ref
     taxSettings, companyLogoUrl, invoiceType, paymentMethod,
     sellerCommercialRegister,
   } = data;
+  const L = { ...defaultInvoiceLabels, ...data.customLabels };
 
   const displayLogo = companyLogoUrl || null;
   const formattedDate = format(new Date(invoiceDate), 'dd/MM/yyyy hh:mm a');
@@ -76,14 +77,14 @@ export const InvoiceTemplate2 = forwardRef<HTMLDivElement, Props>(({ data }, ref
 
       {/* Title */}
       <div className="text-center py-1 bg-gray-100 border-b font-bold">
-        <span>فاتورة ضريبية / Tax Invoice</span>
+        <span>{L.invoiceTitle} / {L.invoiceTitleEn}</span>
       </div>
 
       {/* Seller & Buyer Info - Side by Side */}
       <div className="grid grid-cols-2 gap-0 border-b">
         {/* Seller */}
         <div className="p-2 border-l">
-          <h3 className="font-bold text-center bg-gray-50 py-1 mb-1 border-b">البائع / Seller</h3>
+          <h3 className="font-bold text-center bg-gray-50 py-1 mb-1 border-b">{L.sellerLabel} / {L.sellerLabelEn}</h3>
           <div className="space-y-0.5 text-[10px]">
             <div className="flex gap-1"><span className="text-gray-500 w-16">الاسم:</span><span>{invoiceType === 'sale' ? companyName : sellerName}</span></div>
             <div className="flex gap-1"><span className="text-gray-500 w-16">العنوان:</span><span>{invoiceType === 'sale' ? companyAddress : (sellerAddress || '-')}</span></div>
@@ -93,7 +94,7 @@ export const InvoiceTemplate2 = forwardRef<HTMLDivElement, Props>(({ data }, ref
         </div>
         {/* Buyer */}
         <div className="p-2">
-          <h3 className="font-bold text-center bg-gray-50 py-1 mb-1 border-b">المشتري / Buyer</h3>
+          <h3 className="font-bold text-center bg-gray-50 py-1 mb-1 border-b">{L.buyerLabel} / {L.buyerLabelEn}</h3>
           <div className="space-y-0.5 text-[10px]">
             <div className="flex gap-1"><span className="text-gray-500 w-16">الاسم:</span><span>{invoiceType === 'sale' ? buyerName : companyName}</span></div>
             <div className="flex gap-1"><span className="text-gray-500 w-16">العنوان:</span><span>{invoiceType === 'sale' ? (buyerAddress || '-') : companyAddress}</span></div>
@@ -106,15 +107,15 @@ export const InvoiceTemplate2 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       {/* Items Table */}
       <table className="w-full text-[10px] border-collapse">
         <thead>
-          <tr className="bg-gray-200 font-bold">
-            <th className="p-1.5 border text-center w-8">م#</th>
-            <th className="p-1.5 border text-right">اسم الصنف / Item Name</th>
-            <th className="p-1.5 border text-center w-12">الكمية</th>
-            <th className="p-1.5 border text-center w-16">السعر</th>
-            <th className="p-1.5 border text-center w-14">نسبة الضريبة</th>
-            <th className="p-1.5 border text-center w-16">مبلغ الضريبة</th>
-            <th className="p-1.5 border text-center w-20">الإجمالي شامل</th>
-          </tr>
+           <tr className="bg-gray-200 font-bold">
+             <th className="p-1.5 border text-center w-8">م#</th>
+             <th className="p-1.5 border text-right">{L.descriptionColumn} / Item Name</th>
+             <th className="p-1.5 border text-center w-12">{L.quantityColumn}</th>
+             <th className="p-1.5 border text-center w-16">{L.priceColumn}</th>
+             <th className="p-1.5 border text-center w-14">نسبة {L.taxColumn}</th>
+             <th className="p-1.5 border text-center w-16">مبلغ {L.taxColumn}</th>
+             <th className="p-1.5 border text-center w-20">{L.totalColumn} شامل</th>
+           </tr>
         </thead>
         <tbody>
           {itemsWithTax.map((item, i) => (
@@ -138,13 +139,13 @@ export const InvoiceTemplate2 = forwardRef<HTMLDivElement, Props>(({ data }, ref
           <div className="flex justify-between"><span>Sales Man / البائع</span><span>{data.salesmanName || '-'}</span></div>
         </div>
         <div className="p-2 text-[10px] space-y-1">
-          <div className="flex justify-between"><span>Total Excluding VAT الإجمالي غير شامل الضريبة</span><span>{Math.round(subtotal).toLocaleString('en-US')}</span></div>
-          {discountAmount > 0 && (
-            <div className="flex justify-between"><span>Discount / الخصم</span><span>{Math.round(discountAmount).toLocaleString('en-US')}</span></div>
-          )}
-          <div className="flex justify-between"><span>Total Taxable Amount المبلغ الخاضع للضريبة</span><span>{Math.round(subtotal - discountAmount).toLocaleString('en-US')}</span></div>
-          <div className="flex justify-between"><span>Tax %{taxRate} / الضريبة</span><span>{Math.round(taxAmount).toLocaleString('en-US')}</span></div>
-          <div className="flex justify-between font-bold border-t pt-1"><span>Total Amt With Tax الإجمالي شامل الضريبة</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between"><span>Total Excluding VAT {L.subtotalLabel}</span><span>{Math.round(subtotal).toLocaleString('en-US')}</span></div>
+           {discountAmount > 0 && (
+             <div className="flex justify-between"><span>Discount / الخصم</span><span>{Math.round(discountAmount).toLocaleString('en-US')}</span></div>
+           )}
+           <div className="flex justify-between"><span>Total Taxable Amount المبلغ الخاضع للضريبة</span><span>{Math.round(subtotal - discountAmount).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between"><span>{L.taxLabel} %{taxRate}</span><span>{Math.round(taxAmount).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between font-bold border-t pt-1"><span>Total Amt With Tax {L.grandTotalLabel}</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
         </div>
       </div>
 

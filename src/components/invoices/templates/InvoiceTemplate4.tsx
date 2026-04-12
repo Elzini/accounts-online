@@ -4,7 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import { numberToArabicWords } from '@/lib/numberToArabicWords';
 import logoImage from '@/assets/logo.png';
-import { InvoiceTemplateData } from './types';
+import { InvoiceTemplateData, defaultInvoiceLabels } from './types';
 
 interface Props { data: InvoiceTemplateData; }
 
@@ -15,6 +15,7 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
     items, subtotal, discountAmount = 0, taxAmount, total,
     taxSettings, invoiceType, salesmanName,
   } = data;
+  const L = { ...defaultInvoiceLabels, ...data.customLabels };
 
   const formattedDate = format(new Date(invoiceDate), 'yyyy-MM-dd');
   const taxRate = taxSettings?.tax_rate || 15;
@@ -49,7 +50,7 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
 
       {/* Title */}
       <div className="text-center py-2 border-y-2 border-gray-800">
-        <h2 className="text-lg font-bold">{invoiceType === 'purchase' ? 'فاتورة مشتريات' : 'فاتورة ضريبية'}</h2>
+        <h2 className="text-lg font-bold">{invoiceType === 'purchase' ? 'فاتورة مشتريات' : L.invoiceTitle}</h2>
         <p className="text-[10px] text-gray-500">{data.paymentMethod === 'credit' ? 'آجل' : data.paymentMethod === 'bank' ? 'تحويل بنكي' : 'نقدية'}</p>
       </div>
 
@@ -73,7 +74,7 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       <div className="px-4 py-2 border-b">
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
           <div className="flex gap-1 border-b border-gray-200 pb-1">
-            <span className="text-gray-500 w-20">{invoiceType === 'purchase' ? 'Supplier المورد' : 'Cust. Name اسم العميل'}</span>
+            <span className="text-gray-500 w-20">{invoiceType === 'purchase' ? 'Supplier المورد' : `${L.buyerLabelEn} ${L.buyerLabel}`}</span>
             <span className="font-medium flex-1">{invoiceType === 'purchase' ? sellerName : buyerName}</span>
           </div>
           <div className="flex gap-1 border-b border-gray-200 pb-1">
@@ -98,15 +99,15 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       {/* Items Table */}
       <table className="w-full text-[10px] border-collapse mx-0">
         <thead>
-          <tr className="bg-gray-800 text-white">
-            <th className="p-1.5 border border-gray-700 text-center w-6">No</th>
-            <th className="p-1.5 border border-gray-700 text-center w-16">Item NO الصنف</th>
-            <th className="p-1.5 border border-gray-700 text-right">Description البيان</th>
-            <th className="p-1.5 border border-gray-700 text-center w-12">Quantity الكمية</th>
-            <th className="p-1.5 border border-gray-700 text-center w-16">Price السعر</th>
-            <th className="p-1.5 border border-gray-700 text-center w-14">VAT الضريبة</th>
-            <th className="p-1.5 border border-gray-700 text-center w-18">Subtotal المجموع</th>
-          </tr>
+           <tr className="bg-gray-800 text-white">
+             <th className="p-1.5 border border-gray-700 text-center w-6">No</th>
+             <th className="p-1.5 border border-gray-700 text-center w-16">Item NO الصنف</th>
+             <th className="p-1.5 border border-gray-700 text-right">{L.descriptionColumn} Description</th>
+             <th className="p-1.5 border border-gray-700 text-center w-12">{L.quantityColumn} Quantity</th>
+             <th className="p-1.5 border border-gray-700 text-center w-16">{L.priceColumn} Price</th>
+             <th className="p-1.5 border border-gray-700 text-center w-14">{L.taxColumn} VAT</th>
+             <th className="p-1.5 border border-gray-700 text-center w-18">{L.totalColumn} Subtotal</th>
+           </tr>
         </thead>
         <tbody>
           {itemsWithTax.map((item, i) => (
@@ -131,10 +132,10 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
         </div>
         {/* Totals Right */}
         <div className="flex-1 text-[10px]">
-          <div className="flex justify-between p-1.5 border-b"><span className="font-bold">Total الإجمالي</span><span>{Math.round(subtotal).toLocaleString('en-US')}</span></div>
-          <div className="flex justify-between p-1.5 border-b"><span className="font-bold">Discount الخصم</span><span>{Math.round(discountAmount).toLocaleString('en-US')}</span></div>
-          <div className="flex justify-between p-1.5 border-b"><span className="font-bold">VAT الضريبة</span><span>{Math.round(taxAmount).toLocaleString('en-US')}</span></div>
-          <div className="flex justify-between p-1.5 border-b font-bold text-sm bg-gray-100"><span>Net الصافي</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between p-1.5 border-b"><span className="font-bold">Total {L.subtotalLabel}</span><span>{Math.round(subtotal).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between p-1.5 border-b"><span className="font-bold">Discount الخصم</span><span>{Math.round(discountAmount).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between p-1.5 border-b"><span className="font-bold">{L.taxColumn} VAT</span><span>{Math.round(taxAmount).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between p-1.5 border-b font-bold text-sm bg-gray-100"><span>Net {L.grandTotalLabel}</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
           <div className="p-1.5 text-[10px] text-gray-600">{numberToArabicWords(Math.round(total))} ريال</div>
         </div>
       </div>
