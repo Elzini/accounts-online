@@ -35,6 +35,7 @@ const defaultInvoiceData: InvoiceFormData = {
   seller_name: '', notes: '', price_includes_tax: false, commission: '', other_expenses: '',
   is_installment: false, down_payment: '', number_of_installments: '12', last_payment_date: '',
   first_installment_date: new Date().toISOString().split('T')[0],
+  po_details: '', project_reference: '',
 };
 
 export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
@@ -304,6 +305,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
       price_includes_tax: false, commission: String(sale.commission || ''), other_expenses: String(sale.other_expenses || ''),
       is_installment: false, down_payment: '', number_of_installments: '12', last_payment_date: '',
       first_installment_date: new Date().toISOString().split('T')[0],
+      po_details: sale.po_details || '', project_reference: sale.project_reference || '',
     });
 
     if (isInvoiceRecord) {
@@ -384,6 +386,10 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
       salesmanName: invoiceData.seller_name || savedSaleData?.seller_name || '', branchName: '',
       paymentMethod: (() => { const acc = accounts.find(a => a.id === invoiceData.payment_account_id); if (!acc) return 'cash'; if (acc.code === '1201') return 'credit'; if (acc.code.startsWith('1102') || acc.code === '1103') return 'bank'; return 'cash'; })(),
       notes: invoiceData.notes || savedSaleData?.notes || '',
+      paidAmount: paidAmount || 0,
+      buyerCommercialRegister: (selectedCustomer as any)?.commercial_register || '',
+      poDetails: invoiceData.po_details || '',
+      projectReference: invoiceData.project_reference || '',
     };
   }, [savedSaleData, invoiceData, selectedCustomer, calculations, taxSettings, company, taxRate, nextInvoiceNumber, accounts]);
 

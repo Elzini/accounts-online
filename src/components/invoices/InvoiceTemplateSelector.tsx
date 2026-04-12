@@ -39,6 +39,12 @@ const templates: { id: InvoiceTemplateName; name: string; description: string; p
     description: 'تصميم بسيط ومباشر مع رمز QR وتفريغ بالكلمات',
     preview: '📄',
   },
+  {
+    id: 'template5',
+    name: 'نموذج ضريبي تفصيلي',
+    description: 'فاتورة ضريبية مفصلة ثنائية اللغة مع بيانات العميل والبنك وأمر الشراء',
+    preview: '🏢',
+  },
 ];
 
 export function InvoiceTemplateSelector({ open, onClose, onSelect }: InvoiceTemplateSelectorProps) {

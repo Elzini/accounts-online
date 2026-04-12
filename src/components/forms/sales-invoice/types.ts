@@ -50,6 +50,8 @@ export interface InvoiceFormData {
   number_of_installments: string;
   last_payment_date: string;
   first_installment_date: string;
+  po_details: string;
+  project_reference: string;
 }
 
 export interface StoredHeaderTotals {

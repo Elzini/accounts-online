@@ -42,6 +42,10 @@ export interface InvoiceTemplateData {
   salesmanName?: string;
   paymentMethod?: string;
   voucherNumber?: string | number;
+  notes?: string;
+  buyerCommercialRegister?: string;
+  poDetails?: string;
+  projectReference?: string;
 }
 
-export type InvoiceTemplateName = 'template1' | 'template2' | 'template3' | 'template4' | 'default';
+export type InvoiceTemplateName = 'template1' | 'template2' | 'template3' | 'template4' | 'template5' | 'default';

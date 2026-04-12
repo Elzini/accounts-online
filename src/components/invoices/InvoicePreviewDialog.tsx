@@ -11,7 +11,7 @@ import { generateZatcaXML, downloadXMLInvoice, generateInvoiceUUID, generateInvo
 import { generateZatcaJSONString, downloadJSONInvoice } from '@/lib/zatcaJSON';
 import { toast } from 'sonner';
 import { InvoiceTemplateSelector } from './InvoiceTemplateSelector';
-import { InvoiceTemplate1, InvoiceTemplate2, InvoiceTemplate3, InvoiceTemplate4 } from './templates';
+import { InvoiceTemplate1, InvoiceTemplate2, InvoiceTemplate3, InvoiceTemplate4, InvoiceTemplate5 } from './templates';
 import { InvoiceTemplateName, InvoiceTemplateData } from './templates/types';
 
 interface InvoiceItem {
@@ -147,6 +147,11 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     salesmanName: data.salesmanName || '',
     branchName: data.branchName || '',
     paymentMethod: data.paymentMethod || 'cash',
+    notes: (data as any).notes || '',
+    paidAmount: (data as any).paidAmount || 0,
+    buyerCommercialRegister: (data as any).buyerCommercialRegister || '',
+    poDetails: (data as any).poDetails || '',
+    projectReference: (data as any).projectReference || '',
   };
 
   const renderTemplate = () => {
@@ -155,6 +160,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
       case 'template2': return <InvoiceTemplate2 ref={invoiceRef} data={templateData} />;
       case 'template3': return <InvoiceTemplate3 ref={invoiceRef} data={templateData} />;
       case 'template4': return <InvoiceTemplate4 ref={invoiceRef} data={templateData} />;
+      case 'template5': return <InvoiceTemplate5 ref={invoiceRef} data={templateData} />;
       default: return <ZatcaInvoice ref={invoiceRef} data={{ ...data, uuid: invoiceUUID, paymentMethod: templateData.paymentMethod }} />;
     }
   };
