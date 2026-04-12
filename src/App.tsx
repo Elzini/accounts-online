@@ -27,6 +27,7 @@ const Companies = lazy(() => import("./pages/Companies"));
 const Install = lazy(() => import("./pages/Install"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const RamadanGreeting = lazy(() => import("./pages/RamadanGreeting"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -184,6 +185,7 @@ function AppRoutes() {
           </PublicRoute>
         } 
       />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/install" element={<Install />} />
       <Route path="/ramadan" element={<RamadanGreeting />} />
       <Route path="*" element={<NotFound />} />

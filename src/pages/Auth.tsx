@@ -391,7 +391,27 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
                     <input type="checkbox" className="rounded border-border" defaultChecked />
                     <span className="text-muted-foreground">{isRtl ? 'تذكرني' : 'Remember me'}</span>
                   </label>
-                  <span className="text-[hsl(210,70%,50%)] hover:underline cursor-pointer">
+                  <span
+                    className="text-[hsl(210,70%,50%)] hover:underline cursor-pointer"
+                    onClick={async () => {
+                      if (!email) {
+                        toast.error(isRtl ? 'أدخل البريد الإلكتروني أولاً' : 'Enter your email first');
+                        return;
+                      }
+                      try {
+                        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                          redirectTo: `${window.location.origin}/reset-password`,
+                        });
+                        if (error) {
+                          toast.error(error.message);
+                        } else {
+                          toast.success(isRtl ? 'تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني' : 'Password reset link sent to your email');
+                        }
+                      } catch {
+                        toast.error(isRtl ? 'حدث خطأ' : 'An error occurred');
+                      }
+                    }}
+                  >
                     {t.forgot_password || (isRtl ? 'نسيت كلمة المرور؟' : 'Forgot password?')}
                   </span>
                 </div>
