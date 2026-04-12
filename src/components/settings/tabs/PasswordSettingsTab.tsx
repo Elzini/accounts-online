@@ -34,26 +34,28 @@ export function PasswordSettingsTab() {
         return;
       }
 
-      // Verify current password via edge function to avoid session interference
+      // Verify current password AND update via edge function (avoids session issues)
       const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-password', {
-        body: { currentPassword },
+        body: { currentPassword, newPassword },
       });
 
-      if (verifyError || !verifyData?.valid) {
-        // Check if it's a session/auth error vs wrong password
-        const errorMsg = verifyError?.message || verifyData?.error || '';
-        if (errorMsg.includes('User not found') || errorMsg.includes('No auth') || errorMsg.includes('session')) {
+      if (verifyError) {
+        const errorMsg = verifyError?.message || '';
+        if (errorMsg.includes('Auth') || errorMsg.includes('session') || errorMsg.includes('No auth')) {
           toast.error('انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.');
         } else {
-          toast.error(t.settings_current_password_wrong);
+          toast.error(t.settings_save_error);
         }
         return;
       }
 
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) {
-        console.error('Password update error:', error.message);
-        toast.error(error.message || t.settings_save_error);
+      if (!verifyData?.valid) {
+        toast.error(t.settings_current_password_wrong);
+        return;
+      }
+
+      if (verifyData?.updated === false && verifyData?.error) {
+        toast.error(verifyData.error);
         return;
       }
       toast.success(t.settings_password_changed);
