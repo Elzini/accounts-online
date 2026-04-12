@@ -47,6 +47,7 @@ export interface InvoiceTemplateData {
   poDetails?: string;
   projectReference?: string;
   customLabels?: InvoiceCustomLabels;
+  plateNumber?: string;
 }
 
 export interface InvoiceCustomLabels {
