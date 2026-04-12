@@ -56,6 +56,7 @@ interface InvoiceData {
   paymentMethod?: string;
   notes?: string;
   customLabels?: InvoiceCustomLabels;
+  plateNumber?: string;
 }
 
 interface ZatcaInvoiceProps {

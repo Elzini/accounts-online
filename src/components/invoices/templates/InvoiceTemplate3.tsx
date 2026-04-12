@@ -80,6 +80,7 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
             <div className="flex gap-1"><span className="text-gray-500 w-14">VAT No:</span><span dir="ltr">{invoiceType === 'purchase' ? (sellerTaxNumber || '-') : (buyerTaxNumber || buyerIdNumber || '-')}</span></div>
             <div className="flex gap-1"><span className="text-gray-500 w-14">العنوان:</span><span>{invoiceType === 'purchase' ? (sellerAddress || '-') : (buyerAddress || '-')}</span></div>
             <div className="flex gap-1"><span className="text-gray-500 w-14">الجوال:</span><span dir="ltr">{invoiceType === 'purchase' ? (data.sellerPhone || '-') : (buyerPhone || '-')}</span></div>
+            {data.plateNumber && <div className="flex gap-1"><span className="text-gray-500 w-14">{L.plateNumberLabel}:</span><span>{data.plateNumber}</span></div>}
           </div>
         </div>
         {/* Invoice Info */}
