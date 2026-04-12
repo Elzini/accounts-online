@@ -103,6 +103,16 @@ export function SalesHeaderFields({ hook }: SalesHeaderFieldsProps) {
           <Input type="time" value={invoiceData.issue_time} onChange={(e) => setInvoiceData({ ...invoiceData, issue_time: e.target.value })}
             className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none font-mono" disabled={isApproved} />
         </div>
+        <div className="space-y-1">
+          <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">تفاصيل أمر الشراء</Label>
+          <Input value={invoiceData.po_details} onChange={(e) => setInvoiceData({ ...invoiceData, po_details: e.target.value })}
+            placeholder="P.O. Details" className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">رقم المرجع / المشروع</Label>
+          <Input value={invoiceData.project_reference} onChange={(e) => setInvoiceData({ ...invoiceData, project_reference: e.target.value })}
+            placeholder="Project Reference" className="h-9 text-xs border-0 border-b-2 border-border rounded-none bg-transparent focus:border-blue-500 shadow-none" />
+        </div>
         <div className="space-y-1 col-span-2">
           <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t.inv_notes}</Label>
           <Input value={invoiceData.notes} onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })}

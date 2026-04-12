@@ -386,6 +386,10 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
       salesmanName: invoiceData.seller_name || savedSaleData?.seller_name || '', branchName: '',
       paymentMethod: (() => { const acc = accounts.find(a => a.id === invoiceData.payment_account_id); if (!acc) return 'cash'; if (acc.code === '1201') return 'credit'; if (acc.code.startsWith('1102') || acc.code === '1103') return 'bank'; return 'cash'; })(),
       notes: invoiceData.notes || savedSaleData?.notes || '',
+      paidAmount: paidAmount || 0,
+      buyerCommercialRegister: selectedCustomer?.commercial_register || '',
+      poDetails: invoiceData.po_details || '',
+      projectReference: invoiceData.project_reference || '',
     };
   }, [savedSaleData, invoiceData, selectedCustomer, calculations, taxSettings, company, taxRate, nextInvoiceNumber, accounts]);
 
