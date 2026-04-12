@@ -169,15 +169,11 @@ export const InvoiceTemplate5 = forwardRef<HTMLDivElement, Props>(({ data }, ref
         </div>
 
         {itemsWithTax.map((item, i) => {
-          // Extract plate number from description if present
-          const plateMatch = item.description.match(/لوحة:\s*([^\s-]+)/);
-          const plateNo = plateMatch ? plateMatch[1] : '-';
-          const cleanDesc = item.description.replace(/\s*-\s*لوحة:\s*[^\s-]+/, '');
           return (
             <div key={i} className="flex border-b border-gray-400">
               <div className={`${cellClass} text-center w-8`}>{i + 1}</div>
-              <div className={`${cellClass} flex-[3]`}>{cleanDesc}</div>
-              <div className={`${cellClass} text-center flex-1`}>{plateNo}</div>
+              <div className={`${cellClass} flex-[3]`}>{item.description}</div>
+              <div className={`${cellClass} text-center flex-1`}>{data.plateNumber || '-'}</div>
               <div className={`${cellClass} text-center w-12`}>{item.quantity}</div>
               <div className={`${cellClass} text-center flex-1`} dir="ltr">{item.unitPrice.toFixed(2)}</div>
               <div className={`${cellClass} text-center flex-1`} dir="ltr">{item.taxableAmount.toFixed(2)}</div>
