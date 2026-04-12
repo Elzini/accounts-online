@@ -110,7 +110,7 @@ export function createSalesInvoiceActions(deps: ActionDeps) {
         const { data: invoice, error: invoiceError } = await supabase.from('invoices').insert({
           company_id: companyId, invoice_number: finalInvoiceNumber, invoice_type: 'sales',
           customer_id: invoiceData.customer_id, customer_name: selectedCustomer?.name || '',
-          invoice_date: `${invoiceData.sale_date}T${invoiceData.issue_time || '00:00'}:00`,
+          invoice_date: `${invoiceData.sale_date || new Date().toISOString().split('T')[0]}T${invoiceData.issue_time || '00:00'}:00`,
           subtotal: calculations.subtotal, taxable_amount: calculations.subtotalAfterDiscount,
           vat_rate: taxRate, vat_amount: calculations.totalVAT, total: calculations.finalTotal,
           discount_amount: calculations.discountAmount, amount_paid: paidAmount,
@@ -151,7 +151,7 @@ export function createSalesInvoiceActions(deps: ActionDeps) {
       try {
         const { error: invoiceError } = await supabase.from('invoices').update({
           customer_id: invoiceData.customer_id, customer_name: selectedCustomer?.name || '',
-          invoice_date: `${invoiceData.sale_date}T${invoiceData.issue_time || '00:00'}:00`,
+          invoice_date: `${invoiceData.sale_date || new Date().toISOString().split('T')[0]}T${invoiceData.issue_time || '00:00'}:00`,
           subtotal: calculations.subtotal, taxable_amount: calculations.subtotalAfterDiscount,
           vat_rate: taxRate, vat_amount: calculations.totalVAT, total: calculations.finalTotal,
           discount_amount: calculations.discountAmount, amount_paid: paidAmount,
