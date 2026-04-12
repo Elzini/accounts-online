@@ -11,8 +11,9 @@ import { generateZatcaXML, downloadXMLInvoice, generateInvoiceUUID, generateInvo
 import { generateZatcaJSONString, downloadJSONInvoice } from '@/lib/zatcaJSON';
 import { toast } from 'sonner';
 import { InvoiceTemplateSelector } from './InvoiceTemplateSelector';
+import { InvoiceLabelCustomizer } from './InvoiceLabelCustomizer';
 import { InvoiceTemplate1, InvoiceTemplate2, InvoiceTemplate3, InvoiceTemplate4, InvoiceTemplate5 } from './templates';
-import { InvoiceTemplateName, InvoiceTemplateData } from './templates/types';
+import { InvoiceTemplateName, InvoiceTemplateData, InvoiceCustomLabels, defaultInvoiceLabels } from './templates/types';
 
 interface InvoiceItem {
   description: string;
@@ -67,6 +68,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
   const [uuidCopied, setUuidCopied] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplateName>('default');
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
+  const [customLabels, setCustomLabels] = useState<InvoiceCustomLabels>({ ...defaultInvoiceLabels });
 
   const invoiceUUID = useMemo(() => generateInvoiceUUID(), [data.invoiceNumber]);
 
@@ -152,6 +154,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     buyerCommercialRegister: (data as any).buyerCommercialRegister || '',
     poDetails: (data as any).poDetails || '',
     projectReference: (data as any).projectReference || '',
+    customLabels,
   };
 
   const renderTemplate = () => {
@@ -161,7 +164,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
       case 'template3': return <InvoiceTemplate3 ref={invoiceRef} data={templateData} />;
       case 'template4': return <InvoiceTemplate4 ref={invoiceRef} data={templateData} />;
       case 'template5': return <InvoiceTemplate5 ref={invoiceRef} data={templateData} />;
-      default: return <ZatcaInvoice ref={invoiceRef} data={{ ...data, uuid: invoiceUUID, paymentMethod: templateData.paymentMethod }} />;
+      default: return <ZatcaInvoice ref={invoiceRef} data={{ ...data, uuid: invoiceUUID, paymentMethod: templateData.paymentMethod, customLabels }} />;
     }
   };
 
@@ -205,6 +208,8 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
               {uuidCopied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
             </Button>
           </div>
+
+          <InvoiceLabelCustomizer labels={customLabels} onChange={setCustomLabels} />
           
           <div className="border border-border rounded-lg overflow-hidden bg-muted p-4">
             {renderTemplate()}
