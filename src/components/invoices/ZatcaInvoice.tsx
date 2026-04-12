@@ -110,8 +110,10 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
     // Only show logo if company has one uploaded - no fallback
     const displayLogo = companyLogoUrl || null;
 
-    const formattedDate = format(new Date(invoiceDate), 'yyyy/MM/dd', { locale: ar });
-    const formattedTime = format(new Date(invoiceDate), 'HH:mm:ss');
+    const parsedDate = new Date(invoiceDate);
+    const isValidDate = !isNaN(parsedDate.getTime());
+    const formattedDate = isValidDate ? format(parsedDate, 'yyyy/MM/dd', { locale: ar }) : new Date().toLocaleDateString('ar-SA');
+    const formattedTime = isValidDate ? format(parsedDate, 'HH:mm:ss') : new Date().toLocaleTimeString('ar-SA');
     const taxRate = taxSettings?.tax_rate || 15;
 
     const companyVatNumber = taxSettings?.tax_number || '';
