@@ -22,14 +22,18 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Get user from token
-    const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    // Get user from token - use service role to look up the user from the JWT
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Use admin client to get user from token (avoids session-not-found issues)
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
+    
     if (userError || !user?.email) {
-      return new Response(JSON.stringify({ valid: false, error: 'User not found' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      console.error('verify-password: user lookup failed:', userError?.message);
+      return new Response(JSON.stringify({ valid: false, error: 'Session expired' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
