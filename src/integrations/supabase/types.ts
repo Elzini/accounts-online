@@ -9970,6 +9970,48 @@ export type Database = {
           },
         ]
       }
+      user_2fa: {
+        Row: {
+          backup_codes: string[] | null
+          created_at: string
+          id: string
+          is_enabled: boolean
+          phone_number: string | null
+          secret_encrypted: string | null
+          sms_pin_id: string | null
+          two_fa_type: string | null
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          backup_codes?: string[] | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          phone_number?: string | null
+          secret_encrypted?: string | null
+          sms_pin_id?: string | null
+          two_fa_type?: string | null
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          backup_codes?: string[] | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          phone_number?: string | null
+          secret_encrypted?: string | null
+          sms_pin_id?: string | null
+          two_fa_type?: string | null
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           company_id: string
