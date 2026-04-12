@@ -147,6 +147,11 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     salesmanName: data.salesmanName || '',
     branchName: data.branchName || '',
     paymentMethod: data.paymentMethod || 'cash',
+    notes: (data as any).notes || '',
+    paidAmount: (data as any).paidAmount || 0,
+    buyerCommercialRegister: (data as any).buyerCommercialRegister || '',
+    poDetails: (data as any).poDetails || '',
+    projectReference: (data as any).projectReference || '',
   };
 
   const renderTemplate = () => {
