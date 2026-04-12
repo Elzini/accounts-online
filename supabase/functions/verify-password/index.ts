@@ -25,23 +25,23 @@ serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '');
 
-    // Use getClaims to validate JWT without requiring an active session
+    // Resolve user email and ID from JWT
+    let userEmail: string | null = null;
+    let userId: string | null = null;
+
+    // Try getClaims first
     const claimsClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: claimsData, error: claimsError } = await claimsClient.auth.getClaims(token);
-
-    let userEmail: string | null = null;
-    let userId: string | null = null;
 
     if (!claimsError && claimsData?.claims) {
       userEmail = claimsData.claims.email as string;
       userId = claimsData.claims.sub as string;
     }
 
-    // If getClaims failed, try admin getUserById as fallback
-    if (!userEmail && !claimsError) {
-      // Try to decode JWT manually to get sub
+    // Fallback: decode JWT manually
+    if (!userEmail) {
       try {
         const parts = token.split('.');
         if (parts.length === 3) {
@@ -50,11 +50,11 @@ serve(async (req) => {
           userEmail = payload.email;
         }
       } catch {
-        // ignore decode errors
+        // ignore
       }
     }
 
-    // Final fallback: use admin API to look up user
+    // Final fallback: admin API
     if (!userEmail && userId) {
       const adminClient = createClient(supabaseUrl, supabaseServiceKey);
       const { data: adminUser } = await adminClient.auth.admin.getUserById(userId);
@@ -63,21 +63,20 @@ serve(async (req) => {
       }
     }
 
-    if (!userEmail) {
-      console.error('verify-password: could not resolve user email');
+    if (!userEmail || !userId) {
       return new Response(JSON.stringify({ valid: false, error: 'Auth failed' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const { currentPassword } = await req.json();
+    const { currentPassword, newPassword } = await req.json();
     if (!currentPassword) {
       return new Response(JSON.stringify({ valid: false, error: 'Missing password' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Verify password by attempting sign-in with a separate isolated client
+    // Verify current password
     const verifyClient = createClient(supabaseUrl, supabaseAnonKey);
     const { error: signInError } = await verifyClient.auth.signInWithPassword({
       email: userEmail,
@@ -85,13 +84,40 @@ serve(async (req) => {
     });
 
     if (signInError) {
+      // Clean up
+      await verifyClient.auth.signOut().catch(() => {});
       return new Response(JSON.stringify({ valid: false }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Sign out the verify client session immediately
-    await verifyClient.auth.signOut();
+    // Sign out the verify session
+    await verifyClient.auth.signOut().catch(() => {});
+
+    // If newPassword provided, update it via admin API (no session needed)
+    if (newPassword) {
+      if (newPassword.length < 6) {
+        return new Response(JSON.stringify({ valid: true, updated: false, error: 'Password too short' }), {
+          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+      const { error: updateError } = await adminClient.auth.admin.updateUserById(userId, {
+        password: newPassword,
+      });
+
+      if (updateError) {
+        console.error('Password update error:', updateError.message);
+        return new Response(JSON.stringify({ valid: true, updated: false, error: updateError.message }), {
+          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ valid: true, updated: true }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     return new Response(JSON.stringify({ valid: true }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
