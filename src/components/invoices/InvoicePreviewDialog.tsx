@@ -69,6 +69,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
   const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplateName>('default');
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
   const [customLabels, setCustomLabels] = useState<InvoiceCustomLabels>({ ...defaultInvoiceLabels });
+  const [plateNumber, setPlateNumber] = useState('');
 
   const invoiceUUID = useMemo(() => generateInvoiceUUID(), [data.invoiceNumber]);
 
@@ -155,6 +156,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     poDetails: (data as any).poDetails || '',
     projectReference: (data as any).projectReference || '',
     customLabels,
+    plateNumber,
   };
 
   const renderTemplate = () => {
@@ -210,6 +212,18 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
           </div>
 
           <InvoiceLabelCustomizer labels={customLabels} onChange={setCustomLabels} />
+
+          {/* Plate Number Input */}
+          <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-lg px-3 py-2">
+            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">{customLabels.plateNumberLabel || 'رقم اللوحة'}:</label>
+            <input
+              value={plateNumber}
+              onChange={(e) => setPlateNumber(e.target.value)}
+              placeholder="أدخل رقم اللوحة"
+              className="flex-1 h-7 text-xs bg-transparent border-0 border-b border-input focus:outline-none focus:border-primary px-1"
+              dir="auto"
+            />
+          </div>
           
           <div className="border border-border rounded-lg overflow-hidden bg-muted p-4">
             {renderTemplate()}
