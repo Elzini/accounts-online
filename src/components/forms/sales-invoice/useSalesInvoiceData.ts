@@ -383,6 +383,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
       taxSettings, companyLogoUrl: (company as any)?.invoice_logo_url || company?.logo_url,
       salesmanName: invoiceData.seller_name || savedSaleData?.seller_name || '', branchName: '',
       paymentMethod: (() => { const acc = accounts.find(a => a.id === invoiceData.payment_account_id); if (!acc) return 'cash'; if (acc.code === '1201') return 'credit'; if (acc.code.startsWith('1102') || acc.code === '1103') return 'bank'; return 'cash'; })(),
+      notes: invoiceData.notes || savedSaleData?.notes || '',
     };
   }, [savedSaleData, invoiceData, selectedCustomer, calculations, taxSettings, company, taxRate, nextInvoiceNumber, accounts]);
 

@@ -53,6 +53,7 @@ interface InvoiceData {
   invoiceSettings?: InvoiceSettings | null;
   uuid?: string;
   paymentMethod?: string;
+  notes?: string;
 }
 
 interface ZatcaInvoiceProps {
@@ -418,6 +419,14 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
               <span className="font-bold text-xl">{Math.round(total).toLocaleString('en-US')} ر.س</span>
             </div>
           </div>
+
+          {/* Invoice Notes */}
+          {data.notes && (
+            <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-200">
+              <p className="text-xs font-bold text-gray-600 mb-1">ملاحظات:</p>
+              <p className="text-xs text-gray-700 whitespace-pre-wrap">{data.notes}</p>
+            </div>
+          )}
 
           {/* Footer Notes */}
           {settings.show_terms && (
