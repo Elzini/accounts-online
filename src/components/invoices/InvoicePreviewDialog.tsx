@@ -11,7 +11,7 @@ import { generateZatcaXML, downloadXMLInvoice, generateInvoiceUUID, generateInvo
 import { generateZatcaJSONString, downloadJSONInvoice } from '@/lib/zatcaJSON';
 import { toast } from 'sonner';
 import { InvoiceTemplateSelector } from './InvoiceTemplateSelector';
-import { InvoiceTemplate1, InvoiceTemplate2, InvoiceTemplate3, InvoiceTemplate4 } from './templates';
+import { InvoiceTemplate1, InvoiceTemplate2, InvoiceTemplate3, InvoiceTemplate4, InvoiceTemplate5 } from './templates';
 import { InvoiceTemplateName, InvoiceTemplateData } from './templates/types';
 
 interface InvoiceItem {
