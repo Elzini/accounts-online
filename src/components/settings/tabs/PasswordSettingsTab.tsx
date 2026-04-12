@@ -27,13 +27,26 @@ export function PasswordSettingsTab() {
     if (newPassword !== confirmPassword) { toast.error(t.settings_password_mismatch); return; }
     setChanging(true);
     try {
+      // Ensure we have a valid session before calling the edge function
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session?.access_token) {
+        toast.error('انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.');
+        return;
+      }
+
       // Verify current password via edge function to avoid session interference
       const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-password', {
         body: { currentPassword },
       });
 
       if (verifyError || !verifyData?.valid) {
-        toast.error(t.settings_current_password_wrong);
+        // Check if it's a session/auth error vs wrong password
+        const errorMsg = verifyError?.message || verifyData?.error || '';
+        if (errorMsg.includes('User not found') || errorMsg.includes('No auth') || errorMsg.includes('session')) {
+          toast.error('انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.');
+        } else {
+          toast.error(t.settings_current_password_wrong);
+        }
         return;
       }
 
