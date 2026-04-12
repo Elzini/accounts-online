@@ -56,6 +56,7 @@ interface InvoiceData {
   paymentMethod?: string;
   notes?: string;
   customLabels?: InvoiceCustomLabels;
+  plateNumber?: string;
 }
 
 interface ZatcaInvoiceProps {
@@ -293,6 +294,12 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                       <span className="font-medium">{buyerAddress}</span>
                     </div>
                   )}
+                  {data.plateNumber && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-500">{L.plateNumberLabel}:</span>
+                      <span className="font-medium">{data.plateNumber}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </>
@@ -327,6 +334,12 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                     <div className="flex gap-2">
                       <span className="text-gray-500">العنوان:</span>
                       <span className="font-medium">{buyerAddress}</span>
+                    </div>
+                  )}
+                  {data.plateNumber && (
+                    <div className="flex gap-2">
+                      <span className="text-gray-500">{L.plateNumberLabel}:</span>
+                      <span className="font-medium">{data.plateNumber}</span>
                     </div>
                   )}
                 </div>

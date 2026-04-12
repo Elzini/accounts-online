@@ -93,6 +93,12 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
             <span className="text-gray-500 w-20">VAT No. رقم الضريبة</span>
             <span className="font-bold" dir="ltr">{invoiceType === 'purchase' ? (sellerTaxNumber || '-') : (buyerTaxNumber || '-')}</span>
           </div>
+          {data.plateNumber && (
+            <div className="flex gap-1 col-span-2 border-b border-gray-200 pb-1">
+              <span className="text-gray-500 w-20">{L.plateNumberLabelEn} {L.plateNumberLabel}</span>
+              <span className="font-bold">{data.plateNumber}</span>
+            </div>
+          )}
         </div>
       </div>
 
