@@ -18,6 +18,8 @@ const labelFields: { key: keyof InvoiceCustomLabels; label: string }[] = [
   { key: 'sellerLabelEn', label: 'مسمى البائع (إنجليزي)' },
   { key: 'buyerLabel', label: 'مسمى المشتري (عربي)' },
   { key: 'buyerLabelEn', label: 'مسمى المشتري (إنجليزي)' },
+  { key: 'plateNumberLabel', label: 'مسمى رقم اللوحة (عربي)' },
+  { key: 'plateNumberLabelEn', label: 'مسمى رقم اللوحة (إنجليزي)' },
   { key: 'descriptionColumn', label: 'عمود الوصف' },
   { key: 'quantityColumn', label: 'عمود الكمية' },
   { key: 'priceColumn', label: 'عمود السعر' },

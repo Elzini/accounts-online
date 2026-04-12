@@ -64,6 +64,8 @@ export interface InvoiceCustomLabels {
   sellerLabelEn?: string;
   buyerLabel?: string;
   buyerLabelEn?: string;
+  plateNumberLabel?: string;
+  plateNumberLabelEn?: string;
 }
 
 export const defaultInvoiceLabels: InvoiceCustomLabels = {
@@ -81,6 +83,8 @@ export const defaultInvoiceLabels: InvoiceCustomLabels = {
   sellerLabelEn: 'Seller',
   buyerLabel: 'المشتري',
   buyerLabelEn: 'Buyer',
+  plateNumberLabel: 'رقم اللوحة',
+  plateNumberLabelEn: 'Plate Number',
 };
 
 export type InvoiceTemplateName = 'template1' | 'template2' | 'template3' | 'template4' | 'template5' | 'default';
