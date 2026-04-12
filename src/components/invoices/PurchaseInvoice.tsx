@@ -38,6 +38,7 @@ interface PurchaseInvoiceData {
   taxSettings?: TaxSettings | null;
   // Company logo
   companyLogoUrl?: string | null;
+  notes?: string;
 }
 
 interface PurchaseInvoiceProps {
@@ -260,6 +261,14 @@ export const PurchaseInvoice = forwardRef<HTMLDivElement, PurchaseInvoiceProps>(
               <span className="font-bold text-xl">{total.toLocaleString('en-US', { minimumFractionDigits: getGlobalDecimals(), maximumFractionDigits: getGlobalDecimals() })} ر.س</span>
             </div>
           </div>
+
+          {/* Invoice Notes */}
+          {data.notes && (
+            <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-200">
+              <p className="text-xs font-bold text-gray-600 mb-1">ملاحظات:</p>
+              <p className="text-xs text-gray-700 whitespace-pre-wrap">{data.notes}</p>
+            </div>
+          )}
 
           {/* Footer Notes */}
           <div className="mt-4 text-center text-xs text-gray-500">

@@ -273,6 +273,7 @@ export function usePurchaseInvoice() {
       subtotal: displayTotals.subtotal, taxAmount: displayTotals.totalVAT,
       total: displayTotals.finalTotal, taxSettings: taxSettings,
       companyLogoUrl: (company as any)?.invoice_logo_url || company?.logo_url,
+      notes: invoiceData.notes || savedBatchData?.batch?.notes || '',
     };
   }, [savedBatchData, invoiceData, selectedSupplier, calculations, displayTotals, taxSettings, company, taxRate, nav.nextInvoiceNumber]);
 
