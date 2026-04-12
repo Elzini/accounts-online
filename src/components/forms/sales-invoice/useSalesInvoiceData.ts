@@ -387,7 +387,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
       paymentMethod: (() => { const acc = accounts.find(a => a.id === invoiceData.payment_account_id); if (!acc) return 'cash'; if (acc.code === '1201') return 'credit'; if (acc.code.startsWith('1102') || acc.code === '1103') return 'bank'; return 'cash'; })(),
       notes: invoiceData.notes || savedSaleData?.notes || '',
       paidAmount: paidAmount || 0,
-      buyerCommercialRegister: selectedCustomer?.commercial_register || '',
+      buyerCommercialRegister: (selectedCustomer as any)?.commercial_register || '',
       poDetails: invoiceData.po_details || '',
       projectReference: invoiceData.project_reference || '',
     };
