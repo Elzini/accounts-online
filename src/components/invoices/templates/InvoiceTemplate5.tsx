@@ -33,7 +33,7 @@ export const InvoiceTemplate5 = forwardRef<HTMLDivElement, Props>(({ data }, ref
   const vatNumber = invoiceType === 'sale' ? (taxSettings?.tax_number || sellerTaxNumber || '') : (sellerTaxNumber || '');
   const crn = invoiceType === 'sale' ? (taxSettings?.commercial_register || sellerCommercialRegister || '') : (sellerCommercialRegister || '');
   const companyNameAr = taxSettings?.company_name_ar || sellerName;
-  const companyNameEn = taxSettings?.company_name_en || sellerName;
+  const companyNameEn = (taxSettings as any)?.company_name_en || sellerName;
   const displayLogo = companyLogoUrl || null;
 
   const buyerCrn = (data as any).buyerCommercialRegister || '';
