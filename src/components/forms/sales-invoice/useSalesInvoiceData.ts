@@ -35,6 +35,7 @@ const defaultInvoiceData: InvoiceFormData = {
   seller_name: '', notes: '', price_includes_tax: false, commission: '', other_expenses: '',
   is_installment: false, down_payment: '', number_of_installments: '12', last_payment_date: '',
   first_installment_date: new Date().toISOString().split('T')[0],
+  po_details: '', project_reference: '',
 };
 
 export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
