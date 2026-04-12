@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { QRCodeSVG } from 'qrcode.react';
 import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import logoImage from '@/assets/logo.png';
-import { InvoiceTemplateData } from './types';
+import { InvoiceTemplateData, defaultInvoiceLabels } from './types';
 
 interface Props { data: InvoiceTemplateData; }
 
@@ -14,6 +14,7 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
     items, subtotal, discountAmount = 0, taxAmount, total, paidAmount = 0,
     taxSettings, companyLogoUrl, invoiceType, salesmanName, branchName,
   } = data;
+  const L = { ...defaultInvoiceLabels, ...data.customLabels };
 
   const displayLogo = companyLogoUrl || null;
   const formattedDate = format(new Date(invoiceDate), 'dd-MM-yyyy HH:mm');
@@ -64,16 +65,16 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
 
       {/* Title */}
       <div className="text-center py-1.5 bg-[#3b82f6]/10 border-y border-[#3b82f6]/30">
-        <h2 className="text-base font-bold text-[#3b82f6]">{invoiceType === 'purchase' ? 'فاتورة مشتريات / Purchase Invoice' : 'فاتورة ضريبية / Tax Invoice'}</h2>
+        <h2 className="text-base font-bold text-[#3b82f6]">{invoiceType === 'purchase' ? 'فاتورة مشتريات / Purchase Invoice' : `${L.invoiceTitle} / ${L.invoiceTitleEn}`}</h2>
       </div>
 
       {/* Party & Invoice Info */}
       <div className="grid grid-cols-2 gap-0 p-3">
         {/* Party Info (Supplier for purchases, Customer for sales) */}
         <div className="border border-gray-200 rounded-sm p-2 ml-1">
-          <h3 className="font-bold text-[10px] text-[#3b82f6] mb-1">
-            {invoiceType === 'purchase' ? 'بيانات المورد Supplier' : 'بيانات العميل Customer'}
-          </h3>
+           <h3 className="font-bold text-[10px] text-[#3b82f6] mb-1">
+             {invoiceType === 'purchase' ? 'بيانات المورد Supplier' : `بيانات ${L.buyerLabel} ${L.buyerLabelEn}`}
+           </h3>
           <div className="space-y-0.5 text-[10px]">
             <div className="flex gap-1"><span className="text-gray-500 w-14">الاسم:</span><span className="font-medium">{invoiceType === 'purchase' ? sellerName : buyerName}</span></div>
             <div className="flex gap-1"><span className="text-gray-500 w-14">VAT No:</span><span dir="ltr">{invoiceType === 'purchase' ? (sellerTaxNumber || '-') : (buyerTaxNumber || buyerIdNumber || '-')}</span></div>
@@ -98,14 +99,14 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       <div className="px-3">
         <table className="w-full text-[10px] border-collapse border border-gray-300">
           <thead>
-            <tr className="bg-[#3b82f6] text-white">
-              <th className="p-1.5 border border-[#3b82f6] text-center w-6">#</th>
-              <th className="p-1.5 border border-[#3b82f6] text-right">المركبة / البيان</th>
-              <th className="p-1.5 border border-[#3b82f6] text-center w-16">السعر Price</th>
-              <th className="p-1.5 border border-[#3b82f6] text-center w-12">الكمية</th>
-              <th className="p-1.5 border border-[#3b82f6] text-center w-14">الضريبة {taxRate}%</th>
-              <th className="p-1.5 border border-[#3b82f6] text-center w-16">الاجمالي Subtotal</th>
-            </tr>
+             <tr className="bg-[#3b82f6] text-white">
+               <th className="p-1.5 border border-[#3b82f6] text-center w-6">#</th>
+               <th className="p-1.5 border border-[#3b82f6] text-right">{L.descriptionColumn}</th>
+               <th className="p-1.5 border border-[#3b82f6] text-center w-16">{L.priceColumn} Price</th>
+               <th className="p-1.5 border border-[#3b82f6] text-center w-12">{L.quantityColumn}</th>
+               <th className="p-1.5 border border-[#3b82f6] text-center w-14">{L.taxColumn} {taxRate}%</th>
+               <th className="p-1.5 border border-[#3b82f6] text-center w-16">{L.totalColumn} Subtotal</th>
+             </tr>
           </thead>
           <tbody>
             {itemsWithTax.map((item, i) => (
@@ -125,10 +126,10 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       {/* Totals */}
       <div className="px-3 mt-2">
         <div className="border border-gray-300 rounded-sm overflow-hidden w-72 mr-auto">
-          <div className="flex justify-between p-1.5 border-b text-[10px]"><span>Total Amount without Tax الأجمالي الخاضع للضريبة</span><span>{Math.round(subtotal - discountAmount).toLocaleString('en-US')}</span></div>
-          <div className="flex justify-between p-1.5 border-b text-[10px]"><span>Total VAT {taxRate}% ضريبة القيمة المضافة</span><span>{Math.round(taxAmount).toLocaleString('en-US')}</span></div>
-          {discountAmount > 0 && <div className="flex justify-between p-1.5 border-b text-[10px]"><span>Additions رسوم إضافية</span><span>0</span></div>}
-          <div className="flex justify-between p-1.5 border-b text-[10px] font-bold bg-gray-50"><span>Total Amount مبلغ الفاتورة</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between p-1.5 border-b text-[10px]"><span>Total Amount without Tax {L.subtotalLabel}</span><span>{Math.round(subtotal - discountAmount).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between p-1.5 border-b text-[10px]"><span>Total VAT {taxRate}% {L.taxLabel}</span><span>{Math.round(taxAmount).toLocaleString('en-US')}</span></div>
+           {discountAmount > 0 && <div className="flex justify-between p-1.5 border-b text-[10px]"><span>Additions رسوم إضافية</span><span>0</span></div>}
+           <div className="flex justify-between p-1.5 border-b text-[10px] font-bold bg-gray-50"><span>Total Amount {L.grandTotalLabel}</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
           <div className="flex justify-between p-1.5 border-b text-[10px]"><span>Paid Amount المدفوع</span><span>{Math.round(paidAmount).toLocaleString('en-US')}</span></div>
           <div className="flex justify-between p-1.5 text-[10px] font-bold"><span>Amount Due المبلغ المستحق</span><span>{Math.round(amountDue).toLocaleString('en-US')}</span></div>
         </div>

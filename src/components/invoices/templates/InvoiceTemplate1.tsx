@@ -4,7 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import { numberToArabicWords } from '@/lib/numberToArabicWords';
 import logoImage from '@/assets/logo.png';
-import { InvoiceTemplateData } from './types';
+import { InvoiceTemplateData, defaultInvoiceLabels } from './types';
 
 interface Props { data: InvoiceTemplateData; }
 
@@ -15,6 +15,7 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
     items, subtotal, discountAmount = 0, taxAmount, total,
     taxSettings, companyLogoUrl, salesmanName, branchName, invoiceType,
   } = data;
+  const L = { ...defaultInvoiceLabels, ...data.customLabels };
 
   const displayLogo = companyLogoUrl || null;
   const formattedDate = format(new Date(invoiceDate), 'yyyy/MM/dd');
@@ -58,10 +59,10 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       </div>
 
       {/* Invoice Title */}
-      <div className="text-center py-2 border-b">
-        <h2 className="text-lg font-bold">
-          {invoiceType === 'purchase' ? 'فاتورة مشتريات' : 'فاتورة ضريبية'} {data.paymentMethod === 'credit' ? '- آجل' : data.paymentMethod === 'bank' ? '- تحويل بنكي' : '- نقدي'}
-        </h2>
+       <div className="text-center py-2 border-b">
+         <h2 className="text-lg font-bold">
+           {invoiceType === 'purchase' ? 'فاتورة مشتريات' : L.invoiceTitle} {data.paymentMethod === 'credit' ? '- آجل' : data.paymentMethod === 'bank' ? '- تحويل بنكي' : '- نقدي'}
+         </h2>
       </div>
 
       {/* Info Grid */}
@@ -69,8 +70,8 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
         <div className="p-2 border-l">
           <div className="flex justify-between"><span className="text-gray-500">Store/Branch المعرض/الفرع</span><span className="font-medium">{branchName || 'الرئيسي'}</span></div>
           <div className="flex justify-between mt-1"><span className="text-gray-500">Sales Man مندوب المبيعات</span><span className="font-medium">{salesmanName || '-'}</span></div>
-          <div className="flex justify-between mt-1">
-            <span className="text-gray-500">{invoiceType === 'purchase' ? 'Supplier المورد' : 'Customer العميل'}</span>
+           <div className="flex justify-between mt-1">
+             <span className="text-gray-500">{invoiceType === 'purchase' ? 'Supplier المورد' : `${L.buyerLabelEn} ${L.buyerLabel}`}</span>
             <span className="font-medium">{invoiceType === 'purchase' ? sellerName : buyerName}</span>
           </div>
         </div>
@@ -86,21 +87,21 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       </div>
 
       {/* VAT Number */}
-      <div className="flex justify-between px-4 py-1 border-b text-xs bg-gray-50">
-        <span>{invoiceType === 'purchase' ? 'Supplier VAT NO. الرقم الضريبي المورد' : 'Customer VAT NO. الرقم الضريبي العميل'}</span>
-        <span className="font-bold" dir="ltr">{invoiceType === 'purchase' ? (sellerTaxNumber || '-') : (buyerTaxNumber || '-')}</span>
-      </div>
+       <div className="flex justify-between px-4 py-1 border-b text-xs bg-gray-50">
+         <span>{invoiceType === 'purchase' ? 'Supplier VAT NO. الرقم الضريبي المورد' : `${L.buyerLabelEn} VAT NO. الرقم الضريبي ${L.buyerLabel}`}</span>
+         <span className="font-bold" dir="ltr">{invoiceType === 'purchase' ? (sellerTaxNumber || '-') : (buyerTaxNumber || '-')}</span>
+       </div>
 
       {/* Items Table */}
       <table className="w-full text-xs border-collapse">
         <thead>
-          <tr className="bg-gray-100 border-b">
-            <th className="p-2 border-l text-right">#</th>
-            <th className="p-2 border-l text-right">البيان</th>
-            <th className="p-2 border-l text-center">الكمية</th>
-            <th className="p-2 border-l text-center">السعر Price</th>
-            <th className="p-2 text-center">الإجمالي</th>
-          </tr>
+           <tr className="bg-gray-100 border-b">
+             <th className="p-2 border-l text-right">#</th>
+             <th className="p-2 border-l text-right">{L.descriptionColumn}</th>
+             <th className="p-2 border-l text-center">{L.quantityColumn}</th>
+             <th className="p-2 border-l text-center">{L.priceColumn} Price</th>
+             <th className="p-2 text-center">{L.totalColumn}</th>
+           </tr>
         </thead>
         <tbody>
           {items.map((item, i) => (
@@ -118,12 +119,12 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       {/* Totals + QR */}
       <div className="flex border-t">
         <div className="flex-1 p-3">
-          <div className="flex justify-between py-1"><span>الاجمالي</span><span>{Math.round(subtotal).toLocaleString('en-US')}</span></div>
-          {discountAmount > 0 && (
-            <div className="flex justify-between py-1"><span>الاجمالي بعد الخصم</span><span>{Math.round(subtotalAfterDiscount).toLocaleString('en-US')}</span></div>
-          )}
-          <div className="flex justify-between py-1"><span>القيمة المضافة {taxRate}%</span><span>{Math.round(taxAmount).toLocaleString('en-US')}</span></div>
-          <div className="flex justify-between py-1 font-bold text-base border-t mt-1 pt-2"><span>الاجمالي مع الضريبة</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between py-1"><span>{L.subtotalLabel}</span><span>{Math.round(subtotal).toLocaleString('en-US')}</span></div>
+           {discountAmount > 0 && (
+             <div className="flex justify-between py-1"><span>الاجمالي بعد الخصم</span><span>{Math.round(subtotalAfterDiscount).toLocaleString('en-US')}</span></div>
+           )}
+           <div className="flex justify-between py-1"><span>{L.taxLabel} {taxRate}%</span><span>{Math.round(taxAmount).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between py-1 font-bold text-base border-t mt-1 pt-2"><span>{L.grandTotalLabel}</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
         </div>
         <div className="p-3 border-r flex items-center">
           <QRCodeSVG value={qrData} size={120} level="L" includeMargin={true} />
@@ -143,7 +144,7 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       <div className="grid grid-cols-3 gap-4 p-4 mt-8 border-t">
         <div className="text-center">
           <div className="border-b border-gray-400 pb-8 mb-1"></div>
-          <p className="text-xs text-gray-500">{invoiceType === 'purchase' ? 'Supplier المورد' : 'Customer العميل'}</p>
+          <p className="text-xs text-gray-500">{invoiceType === 'purchase' ? 'Supplier المورد' : `${L.buyerLabelEn} ${L.buyerLabel}`}</p>
         </div>
         <div className="text-center">
           <div className="border-b border-gray-400 pb-8 mb-1"></div>

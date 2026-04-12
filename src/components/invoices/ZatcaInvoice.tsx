@@ -5,6 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { TaxSettings } from '@/services/accounting';
 import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import logoImage from '@/assets/logo.png';
+import { InvoiceCustomLabels, defaultInvoiceLabels } from './templates/types';
 
 interface InvoiceItem {
   description: string;
@@ -54,6 +55,7 @@ interface InvoiceData {
   uuid?: string;
   paymentMethod?: string;
   notes?: string;
+  customLabels?: InvoiceCustomLabels;
 }
 
 interface ZatcaInvoiceProps {
@@ -85,6 +87,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
       paymentMethod,
     } = data;
 
+    const L = { ...defaultInvoiceLabels, ...data.customLabels };
     // Invoice settings with defaults
     const settings = {
       template: invoiceSettings?.template || 'modern',
@@ -202,8 +205,8 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
             <div className={`text-left ${
               settings.logo_position === 'center' && settings.qr_position === 'center' ? '' : ''
             }`}>
-              <h1 className="text-3xl font-bold">فاتورة</h1>
-              <h2 className="text-2xl font-bold">ضريبية</h2>
+              <h1 className="text-3xl font-bold">{L.invoiceTitle?.split(' ')[0] || 'فاتورة'}</h1>
+              <h2 className="text-2xl font-bold">{L.invoiceTitle?.split(' ').slice(1).join(' ') || 'ضريبية'}</h2>
               <div className="mt-2 bg-white/20 px-3 py-1 rounded text-sm">
                 <span>رقم الفاتورة: </span>
                 <span className="font-bold">{invoiceNumber}</span>
@@ -233,7 +236,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                   className="font-bold text-lg mb-3 border-b pb-2"
                   style={{ color: settings.primary_color, borderColor: settings.primary_color + '40' }}
                 >
-                  {settings.seller_title}
+                   {L.sellerLabel}
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex gap-2">
@@ -265,7 +268,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                   className="font-bold text-lg mb-3 border-b pb-2"
                   style={{ color: settings.primary_color, borderColor: settings.primary_color + '40' }}
                 >
-                  {settings.buyer_title}
+                   {L.buyerLabel}
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex gap-2">
@@ -301,7 +304,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                   className="font-bold text-lg mb-3 border-b pb-2"
                   style={{ color: settings.primary_color, borderColor: settings.primary_color + '40' }}
                 >
-                  {settings.buyer_title}
+                  {L.buyerLabel}
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex gap-2">
@@ -335,7 +338,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                   className="font-bold text-lg mb-3 border-b pb-2"
                   style={{ color: settings.primary_color, borderColor: settings.primary_color + '40' }}
                 >
-                  {settings.seller_title}
+                  {L.sellerLabel}
                 </h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex gap-2">
@@ -374,12 +377,12 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ backgroundColor: settings.primary_color + '15', color: settings.primary_color }}>
-                  <th className="p-3 text-right border-b" style={{ borderColor: settings.primary_color + '40' }}>#</th>
-                  <th className="p-3 text-right border-b" style={{ borderColor: settings.primary_color + '40' }}>اسم المنتج</th>
-                  <th className="p-3 text-center border-b" style={{ borderColor: settings.primary_color + '40' }}>الكمية</th>
-                  <th className="p-3 text-center border-b" style={{ borderColor: settings.primary_color + '40' }}>السعر</th>
-                  <th className="p-3 text-center border-b" style={{ borderColor: settings.primary_color + '40' }}>ضريبة القيمة المضافة</th>
-                  <th className="p-3 text-center border-b" style={{ borderColor: settings.primary_color + '40' }}>المجموع الكلي</th>
+                   <th className="p-3 text-right border-b" style={{ borderColor: settings.primary_color + '40' }}>#</th>
+                   <th className="p-3 text-right border-b" style={{ borderColor: settings.primary_color + '40' }}>{L.descriptionColumn}</th>
+                   <th className="p-3 text-center border-b" style={{ borderColor: settings.primary_color + '40' }}>{L.quantityColumn}</th>
+                   <th className="p-3 text-center border-b" style={{ borderColor: settings.primary_color + '40' }}>{L.priceColumn}</th>
+                   <th className="p-3 text-center border-b" style={{ borderColor: settings.primary_color + '40' }}>{L.taxColumn}</th>
+                   <th className="p-3 text-center border-b" style={{ borderColor: settings.primary_color + '40' }}>{L.totalColumn}</th>
                 </tr>
               </thead>
               <tbody>
@@ -404,18 +407,18 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
           {/* Totals */}
           <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
             <div className="flex justify-between items-center p-4 border-b border-gray-100">
-              <span className="text-gray-600 font-medium">المجموع</span>
-              <span className="font-bold text-lg">{Math.round(subtotal).toLocaleString('en-US')} ر.س</span>
-            </div>
-            <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
-              <span className="text-gray-600 font-medium">ضريبة القيمة المضافة ({taxRate}%)</span>
-              <span className="font-bold text-lg">{Math.round(taxAmount).toLocaleString('en-US')} ر.س</span>
-            </div>
-            <div 
-              className="flex justify-between items-center p-4 text-white"
-              style={{ backgroundColor: settings.primary_color }}
-            >
-              <span className="font-bold text-lg">المجموع مع الضريبة ({taxRate}%)</span>
+               <span className="text-gray-600 font-medium">{L.subtotalLabel}</span>
+               <span className="font-bold text-lg">{Math.round(subtotal).toLocaleString('en-US')} ر.س</span>
+             </div>
+             <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+               <span className="text-gray-600 font-medium">{L.taxLabel} ({taxRate}%)</span>
+               <span className="font-bold text-lg">{Math.round(taxAmount).toLocaleString('en-US')} ر.س</span>
+             </div>
+             <div 
+               className="flex justify-between items-center p-4 text-white"
+               style={{ backgroundColor: settings.primary_color }}
+             >
+               <span className="font-bold text-lg">{L.grandTotalLabel} ({taxRate}%)</span>
               <span className="font-bold text-xl">{Math.round(total).toLocaleString('en-US')} ر.س</span>
             </div>
           </div>

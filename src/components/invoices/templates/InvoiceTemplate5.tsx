@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { QRCodeSVG } from 'qrcode.react';
 import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import { numberToArabicWords } from '@/lib/numberToArabicWords';
-import { InvoiceTemplateData } from './types';
+import { InvoiceTemplateData, defaultInvoiceLabels } from './types';
 
 interface Props { data: InvoiceTemplateData; }
 
@@ -15,6 +15,7 @@ export const InvoiceTemplate5 = forwardRef<HTMLDivElement, Props>(({ data }, ref
     items, subtotal, discountAmount = 0, taxAmount, total,
     taxSettings, companyLogoUrl, invoiceType, paidAmount = 0,
   } = data;
+  const L = { ...defaultInvoiceLabels, ...data.customLabels };
 
   const formattedDate = (() => {
     try {
@@ -72,8 +73,8 @@ export const InvoiceTemplate5 = forwardRef<HTMLDivElement, Props>(({ data }, ref
         {/* Top Title Bar */}
         <div className="bg-emerald-700 text-white text-center py-2">
           <div className="flex justify-between px-4 items-center">
-            <span className="text-base font-bold">فاتورة ضريبية</span>
-            <span className="text-base font-bold">TAX Invoice</span>
+             <span className="text-base font-bold">{L.invoiceTitle}</span>
+             <span className="text-base font-bold">{L.invoiceTitleEn}</span>
           </div>
         </div>
 
@@ -149,7 +150,7 @@ export const InvoiceTemplate5 = forwardRef<HTMLDivElement, Props>(({ data }, ref
           </div>
           <div className={`${cellClass} flex-1 text-center font-bold`}>{invoiceNumber}</div>
           <div className={`${cellClass} flex-[1.5] text-center`}>{poDetails || '-'}</div>
-          <div className={`${cellClass} flex-1 text-center`}>{invoiceType === 'sale' ? 'فاتورة بيع' : 'فاتورة مشتريات'}</div>
+          <div className={`${cellClass} flex-1 text-center`}>{invoiceType === 'sale' ? L.invoiceTitle : 'فاتورة مشتريات'}</div>
           <div className={`${cellClass} flex-1 text-center`}>{paymentStatus}</div>
           <div className={`${cellClass} flex-[1.5] text-center`}>{projectReference || '-'}</div>
         </div>
@@ -157,14 +158,14 @@ export const InvoiceTemplate5 = forwardRef<HTMLDivElement, Props>(({ data }, ref
         {/* === Items Table === */}
         <div className="flex border-b border-gray-400 bg-emerald-700 text-white">
           <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center w-8">#</div>
-          <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center flex-[3]">Nature of Goods/Services<br />طبيعة السلع / الخدمات</div>
-          <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center flex-1">رقم اللوحة<br />Plate No</div>
-          <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center w-12">كمية<br />Qty</div>
-          <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center flex-1">Unit Rate (SAR)<br />سعر الوحدة</div>
-          <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center flex-1">Taxable Amount<br />خاضع للضريبة</div>
-          <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center w-14">VAT %{taxRate}<br />ضريبة</div>
-          <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center flex-1">Tax Amount<br />مبلغ الضريبة</div>
-          <div className="p-1.5 text-[9px] font-bold text-center flex-1">Subtotal(SAR)<br />المجموع الفرعي</div>
+           <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center flex-[3]">Nature of Goods/Services<br />{L.descriptionColumn}</div>
+           <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center flex-1">رقم اللوحة<br />Plate No</div>
+           <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center w-12">{L.quantityColumn}<br />Qty</div>
+           <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center flex-1">Unit Rate (SAR)<br />{L.priceColumn}</div>
+           <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center flex-1">Taxable Amount<br />خاضع للضريبة</div>
+           <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center w-14">VAT %{taxRate}<br />{L.taxColumn}</div>
+           <div className="p-1.5 border-l border-gray-300 text-[9px] font-bold text-center flex-1">Tax Amount<br />مبلغ {L.taxColumn}</div>
+           <div className="p-1.5 text-[9px] font-bold text-center flex-1">Subtotal(SAR)<br />{L.totalColumn}</div>
         </div>
 
         {itemsWithTax.map((item, i) => {
@@ -211,16 +212,16 @@ export const InvoiceTemplate5 = forwardRef<HTMLDivElement, Props>(({ data }, ref
           {/* Totals */}
           <div className="flex-1">
             <div className="flex border-b border-gray-400">
-              <div className={`${cellClass} flex-1 font-bold`}>Subtotal الإجمالي غير شامل ضريبة القيمة المضافة</div>
-              <div className={`${cellClass} w-28 text-center font-bold`} dir="ltr">{subtotal.toFixed(2)}</div>
-            </div>
-            <div className="flex border-b border-gray-400">
-              <div className={`${cellClass} flex-1 font-bold`}>VAT%{taxRate} ضريبة القيمة المضافة</div>
-              <div className={`${cellClass} w-28 text-center font-bold`} dir="ltr">{taxAmount.toFixed(2)}</div>
-            </div>
-            <div className="flex border-b border-gray-400 bg-gray-100">
-              <div className={`${cellClass} flex-1 font-bold`}>Total Amount الصافي شامل ضريبة القيمة المضافة</div>
-              <div className={`${cellClass} w-28 text-center font-bold text-sm`} dir="ltr">{total.toFixed(2)}</div>
+             <div className={`${cellClass} flex-1 font-bold`}>Subtotal {L.subtotalLabel}</div>
+               <div className={`${cellClass} w-28 text-center font-bold`} dir="ltr">{subtotal.toFixed(2)}</div>
+             </div>
+             <div className="flex border-b border-gray-400">
+               <div className={`${cellClass} flex-1 font-bold`}>VAT%{taxRate} {L.taxLabel}</div>
+               <div className={`${cellClass} w-28 text-center font-bold`} dir="ltr">{taxAmount.toFixed(2)}</div>
+             </div>
+             <div className="flex border-b border-gray-400 bg-gray-100">
+               <div className={`${cellClass} flex-1 font-bold`}>Total Amount {L.grandTotalLabel}</div>
+               <div className={`${cellClass} w-28 text-center font-bold text-sm`} dir="ltr">{total.toFixed(2)}</div>
             </div>
             <div className="flex">
               <div className={`${cellClass} flex-1 font-bold`}>Total Paid مجموع المبالغ المدفوعة</div>
