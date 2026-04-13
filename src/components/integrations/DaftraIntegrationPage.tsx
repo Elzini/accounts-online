@@ -201,7 +201,7 @@ export function DaftraIntegrationPage() {
     } catch (err: any) {
       toast.error(`خطأ في الاستيراد: ${err.message}`);
     }
-  
+  };
 
   const handleSyncJournals = async () => {
     if (!companyId) return;
