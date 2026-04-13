@@ -65,7 +65,7 @@ export async function exportJournalEntriesToDaftraCsv(entries: JournalEntryBasic
 
     for (const line of entryLines) {
       const account = line.account_id ? accountsById.get(line.account_id) : undefined;
-      const accountName = String(account?.code || account?.name || '').trim();
+      const accountName = String(account?.name || account?.code || '').trim();
 
       csvRows.push([
         esc(journalCode),
