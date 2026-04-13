@@ -121,19 +121,21 @@ function normalizeArabic(text: string): string {
     .toLowerCase()
 }
 
-// Fuzzy name matching: checks if one name contains the other or similarity is high
+// Strict fuzzy name matching - requires similar length and high word overlap
 function fuzzyNameMatch(name1: string, name2: string): boolean {
   if (name1 === name2) return true
   if (!name1 || !name2) return false
-  // One contains the other
-  if (name1.includes(name2) || name2.includes(name1)) return true
-  // Check word overlap: if 80%+ words match
   const words1 = name1.split(' ').filter(w => w.length > 1)
   const words2 = name2.split(' ').filter(w => w.length > 1)
   if (words1.length === 0 || words2.length === 0) return false
+  // Reject if word count difference is too large (e.g. "الأصول" vs "الأصول الثابتة")
+  if (Math.abs(words1.length - words2.length) > 1) return false
+  // Require at least 2 words to fuzzy match (single-word names must be exact)
+  if (words1.length <= 1 && words2.length <= 1) return false
   const common = words1.filter(w => words2.includes(w))
-  const overlapRatio = common.length / Math.min(words1.length, words2.length)
-  return overlapRatio >= 0.7
+  // Need 80%+ overlap of the LARGER set (stricter)
+  const overlapRatio = common.length / Math.max(words1.length, words2.length)
+  return overlapRatio >= 0.8
 }
 
 function extractDaftraAccounts(payload: any) {
@@ -618,11 +620,24 @@ async function handleAlignCodes(supabase: any, config: any, companyId: string, d
 
   console.log(`[Daftra] Align: ${updates.length} codes to update, ${unmatched.length} unmatched`)
 
-  // 4. Update our account_categories codes
+  // 4. Collect existing codes to avoid conflicts
+  const existingCodes = new Set(ourAccounts.map((a: any) => normalizeAccountCode(a.code)))
+  // Add codes we're about to assign
+  const assignedCodes = new Set<string>()
+
+  // 5. Update our account_categories codes
   let updatedCount = 0
+  let skippedConflicts = 0
   const errors: any[] = []
 
   for (const u of updates) {
+    // Skip if target code already used by another account
+    if ((existingCodes.has(u.daftra_code) && u.daftra_code !== normalizeAccountCode(u.our_code)) || assignedCodes.has(u.daftra_code)) {
+      errors.push({ name: u.name, our_code: u.our_code, daftra_code: u.daftra_code, error: 'كود مستخدم بالفعل من حساب آخر' })
+      skippedConflicts++
+      continue
+    }
+
     const { error } = await supabase
       .from('account_categories')
       .update({ code: u.daftra_code })
@@ -633,6 +648,9 @@ async function handleAlignCodes(supabase: any, config: any, companyId: string, d
       errors.push({ name: u.name, our_code: u.our_code, daftra_code: u.daftra_code, error: error.message })
     } else {
       updatedCount++
+      existingCodes.delete(normalizeAccountCode(u.our_code))
+      existingCodes.add(u.daftra_code)
+      assignedCodes.add(u.daftra_code)
     }
   }
 
