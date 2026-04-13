@@ -191,6 +191,18 @@ export function DaftraIntegrationPage() {
     }
   };
 
+  const handleImportAccounts = async () => {
+    if (!companyId) return;
+    if (!confirm('سيتم استيراد شجرة الحسابات من دفترة إلى نظامنا. الحسابات الموجودة بنفس الكود لن تتأثر. هل تريد المتابعة؟')) return;
+    try {
+      const result = await importAccounts.mutateAsync(companyId);
+      const d = result as any;
+      toast.success(`تم استيراد ${d?.imported || 0} حساب • متجاوز ${d?.skipped || 0} • أخطاء ${d?.errors || 0} (إجمالي ${d?.total || 0})`);
+    } catch (err: any) {
+      toast.error(`خطأ في الاستيراد: ${err.message}`);
+    }
+  
+
   const handleSyncJournals = async () => {
     if (!companyId) return;
     try {
