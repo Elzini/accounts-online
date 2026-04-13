@@ -321,6 +321,7 @@ async function handleSyncJournals(supabase: any, config: any, companyId: string,
           console.log(`[Daftra] No mapping found for account: "${name}" (code: "${code}")`)
         }
         return {
+          journal_id: 0,
           debit: Number(line.debit || 0),
           credit: Number(line.credit || 0),
           journal_account_id: daftraId,
@@ -350,12 +351,12 @@ async function handleSyncJournals(supabase: any, config: any, companyId: string,
       const payload = {
         Journal: {
           description: entry.description || `قيد رقم ${entry.entry_number}`,
-          entity_type: 'income',
+          entity_type: 'expense',
           entity_id: String(entry.entry_number || '0'),
           total_debit: totalDebit,
           total_credit: totalCredit,
           currency_code: entry.currency || 'SAR',
-          is_automatic: false,
+          staff_id: 1,
         },
         JournalTransaction: transactions,
       }
