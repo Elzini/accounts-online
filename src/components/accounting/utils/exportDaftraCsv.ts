@@ -19,10 +19,33 @@ export async function exportJournalEntriesToDaftraCsv(entries: JournalEntryBasic
   const entryIds = entries.map(e => e.id);
   const { data: lines, error } = await supabase
     .from('journal_entry_lines')
-    .select('journal_entry_id, account_id, description, debit, credit, account:account_categories(code, name)')
-    .in('journal_entry_id', entryIds);
+    .select('journal_entry_id, account_id, description, debit, credit')
+    .in('journal_entry_id', entryIds)
+    .order('created_at', { ascending: true });
 
   if (error) throw error;
+
+  const accountIds = Array.from(
+    new Set((lines || []).map((line) => line.account_id).filter(Boolean))
+  ) as string[];
+
+  const accountsById = new Map<string, { code: string; name: string }>();
+
+  if (accountIds.length > 0) {
+    const { data: accounts, error: accountsError } = await supabase
+      .from('account_categories')
+      .select('id, code, name')
+      .in('id', accountIds);
+
+    if (accountsError) throw accountsError;
+
+    (accounts || []).forEach((account) => {
+      accountsById.set(account.id, {
+        code: String(account.code || '').trim(),
+        name: String(account.name || '').trim(),
+      });
+    });
+  }
 
   const headers = [
     'Journal Code', 'Journal Date', 'Currency', 'Journal Description',
@@ -33,13 +56,16 @@ export async function exportJournalEntriesToDaftraCsv(entries: JournalEntryBasic
   const csvRows: string[][] = [];
 
   for (const entry of entries) {
-    const entryLines = (lines || []).filter((l: any) => l.journal_entry_id === entry.id);
+    const entryLines = (lines || []).filter((l: any) => (
+      l.journal_entry_id === entry.id &&
+      (Number(l.debit || 0) !== 0 || Number(l.credit || 0) !== 0)
+    ));
     const journalCode = `JRN${String(entry.entry_number).padStart(3, '0')}`;
     const journalDate = format(new Date(entry.entry_date), 'dd/MM/yyyy');
 
     for (const line of entryLines) {
-      const acc = line.account as any;
-      const accountName = acc ? String(acc.code || acc.name || '').trim() : '';
+      const account = line.account_id ? accountsById.get(line.account_id) : undefined;
+      const accountName = String(account?.code || account?.name || '').trim();
 
       csvRows.push([
         esc(journalCode),
