@@ -418,9 +418,58 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
       successCount++
     } catch (err) {
       if (isDaftraDuplicateCodeError(err)) {
-        results.push({ code: account.code, name: account.name, status: 'skipped', reason: 'موجود مسبقاً في دفترة' })
-        skippedCount++
-        continue
+        // Account exists but wasn't returned by get_accounts API - search for it
+        console.log(`[Daftra] Code ${normalizedCode} exists but not in API listing, searching...`)
+        try {
+          const searchResult = await daftraFetch(config, `/api2/journal_accounts.json?code=${normalizedCode}`)
+          const found = extractDaftraAccounts(searchResult)
+          let foundId = ''
+          for (const f of found) {
+            const info = f?.JournalAccount || f
+            if (normalizeAccountCode(info?.code) === normalizedCode && info?.id) {
+              foundId = String(info.id)
+              codeToDaftraId.set(normalizedCode, foundId)
+              codeToExisting.set(normalizedCode, { id: foundId, journal_cat_id: String(info.journal_cat_id || '0') })
+              console.log(`[Daftra] Found hidden account ${normalizedCode} -> daftra_id ${foundId}`)
+              // If orphaned AND we have a parent, update it
+              if (String(info.journal_cat_id || '0') === '0' && parentDaftraId !== '0') {
+                try {
+                  await daftraFetch(config, `/api2/journal_accounts/${foundId}.json`, 'PUT', {
+                    JournalAccount: { journal_cat_id: parentDaftraId, name: account.name },
+                  })
+                  codeToExisting.set(normalizedCode, { id: foundId, journal_cat_id: parentDaftraId })
+                  results.push({ code: account.code, name: account.name, status: 'updated', reason: 'تم ربطه بالحساب الأب' })
+                  updatedCount++
+                  continue
+                } catch (updateErr) {
+                  console.log(`[Daftra] Failed to update parent for found account ${normalizedCode}: ${getErrorMessage(updateErr)}`)
+                }
+              }
+              break
+            }
+          }
+          if (!foundId) {
+            // Try refetching all accounts to find it
+            const allAccs = await fetchAllDaftraAccounts(config)
+            for (const a of allAccs) {
+              const info = a?.JournalAccount || a
+              if (normalizeAccountCode(info?.code) === normalizedCode && info?.id) {
+                foundId = String(info.id)
+                codeToDaftraId.set(normalizedCode, foundId)
+                codeToExisting.set(normalizedCode, { id: foundId, journal_cat_id: String(info.journal_cat_id || '0') })
+                break
+              }
+            }
+          }
+          results.push({ code: account.code, name: account.name, status: 'skipped', reason: 'موجود مسبقاً في دفترة', daftra_id: foundId })
+          skippedCount++
+          continue
+        } catch (searchErr) {
+          console.log(`[Daftra] Failed to search for duplicate account ${normalizedCode}: ${getErrorMessage(searchErr)}`)
+          results.push({ code: account.code, name: account.name, status: 'skipped', reason: 'موجود مسبقاً في دفترة' })
+          skippedCount++
+          continue
+        }
       }
       results.push({ code: account.code, name: account.name, status: 'error', error: getErrorMessage(err) })
       errorCount++
