@@ -810,7 +810,7 @@ async function handleResetAndSyncAccounts(supabase: any, config: any, companyId:
     success: true,
     phase1_delete: {
       deleted: deleteSuccess,
-      remaining: remainingAccounts.length,
+      remaining: postDeleteAccounts.length,
       protected: protectedAccounts.length,
       errors: deleteErrors.slice(0, 20),
     },
