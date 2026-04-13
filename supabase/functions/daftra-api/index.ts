@@ -571,7 +571,6 @@ async function handleResetAndSyncAccounts(supabase: any, config: any, companyId:
     return jsonResponse({ error: 'No accounts provided' }, 400)
   }
 
-  // 1. Fetch all existing Daftra accounts
   let daftraAccounts: any[] = []
   try {
     daftraAccounts = await fetchAllDaftraAccounts(config)
@@ -579,54 +578,94 @@ async function handleResetAndSyncAccounts(supabase: any, config: any, companyId:
     return jsonResponse({ error: 'فشل في جلب حسابات دفترة', details: getErrorMessage(err) }, 500)
   }
 
-  console.log(`[Daftra] Reset: Found ${daftraAccounts.length} accounts to delete`)
+  const protectedAccounts: any[] = []
+  const pending = new Map<string, any>()
 
-  // 2. Sort by level DESC (delete children first) then delete all
-  const sortedForDelete = [...daftraAccounts].sort((a: any, b: any) => {
-    const aLevel = Number((a?.JournalAccount || a)?.level || 0)
-    const bLevel = Number((b?.JournalAccount || b)?.level || 0)
-    return bLevel - aLevel // deepest first
-  })
+  for (const raw of daftraAccounts) {
+    const account = raw?.JournalAccount || raw || {}
+    const id = String(account?.id || '')
+    const code = normalizeAccountCode(account?.code)
+    const entityType = String(account?.entity_type || '').trim()
+    const isMainAccount = code.length <= 1
 
-  let deleteSuccess = 0
-  let deleteFailed = 0
-  const deleteErrors: any[] = []
-
-  for (const acc of sortedForDelete) {
-    const a = acc?.JournalAccount || acc
-    const id = a?.id
     if (!id) continue
 
-    // Skip system/default accounts that can't be deleted (entity_type is set)
-    const entityType = a?.entity_type
-    if (entityType && entityType !== 'null' && entityType !== '') {
-      console.log(`[Daftra] Skip system account: ${a?.name} (entity_type: ${entityType})`)
+    if (entityType || isMainAccount) {
+      protectedAccounts.push(account)
       continue
     }
 
-    try {
-      await daftraFetch(config, `/api2/journal_accounts/${id}.json`, 'DELETE')
-      deleteSuccess++
-    } catch (err) {
-      const msg = getErrorMessage(err)
-      // If account has transactions, skip silently
-      if (msg.includes('transaction') || msg.includes('cannot') || msg.includes('لا يمكن')) {
-        console.log(`[Daftra] Cannot delete account ${a?.name}: ${msg}`)
-      }
-      deleteFailed++
-      deleteErrors.push({ id, name: a?.name, code: a?.code, error: msg })
-    }
+    pending.set(id, account)
   }
 
-  console.log(`[Daftra] Reset: Deleted ${deleteSuccess}, failed ${deleteFailed}`)
+  console.log(`[Daftra] Reset: ${pending.size} eligible accounts, ${protectedAccounts.length} protected/system accounts`)
 
-  // 3. Now sync accounts fresh (reuse handleSyncAccounts logic)
-  const syncResult = await handleSyncAccounts(supabase, config, companyId, data)
+  let deleteSuccess = 0
+  const deleteErrors: any[] = []
+  const blockedLeafIds = new Set<string>()
+
+  for (let pass = 1; pass <= 20 && pending.size > 0; pass++) {
+    const parentIdsWithChildren = new Set(
+      Array.from(pending.values())
+        .map((account: any) => String(account?.journal_cat_id || '0'))
+        .filter((parentId: string) => parentId !== '0' && pending.has(parentId))
+    )
+
+    const leafAccounts = Array.from(pending.values()).filter((account: any) => {
+      const id = String(account?.id || '')
+      return id && !parentIdsWithChildren.has(id) && !blockedLeafIds.has(id)
+    })
+
+    console.log(`[Daftra] Reset pass ${pass}: ${leafAccounts.length} leaf accounts, ${pending.size} pending`)
+
+    if (!leafAccounts.length) break
+
+    let deletedThisPass = 0
+
+    for (const account of leafAccounts) {
+      const id = String(account?.id || '')
+      try {
+        await daftraFetch(config, `/api2/journal_accounts/${id}.json`, 'DELETE')
+        pending.delete(id)
+        blockedLeafIds.delete(id)
+        deleteSuccess++
+        deletedThisPass++
+      } catch (err) {
+        const message = getErrorMessage(err)
+        blockedLeafIds.add(id)
+        deleteErrors.push({ id, name: account?.name, code: account?.code, error: message })
+        console.log(`[Daftra] Reset failed for ${account?.name || id}: ${message}`)
+      }
+    }
+
+    if (deletedThisPass === 0) break
+  }
+
+  const remainingAccounts = Array.from(pending.values())
+  const existingCodes = new Set(
+    [...protectedAccounts, ...remainingAccounts]
+      .map((account: any) => normalizeAccountCode(account?.code))
+      .filter(Boolean)
+  )
+
+  const accountsToSync = accounts.filter((account: any) => !existingCodes.has(normalizeAccountCode(account.code)))
+
+  console.log(`[Daftra] Reset summary: deleted=${deleteSuccess}, remaining=${remainingAccounts.length}, protected=${protectedAccounts.length}, to_sync=${accountsToSync.length}`)
+
+  const syncResult = await handleSyncAccounts(supabase, config, companyId, {
+    ...data,
+    accounts: accountsToSync,
+  })
   const syncBody = await syncResult.clone().json()
 
   return jsonResponse({
     success: true,
-    phase1_delete: { deleted: deleteSuccess, failed: deleteFailed, errors: deleteErrors.slice(0, 20) },
+    phase1_delete: {
+      deleted: deleteSuccess,
+      remaining: remainingAccounts.length,
+      protected: protectedAccounts.length,
+      errors: deleteErrors.slice(0, 20),
+    },
     phase2_sync: syncBody,
   })
 }

@@ -183,7 +183,7 @@ export function DaftraIntegrationPage() {
       const d = result as any;
       const del = d?.phase1_delete;
       const sync = d?.phase2_sync;
-      toast.success(`تم حذف ${del?.deleted || 0} حساب • إنشاء ${sync?.synced || 0} حساب جديد • ${sync?.errors || 0} أخطاء`);
+      toast.success(`تم حذف ${del?.deleted || 0} حساب • متبقٍ ${del?.remaining || 0} • محمي ${del?.protected || 0} • إنشاء ${sync?.synced || 0}`);
     } catch (err: any) {
       toast.error(`خطأ: ${err.message}`);
     }
@@ -546,7 +546,7 @@ export function DaftraIntegrationPage() {
                   <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-start gap-2">
                     <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
                     <p className="text-sm text-destructive">
-                      ⚠️ تحذير: هذا الإجراء سيحذف جميع الحسابات في دفترة (ما عدا حسابات النظام والحسابات المرتبطة بقيود). ثم سيُعيد إنشاء شجرة الحسابات من نظامنا.
+                      ⚠️ دفترة تمنع حذف الحسابات الرئيسية أو الحسابات المرتبطة بحركات مسجلة؛ لذلك سيحذف النظام الحسابات القابلة للحذف فقط ثم يعيد مزامنة الباقي من نظامنا.
                     </p>
                   </div>
                 </CardContent>
