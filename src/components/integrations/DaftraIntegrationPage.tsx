@@ -452,7 +452,36 @@ export function DaftraIntegrationPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="accounts" className="mt-4">
+            <TabsContent value="accounts" className="mt-4 space-y-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-lg text-primary">
+                      <ArrowUpDown className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">مطابقة الأكواد</CardTitle>
+                      <CardDescription>تحديث أكواد حساباتنا لتتطابق مع أكواد دفترة (بناءً على اسم الحساب)</CardDescription>
+                    </div>
+                  </div>
+                  <Button variant="outline" onClick={handleAlignCodes} disabled={alignCodes.isPending}>
+                    {alignCodes.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                    ) : (
+                      <ArrowUpDown className="w-4 h-4 ml-2" />
+                    )}
+                    مطابقة الأكواد
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                      يُنصح بتشغيل هذا أولاً قبل المزامنة. سيغيّر أكواد الحسابات في نظامنا لتتوافق مع دفترة.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
               <SyncCard
                 title="مزامنة شجرة الحسابات"
                 description="إرسال جميع الحسابات من دليل الحسابات إلى دفترة تلقائياً"
