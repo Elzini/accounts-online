@@ -6,7 +6,7 @@ const corsHeaders = {
 }
 
 interface DaftraAction {
-  action: 'authenticate' | 'sync_accounts' | 'sync_journals' | 'sync_clients' | 'sync_suppliers' | 'test_connection' | 'get_accounts';
+  action: 'authenticate' | 'sync_accounts' | 'sync_journals' | 'sync_clients' | 'sync_suppliers' | 'test_connection' | 'get_accounts' | 'align_codes';
   companyId: string;
   data?: any;
 }
