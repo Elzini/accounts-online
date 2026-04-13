@@ -354,8 +354,8 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
           results.push({ code: account.code, name: account.name, status: 'updated', reason: 'تم ربطه بالحساب الأب' })
           updatedCount++
 
-          // Update the parent_cat_ids chain
           codeToDaftraId.set(normalizedCode, existing.id)
+          codeToExisting.set(normalizedCode, { id: existing.id, journal_cat_id: parentDaftraId })
           continue
         } catch (err) {
           console.log(`[Daftra] Failed to update parent for ${account.code}: ${err.message}`)
@@ -384,11 +384,31 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
       }
 
       const result = await daftraFetch(config, '/api2/journal_accounts.json', 'POST', payload)
-      const newId = String(result.id || '')
-      if (normalizedCode && newId) {
+      const createdAccount = result?.JournalAccount || result?.data?.JournalAccount || result?.data || result
+      const newId = String(createdAccount?.id || result?.id || '')
+      const createdParentId = String(createdAccount?.journal_cat_id ?? parentDaftraId ?? '0')
+
+      if (!newId) {
+        console.log(`[Daftra] Account created but id missing in response for code ${normalizedCode}; refetching accounts`)
+        try {
+          const refreshedAccounts = await fetchAllDaftraAccounts(config)
+          for (const refreshed of refreshedAccounts) {
+            const info = refreshed?.JournalAccount || refreshed
+            const refreshedCode = normalizeAccountCode(info?.code)
+            if (refreshedCode === normalizedCode && info?.id) {
+              codeToDaftraId.set(normalizedCode, String(info.id))
+              codeToExisting.set(normalizedCode, { id: String(info.id), journal_cat_id: String(info.journal_cat_id || createdParentId || '0') })
+              break
+            }
+          }
+        } catch (refreshError) {
+          console.log(`[Daftra] Failed to refetch accounts after create for ${normalizedCode}: ${refreshError.message}`)
+        }
+      } else if (normalizedCode) {
         codeToDaftraId.set(normalizedCode, newId)
-        codeToExisting.set(normalizedCode, { id: newId, journal_cat_id: parentDaftraId })
+        codeToExisting.set(normalizedCode, { id: newId, journal_cat_id: createdParentId })
       }
+
       results.push({ code: account.code, name: account.name, status: 'success', daftra_id: newId })
       successCount++
     } catch (err) {
