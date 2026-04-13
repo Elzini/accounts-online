@@ -36,6 +36,15 @@ export function useDaftraSyncAccounts() {
   });
 }
 
+export function useDaftraAlignCodes() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { companyId: string; accounts: Parameters<typeof daftraService.alignCodesToDaftra>[1] }) =>
+      daftraService.alignCodesToDaftra(params.companyId, params.accounts),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['daftra-config'] }),
+  });
+}
+
 export function useDaftraSyncJournals() {
   const qc = useQueryClient();
   return useMutation({

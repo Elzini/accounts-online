@@ -78,6 +78,24 @@ export async function syncAccountsToDaftra(companyId: string, accounts: Array<{
   return data;
 }
 
+// ==================== ALIGN CODES ====================
+
+export async function alignCodesToDaftra(companyId: string, accounts: Array<{
+  id: string;
+  code: string;
+  name: string;
+}>) {
+  const { data, error } = await supabase.functions.invoke<DaftraResponse>('daftra-api', {
+    body: {
+      action: 'align_codes',
+      companyId,
+      data: { accounts },
+    },
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 // ==================== SYNC JOURNALS ====================
 
 export async function syncJournalsToDaftra(companyId: string, entries: Array<{

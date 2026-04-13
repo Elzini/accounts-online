@@ -22,6 +22,7 @@ import {
   useDaftraSyncClients,
   useDaftraSyncSuppliers,
   useDaftraDeleteConfig,
+  useDaftraAlignCodes,
 } from '@/hooks/useDaftraIntegration';
 import {
   Link2, Unlink, RefreshCw, CheckCircle2, XCircle, Loader2,
@@ -38,6 +39,7 @@ export function DaftraIntegrationPage() {
   const syncClients = useDaftraSyncClients();
   const syncSuppliers = useDaftraSyncSuppliers();
   const deleteConfig = useDaftraDeleteConfig();
+  const alignCodes = useDaftraAlignCodes();
 
   const [credentials, setCredentials] = useState({
     subdomain: '',
@@ -116,6 +118,35 @@ export function DaftraIntegrationPage() {
       toast.success(`تمت مزامنة ${result?.synced || 0} حساب • ${result?.updated || 0} محدّث • ${result?.skipped || 0} متجاوز • ${result?.errors || 0} أخطاء`);
     } catch (err: any) {
       toast.error(`خطأ في المزامنة: ${err.message}`);
+    }
+  };
+
+  const handleAlignCodes = async () => {
+    if (!companyId) return;
+    try {
+      const { data: accounts } = await supabase
+        .from('account_categories')
+        .select('id, code, name')
+        .eq('company_id', companyId);
+
+      if (!accounts?.length) {
+        toast.error('لا توجد حسابات');
+        return;
+      }
+
+      const result = await alignCodes.mutateAsync({
+        companyId,
+        accounts: accounts.map(a => ({ id: a.id, code: a.code, name: a.name })),
+      });
+
+      const d = result as any;
+      toast.success(`تم تحديث ${d?.updated || 0} كود • ${d?.unmatched || 0} غير متطابق • ${d?.errors || 0} أخطاء`);
+      
+      if (d?.details?.updated?.length > 0) {
+        console.log('[Align] Updated codes:', d.details.updated);
+      }
+    } catch (err: any) {
+      toast.error(`خطأ في مطابقة الأكواد: ${err.message}`);
     }
   };
 
@@ -421,7 +452,36 @@ export function DaftraIntegrationPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="accounts" className="mt-4">
+            <TabsContent value="accounts" className="mt-4 space-y-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-2 rounded-lg text-primary">
+                      <ArrowUpDown className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">مطابقة الأكواد</CardTitle>
+                      <CardDescription>تحديث أكواد حساباتنا لتتطابق مع أكواد دفترة (بناءً على اسم الحساب)</CardDescription>
+                    </div>
+                  </div>
+                  <Button variant="outline" onClick={handleAlignCodes} disabled={alignCodes.isPending}>
+                    {alignCodes.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                    ) : (
+                      <ArrowUpDown className="w-4 h-4 ml-2" />
+                    )}
+                    مطابقة الأكواد
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                      يُنصح بتشغيل هذا أولاً قبل المزامنة. سيغيّر أكواد الحسابات في نظامنا لتتوافق مع دفترة.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
               <SyncCard
                 title="مزامنة شجرة الحسابات"
                 description="إرسال جميع الحسابات من دليل الحسابات إلى دفترة تلقائياً"
