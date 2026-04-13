@@ -144,10 +144,7 @@ async function daftraFetch(config: any, path: string, method = 'GET', body?: any
 
   const opts: RequestInit = { method, headers }
   if (body) {
-    // Daftra API accepts text/plain for journal creation
-    headers['Content-Type'] = path.includes('/journals.json') && method === 'POST'
-      ? 'text/plain'
-      : 'application/json'
+    headers['Content-Type'] = 'application/json'
     opts.body = JSON.stringify(body)
   }
 
@@ -437,12 +434,10 @@ async function handleSyncJournals(supabase: any, config: any, companyId: string,
       const payload = {
         Journal: {
           description: entry.description || `قيد رقم ${entry.entry_number}`,
-          entity_type: 'expense',
-          entity_id: String(entry.entry_number || '0'),
           total_debit: totalDebit,
           total_credit: totalCredit,
           currency_code: entry.currency || 'SAR',
-          staff_id: 1,
+          date: entry.date || new Date().toISOString().split('T')[0],
           JournalTransaction: transactions,
         },
       }
