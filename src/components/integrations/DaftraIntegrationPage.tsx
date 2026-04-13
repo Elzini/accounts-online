@@ -152,6 +152,43 @@ export function DaftraIntegrationPage() {
     }
   };
 
+  const handleResetAndSync = async () => {
+    if (!companyId) return;
+    if (!confirm('⚠️ تحذير: سيتم حذف جميع الحسابات في دفترة وإعادة إنشائها من نظامنا. هل أنت متأكد؟')) return;
+    try {
+      const { data: accounts } = await supabase
+        .from('account_categories')
+        .select('id, code, name, type, description, parent_id')
+        .eq('company_id', companyId);
+
+      if (!accounts?.length) {
+        toast.error('لا توجد حسابات للمزامنة');
+        return;
+      }
+
+      const idToCode = new Map<string, string>();
+      for (const a of accounts) idToCode.set(a.id, a.code);
+
+      const result = await resetAndSync.mutateAsync({
+        companyId,
+        accounts: accounts.map(a => ({
+          code: a.code,
+          name: a.name,
+          type: a.type,
+          description: a.description || '',
+          parent_code: a.parent_id ? idToCode.get(a.parent_id) || '' : '',
+        })),
+      });
+
+      const d = result as any;
+      const del = d?.phase1_delete;
+      const sync = d?.phase2_sync;
+      toast.success(`تم حذف ${del?.deleted || 0} حساب • إنشاء ${sync?.synced || 0} حساب جديد • ${sync?.errors || 0} أخطاء`);
+    } catch (err: any) {
+      toast.error(`خطأ: ${err.message}`);
+    }
+  };
+
   const handleSyncJournals = async () => {
     if (!companyId) return;
     try {
