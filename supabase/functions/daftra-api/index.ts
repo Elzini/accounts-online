@@ -104,11 +104,16 @@ async function daftraFetch(config: any, path: string, method = 'GET', body?: any
   const opts: RequestInit = { method, headers }
   if (body) opts.body = JSON.stringify(body)
 
+  console.log(`[Daftra] ${method} ${url}`)
+  if (body) console.log(`[Daftra] Body:`, JSON.stringify(body).substring(0, 500))
+  
   const res = await fetch(url, opts)
   const text = await res.text()
 
   let json
   try { json = JSON.parse(text) } catch { json = { raw: text } }
+
+  console.log(`[Daftra] Response ${res.status}:`, JSON.stringify(json).substring(0, 500))
 
   if (!res.ok) {
     throw new Error(`Daftra API ${res.status}: ${JSON.stringify(json)}`)
