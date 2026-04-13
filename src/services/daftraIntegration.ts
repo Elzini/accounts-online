@@ -2,7 +2,7 @@
  * Daftra Integration Service
  * Handles all communication with the Daftra API through the edge function proxy
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 
 interface DaftraResponse {
   success?: boolean;
@@ -143,20 +143,30 @@ export async function syncSuppliersToDaftra(companyId: string, suppliers: Array<
 // ==================== GET CONFIG ====================
 
 export async function getDaftraConfig(companyId: string) {
-  const { data, error } = await supabase
-    .from('daftra_integrations' as any)
+  const { data, error } = await untypedFrom('daftra_integrations')
     .select('id, company_id, subdomain, client_id, is_active, last_sync_at, sync_status, sync_log, created_at')
     .eq('company_id', companyId)
     .maybeSingle();
   if (error) throw error;
-  return data;
+  return data as DaftraConfig | null;
+}
+
+export interface DaftraConfig {
+  id: string;
+  company_id: string;
+  subdomain: string;
+  client_id: string;
+  is_active: boolean;
+  last_sync_at: string | null;
+  sync_status: string | null;
+  sync_log: any;
+  created_at: string;
 }
 
 // ==================== DELETE CONFIG ====================
 
 export async function deleteDaftraConfig(companyId: string) {
-  const { error } = await supabase
-    .from('daftra_integrations' as any)
+  const { error } = await untypedFrom('daftra_integrations')
     .delete()
     .eq('company_id', companyId);
   if (error) throw error;
