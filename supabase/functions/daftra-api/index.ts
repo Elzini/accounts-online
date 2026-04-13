@@ -620,11 +620,24 @@ async function handleAlignCodes(supabase: any, config: any, companyId: string, d
 
   console.log(`[Daftra] Align: ${updates.length} codes to update, ${unmatched.length} unmatched`)
 
-  // 4. Update our account_categories codes
+  // 4. Collect existing codes to avoid conflicts
+  const existingCodes = new Set(ourAccounts.map((a: any) => normalizeAccountCode(a.code)))
+  // Add codes we're about to assign
+  const assignedCodes = new Set<string>()
+
+  // 5. Update our account_categories codes
   let updatedCount = 0
+  let skippedConflicts = 0
   const errors: any[] = []
 
   for (const u of updates) {
+    // Skip if target code already used by another account
+    if ((existingCodes.has(u.daftra_code) && u.daftra_code !== normalizeAccountCode(u.our_code)) || assignedCodes.has(u.daftra_code)) {
+      errors.push({ name: u.name, our_code: u.our_code, daftra_code: u.daftra_code, error: 'كود مستخدم بالفعل من حساب آخر' })
+      skippedConflicts++
+      continue
+    }
+
     const { error } = await supabase
       .from('account_categories')
       .update({ code: u.daftra_code })
@@ -635,6 +648,9 @@ async function handleAlignCodes(supabase: any, config: any, companyId: string, d
       errors.push({ name: u.name, our_code: u.our_code, daftra_code: u.daftra_code, error: error.message })
     } else {
       updatedCount++
+      existingCodes.delete(normalizeAccountCode(u.our_code))
+      existingCodes.add(u.daftra_code)
+      assignedCodes.add(u.daftra_code)
     }
   }
 
