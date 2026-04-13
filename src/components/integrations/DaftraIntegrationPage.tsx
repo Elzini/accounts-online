@@ -121,6 +121,35 @@ export function DaftraIntegrationPage() {
     }
   };
 
+  const handleAlignCodes = async () => {
+    if (!companyId) return;
+    try {
+      const { data: accounts } = await supabase
+        .from('account_categories')
+        .select('id, code, name')
+        .eq('company_id', companyId);
+
+      if (!accounts?.length) {
+        toast.error('لا توجد حسابات');
+        return;
+      }
+
+      const result = await alignCodes.mutateAsync({
+        companyId,
+        accounts: accounts.map(a => ({ id: a.id, code: a.code, name: a.name })),
+      });
+
+      const d = result as any;
+      toast.success(`تم تحديث ${d?.updated || 0} كود • ${d?.unmatched || 0} غير متطابق • ${d?.errors || 0} أخطاء`);
+      
+      if (d?.details?.updated?.length > 0) {
+        console.log('[Align] Updated codes:', d.details.updated);
+      }
+    } catch (err: any) {
+      toast.error(`خطأ في مطابقة الأكواد: ${err.message}`);
+    }
+  };
+
   const handleSyncJournals = async () => {
     if (!companyId) return;
     try {
