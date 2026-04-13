@@ -24,6 +24,7 @@ import {
   useDaftraDeleteConfig,
   useDaftraAlignCodes,
   useDaftraResetAndSync,
+  useDaftraImportAccounts,
 } from '@/hooks/useDaftraIntegration';
 import {
   Link2, Unlink, RefreshCw, CheckCircle2, XCircle, Loader2,
@@ -42,6 +43,7 @@ export function DaftraIntegrationPage() {
   const deleteConfig = useDaftraDeleteConfig();
   const alignCodes = useDaftraAlignCodes();
   const resetAndSync = useDaftraResetAndSync();
+  const importAccounts = useDaftraImportAccounts();
 
   const [credentials, setCredentials] = useState({
     subdomain: '',
@@ -186,6 +188,18 @@ export function DaftraIntegrationPage() {
       toast.success(`تم حذف ${del?.deleted || 0} حساب • متبقٍ ${del?.remaining || 0} • محمي ${del?.protected || 0} • إنشاء ${sync?.synced || 0}`);
     } catch (err: any) {
       toast.error(`خطأ: ${err.message}`);
+    }
+  };
+
+  const handleImportAccounts = async () => {
+    if (!companyId) return;
+    if (!confirm('سيتم استيراد شجرة الحسابات من دفترة إلى نظامنا. الحسابات الموجودة بنفس الكود لن تتأثر. هل تريد المتابعة؟')) return;
+    try {
+      const result = await importAccounts.mutateAsync(companyId);
+      const d = result as any;
+      toast.success(`تم استيراد ${d?.imported || 0} حساب • متجاوز ${d?.skipped || 0} • أخطاء ${d?.errors || 0} (إجمالي ${d?.total || 0})`);
+    } catch (err: any) {
+      toast.error(`خطأ في الاستيراد: ${err.message}`);
     }
   };
 
@@ -492,6 +506,37 @@ export function DaftraIntegrationPage() {
             </TabsList>
 
             <TabsContent value="accounts" className="mt-4 space-y-4">
+              {/* Import from Daftra */}
+              <Card className="border-blue-300 dark:border-blue-700">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-500/10 p-2 rounded-lg text-blue-600 dark:text-blue-400">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">استيراد من دفترة</CardTitle>
+                      <CardDescription>استيراد شجرة حسابات دفترة إلى نظامنا للتعديل عليها ثم إعادة مزامنتها</CardDescription>
+                    </div>
+                  </div>
+                  <Button variant="outline" onClick={handleImportAccounts} disabled={importAccounts.isPending}>
+                    {importAccounts.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                    ) : (
+                      <BookOpen className="w-4 h-4 ml-2" />
+                    )}
+                    استيراد الحسابات
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      سيتم جلب جميع الحسابات من دفترة وإضافتها لشجرة الحسابات في النظام. الحسابات الموجودة بنفس الكود لن تتأثر. بعد الاستيراد يمكنك التعديل ثم مزامنتها مرة أخرى.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div className="flex items-center gap-3">

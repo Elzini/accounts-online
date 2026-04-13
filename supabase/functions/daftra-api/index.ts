@@ -6,7 +6,7 @@ const corsHeaders = {
 }
 
 interface DaftraAction {
-  action: 'authenticate' | 'sync_accounts' | 'sync_journals' | 'sync_clients' | 'sync_suppliers' | 'test_connection' | 'get_accounts' | 'align_codes' | 'reset_and_sync_accounts';
+  action: 'authenticate' | 'sync_accounts' | 'sync_journals' | 'sync_clients' | 'sync_suppliers' | 'test_connection' | 'get_accounts' | 'align_codes' | 'reset_and_sync_accounts' | 'import_accounts';
   companyId: string;
   data?: any;
 }
@@ -60,6 +60,8 @@ Deno.serve(async (req) => {
         return await handleTestConnection(config)
       case 'get_accounts':
         return await handleGetAccounts(config)
+      case 'import_accounts':
+        return await handleImportAccounts(serviceClient, config, companyId)
       case 'sync_accounts':
         return await handleSyncAccounts(serviceClient, config, companyId, data)
       case 'align_codes':
@@ -335,6 +337,143 @@ async function handleGetAccounts(config: any) {
   } catch (err) {
     return jsonResponse({ success: false, error: getErrorMessage(err) }, 400)
   }
+}
+
+// ===================== IMPORT ACCOUNTS FROM DAFTRA =====================
+
+function reverseDaftraType(type: string | number): string {
+  const map: Record<string, string> = {
+    '1': 'asset', '2': 'liability', '3': 'equity', '4': 'revenue', '5': 'expense',
+  }
+  return map[String(type)] || 'asset'
+}
+
+async function handleImportAccounts(supabase: any, config: any, companyId: string) {
+  // 1. Fetch all Daftra accounts
+  let daftraAccounts: any[] = []
+  try {
+    daftraAccounts = await fetchAllDaftraAccounts(config)
+  } catch (err) {
+    return jsonResponse({ error: 'فشل في جلب حسابات دفترة', details: getErrorMessage(err) }, 500)
+  }
+
+  if (!daftraAccounts.length) {
+    return jsonResponse({ error: 'لا توجد حسابات في دفترة' }, 400)
+  }
+
+  // 2. Get existing accounts in our system
+  const { data: existingAccounts } = await supabase
+    .from('account_categories')
+    .select('id, code, name')
+    .eq('company_id', companyId)
+
+  const existingCodes = new Set((existingAccounts || []).map((a: any) => normalizeAccountCode(a.code)))
+
+  // 3. Parse Daftra accounts and build ID→code map
+  const parsed: Array<{
+    daftra_id: string;
+    code: string;
+    name: string;
+    type: string;
+    description: string;
+    parent_daftra_id: string;
+  }> = []
+
+  const daftraIdToCode = new Map<string, string>()
+
+  for (const raw of daftraAccounts) {
+    const account = raw?.JournalAccount || raw || {}
+    const id = String(account?.id || '')
+    const code = normalizeAccountCode(account?.code)
+    const name = String(account?.name || '').trim()
+    const type = reverseDaftraType(account?.type)
+    const parentId = String(account?.journal_cat_id || '0')
+
+    if (!id || !code || !name) continue
+
+    daftraIdToCode.set(id, code)
+    parsed.push({
+      daftra_id: id,
+      code,
+      name,
+      type,
+      description: String(account?.description || ''),
+      parent_daftra_id: parentId === '0' ? '' : parentId,
+    })
+  }
+
+  // 4. Sort by code length (parents first)
+  parsed.sort((a, b) => a.code.length - b.code.length || a.code.localeCompare(b.code))
+
+  // 5. Insert accounts that don't exist in our system
+  let imported = 0
+  let skipped = 0
+  let errors = 0
+  const details: any[] = []
+  const codeToOurId = new Map<string, string>()
+
+  // Map existing accounts' codes to IDs
+  for (const a of (existingAccounts || [])) {
+    codeToOurId.set(normalizeAccountCode(a.code), a.id)
+  }
+
+  for (const account of parsed) {
+    if (existingCodes.has(account.code)) {
+      skipped++
+      details.push({ code: account.code, name: account.name, status: 'skipped', reason: 'موجود مسبقاً' })
+      // Still map the code to our ID for parent resolution
+      continue
+    }
+
+    // Resolve parent
+    let parentId: string | null = null
+    if (account.parent_daftra_id) {
+      const parentCode = daftraIdToCode.get(account.parent_daftra_id)
+      if (parentCode) {
+        parentId = codeToOurId.get(parentCode) || null
+      }
+    }
+
+    try {
+      const { data: inserted, error } = await supabase
+        .from('account_categories')
+        .insert({
+          company_id: companyId,
+          code: account.code,
+          name: account.name,
+          type: account.type,
+          description: account.description || null,
+          parent_id: parentId,
+          is_system: false,
+        })
+        .select('id')
+        .single()
+
+      if (error) throw error
+
+      if (inserted?.id) {
+        codeToOurId.set(account.code, inserted.id)
+        existingCodes.add(account.code)
+      }
+
+      imported++
+      details.push({ code: account.code, name: account.name, status: 'success' })
+    } catch (err) {
+      errors++
+      details.push({ code: account.code, name: account.name, status: 'error', error: getErrorMessage(err) })
+    }
+  }
+
+  console.log(`[Daftra] Import: ${imported} imported, ${skipped} skipped, ${errors} errors from ${parsed.length} total`)
+
+  return jsonResponse({
+    success: true,
+    imported,
+    skipped,
+    errors,
+    total: parsed.length,
+    details,
+  })
 }
 
 // ===================== SYNC ACCOUNTS =====================
