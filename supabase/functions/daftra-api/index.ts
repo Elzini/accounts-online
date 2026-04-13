@@ -136,7 +136,6 @@ async function daftraFetch(config: any, path: string, method = 'GET', body?: any
   const url = `${daftraBaseUrl(config.subdomain)}${path}`
   const headers: Record<string, string> = {
     'Accept': 'application/json',
-    'Content-Type': 'application/json',
   }
 
   if (config.access_token_encrypted) {
@@ -144,7 +143,13 @@ async function daftraFetch(config: any, path: string, method = 'GET', body?: any
   }
 
   const opts: RequestInit = { method, headers }
-  if (body) opts.body = JSON.stringify(body)
+  if (body) {
+    // Daftra API accepts text/plain for journal creation
+    headers['Content-Type'] = path.includes('/journals.json') && method === 'POST'
+      ? 'text/plain'
+      : 'application/json'
+    opts.body = JSON.stringify(body)
+  }
 
   console.log(`[Daftra] ${method} ${url}`)
   if (body) console.log(`[Daftra] Body:`, JSON.stringify(body).substring(0, 500))
