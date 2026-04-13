@@ -118,7 +118,7 @@ export function DaftraIntegrationPage() {
       const { data: entries } = await untypedFrom('journal_entries')
         .select('id, entry_number, description, entry_date')
         .eq('company_id', companyId)
-        .eq('status', 'posted')
+        .eq('is_posted', true)
         .order('entry_number', { ascending: true })
         .limit(50);
 
