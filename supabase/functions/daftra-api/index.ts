@@ -437,12 +437,12 @@ async function handleSyncJournals(supabase: any, config: any, companyId: string,
           total_debit: totalDebit,
           total_credit: totalCredit,
           currency_code: entry.currency || 'SAR',
-          date: entry.date || new Date().toISOString().split('T')[0],
           entity_type: 'expense',
           entity_id: '0',
-          staff_id: 1,
-          JournalTransaction: transactions,
+          staff_id: 0,
+          is_automatic: false,
         },
+        JournalTransaction: transactions,
       }
 
       const result = await daftraFetch(config, '/api2/journals.json', 'POST', payload)
