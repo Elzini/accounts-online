@@ -305,17 +305,20 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
 
   // 1. Fetch ALL existing Daftra accounts
   let daftraAccounts: any[] = []
-  const codeToExisting: Map<string, { id: string; journal_cat_id: string }> = new Map()
+  const codeToExisting: Map<string, { id: string; journal_cat_id: string; name: string }> = new Map()
+  const nameToExisting: Map<string, { id: string; journal_cat_id: string; code: string }> = new Map()
   try {
     daftraAccounts = await fetchAllDaftraAccounts(config)
     for (const acc of daftraAccounts) {
       const a = acc?.JournalAccount || acc
       const code = normalizeAccountCode(a?.code)
-      if (code && a?.id) {
-        codeToExisting.set(code, { id: String(a.id), journal_cat_id: String(a.journal_cat_id || '0') })
+      const name = normalizeAccountName(a?.name)
+      if (a?.id) {
+        if (code) codeToExisting.set(code, { id: String(a.id), journal_cat_id: String(a.journal_cat_id || '0'), name })
+        if (name) nameToExisting.set(name, { id: String(a.id), journal_cat_id: String(a.journal_cat_id || '0'), code })
       }
     }
-    console.log(`[Daftra] Found ${codeToExisting.size} existing accounts in Daftra`)
+    console.log(`[Daftra] Found ${codeToExisting.size} accounts by code, ${nameToExisting.size} by name`)
   } catch (err) {
     console.log(`[Daftra] Could not fetch existing accounts: ${getErrorMessage(err)}`)
   }
@@ -328,9 +331,40 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
   })
 
   // 3. Build local code→daftra_id map (for parent resolution)
+  // This maps OUR codes to Daftra IDs (could come from code match OR name match)
   const codeToDaftraId: Map<string, string> = new Map()
   for (const [code, info] of codeToExisting) {
     codeToDaftraId.set(code, info.id)
+  }
+
+  // Helper: resolve a Daftra ID for one of our account codes
+  // Try code match first, then name match using the account name from our system
+  function resolveExisting(ourCode: string, ourName: string) {
+    const byCode = ourCode ? codeToExisting.get(ourCode) : null
+    if (byCode) return { ...byCode, matchType: 'code' as const }
+    const byName = ourName ? nameToExisting.get(normalizeAccountName(ourName)) : null
+    if (byName) return { id: byName.id, journal_cat_id: byName.journal_cat_id, name: ourName, matchType: 'name' as const }
+    return null
+  }
+
+  // Helper: resolve parent Daftra ID using our parent_code + parent's name
+  function resolveParentId(parentCode: string, parentName?: string): string {
+    if (!parentCode) return '0'
+    // First check our mapping (already resolved)
+    const mapped = codeToDaftraId.get(parentCode)
+    if (mapped) return mapped
+    // Fallback: try finding parent by name in Daftra
+    if (parentName) {
+      const byName = nameToExisting.get(normalizeAccountName(parentName))
+      if (byName) return byName.id
+    }
+    return '0'
+  }
+
+  // Build a quick lookup: our code → our account (for parent name resolution)
+  const ourCodeToAccount: Map<string, any> = new Map()
+  for (const a of accounts) {
+    ourCodeToAccount.set(normalizeAccountCode(a.code), a)
   }
 
   const results: any[] = []
@@ -341,26 +375,28 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
 
   for (const account of sorted) {
     const normalizedCode = normalizeAccountCode(account.code)
+    const normalizedName = normalizeAccountName(account.name)
     const parentCode = normalizeAccountCode(account.parent_code)
-    const parentDaftraId = parentCode ? codeToDaftraId.get(parentCode) || '0' : '0'
+    const parentAccount = parentCode ? ourCodeToAccount.get(parentCode) : null
+    const parentDaftraId = resolveParentId(parentCode, parentAccount?.name)
 
-    const existing = normalizedCode ? codeToExisting.get(normalizedCode) : null
+    const existing = resolveExisting(normalizedCode, normalizedName)
 
     if (existing) {
+      // Map our code to the Daftra ID (even if matched by name with different code)
+      codeToDaftraId.set(normalizedCode, existing.id)
+
       // Account exists - check if it needs parent update (orphaned: journal_cat_id = "0")
       if (existing.journal_cat_id === '0' && parentDaftraId !== '0') {
         try {
           await daftraFetch(config, `/api2/journal_accounts/${existing.id}.json`, 'PUT', {
             JournalAccount: {
               journal_cat_id: parentDaftraId,
-              name: account.name,
             },
           })
-          results.push({ code: account.code, name: account.name, status: 'updated', reason: 'تم ربطه بالحساب الأب' })
+          const matchNote = existing.matchType === 'name' ? ' (تطابق بالاسم)' : ''
+          results.push({ code: account.code, name: account.name, status: 'updated', reason: `تم ربطه بالحساب الأب${matchNote}` })
           updatedCount++
-
-          codeToDaftraId.set(normalizedCode, existing.id)
-          codeToExisting.set(normalizedCode, { id: existing.id, journal_cat_id: parentDaftraId })
           continue
         } catch (err) {
           console.log(`[Daftra] Failed to update parent for ${account.code}: ${getErrorMessage(err)}`)
@@ -370,8 +406,8 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
         }
       }
 
-      // Already properly linked
-      results.push({ code: account.code, name: account.name, status: 'skipped', reason: 'موجود مسبقاً في دفترة' })
+      const matchNote = existing.matchType === 'name' ? ' (تطابق بالاسم)' : ''
+      results.push({ code: account.code, name: account.name, status: 'skipped', reason: `موجود مسبقاً في دفترة${matchNote}` })
       skippedCount++
       continue
     }
