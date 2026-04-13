@@ -523,6 +523,82 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
   return jsonResponse({ success: true, synced: successCount, updated: updatedCount, errors: errorCount, skipped: skippedCount, details: results })
 }
 
+// ===================== ALIGN CODES =====================
+
+async function handleAlignCodes(supabase: any, config: any, companyId: string, data: any) {
+  const ourAccounts = data?.accounts || []
+  if (!ourAccounts.length) {
+    return jsonResponse({ error: 'No accounts provided' }, 400)
+  }
+
+  // 1. Fetch all Daftra accounts
+  let daftraAccounts: any[] = []
+  try {
+    daftraAccounts = await fetchAllDaftraAccounts(config)
+  } catch (err) {
+    return jsonResponse({ error: 'فشل في جلب حسابات دفترة', details: getErrorMessage(err) }, 500)
+  }
+
+  // 2. Build Daftra name→code map
+  const daftraNameToCode: Map<string, string> = new Map()
+  for (const acc of daftraAccounts) {
+    const a = acc?.JournalAccount || acc
+    const name = normalizeAccountName(a?.name)
+    const code = normalizeAccountCode(a?.code)
+    if (name && code) {
+      daftraNameToCode.set(name, code)
+    }
+  }
+
+  console.log(`[Daftra] Align: ${daftraNameToCode.size} Daftra accounts, ${ourAccounts.length} our accounts`)
+
+  // 3. Match by name and build updates
+  const updates: Array<{ id: string; our_code: string; daftra_code: string; name: string }> = []
+  const unmatched: Array<{ code: string; name: string }> = []
+
+  for (const acc of ourAccounts) {
+    const normalizedName = normalizeAccountName(acc.name)
+    const daftraCode = daftraNameToCode.get(normalizedName)
+    if (daftraCode && daftraCode !== normalizeAccountCode(acc.code)) {
+      updates.push({ id: acc.id, our_code: acc.code, daftra_code: daftraCode, name: acc.name })
+    } else if (!daftraCode) {
+      unmatched.push({ code: acc.code, name: acc.name })
+    }
+  }
+
+  console.log(`[Daftra] Align: ${updates.length} codes to update, ${unmatched.length} unmatched`)
+
+  // 4. Update our account_categories codes
+  let updatedCount = 0
+  const errors: any[] = []
+
+  for (const u of updates) {
+    const { error } = await supabase
+      .from('account_categories')
+      .update({ code: u.daftra_code })
+      .eq('id', u.id)
+      .eq('company_id', companyId)
+
+    if (error) {
+      errors.push({ name: u.name, our_code: u.our_code, daftra_code: u.daftra_code, error: error.message })
+    } else {
+      updatedCount++
+    }
+  }
+
+  return jsonResponse({
+    success: true,
+    updated: updatedCount,
+    errors: errors.length,
+    unmatched: unmatched.length,
+    details: {
+      updated: updates.map(u => ({ name: u.name, from: u.our_code, to: u.daftra_code })),
+      unmatched: unmatched.slice(0, 20),
+      errors,
+    },
+  })
+}
+
 // ===================== SYNC JOURNALS =====================
 
 async function handleSyncJournals(supabase: any, config: any, companyId: string, data: any) {
