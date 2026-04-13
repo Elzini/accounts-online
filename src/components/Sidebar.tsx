@@ -218,6 +218,7 @@ export function Sidebar({
     { id: 'tax-settings' as ActivePage, label: s(settings?.tax_settings_title, t.nav_tax_settings), icon: Percent },
     { id: 'vat-return-report' as ActivePage, label: t.nav_vat_return, icon: Receipt },
     { id: 'fiscal-years' as ActivePage, label: t.nav_fiscal_years, icon: Calendar },
+    { id: 'daftra-integration' as ActivePage, label: language === 'ar' ? 'ربط دفترة' : 'Daftra Integration', icon: Link2 },
   ];
 
   const warehouseMenuItems: MenuItem[] = [
