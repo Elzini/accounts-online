@@ -195,10 +195,25 @@ async function handleTestConnection(config: any) {
 
 // ===================== GET ACCOUNTS =====================
 
+async function fetchAllDaftraAccounts(config: any) {
+  // Fetch all pages of accounts from Daftra
+  let allAccounts: any[] = []
+  let page = 1
+  while (true) {
+    const result = await daftraFetch(config, `/api2/journal_accounts.json?page=${page}`)
+    const accounts = result?.data || result?.JournalAccount || result || []
+    if (!Array.isArray(accounts) || accounts.length === 0) break
+    allAccounts = allAccounts.concat(accounts)
+    if (accounts.length < 25) break // Daftra default page size
+    page++
+  }
+  return allAccounts
+}
+
 async function handleGetAccounts(config: any) {
   try {
-    const result = await daftraFetch(config, '/api2/journal_accounts.json')
-    return jsonResponse({ success: true, accounts: result })
+    const accounts = await fetchAllDaftraAccounts(config)
+    return jsonResponse({ success: true, accounts })
   } catch (err) {
     return jsonResponse({ success: false, error: err.message }, 400)
   }
@@ -212,11 +227,32 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
     return jsonResponse({ error: 'No accounts provided' }, 400)
   }
 
+  // Fetch existing accounts from Daftra to skip duplicates
+  let existingCodes: Set<string> = new Set()
+  try {
+    const existing = await fetchAllDaftraAccounts(config)
+    for (const acc of existing) {
+      const code = acc?.JournalAccount?.code || acc?.code
+      if (code) existingCodes.add(String(code))
+    }
+    console.log(`[Daftra] Found ${existingCodes.size} existing accounts in Daftra`)
+  } catch (err) {
+    console.log(`[Daftra] Could not fetch existing accounts, proceeding with all: ${err.message}`)
+  }
+
   const results: any[] = []
   let successCount = 0
   let errorCount = 0
+  let skippedCount = 0
 
   for (const account of accounts) {
+    // Skip if code already exists in Daftra
+    if (existingCodes.has(String(account.code))) {
+      results.push({ code: account.code, name: account.name, status: 'skipped', reason: 'موجود مسبقاً في دفترة' })
+      skippedCount++
+      continue
+    }
+
     try {
       const payload = {
         JournalAccount: {
@@ -237,14 +273,13 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
     }
   }
 
-  // Update sync status
   await supabase.from('daftra_integrations').update({
     last_sync_at: new Date().toISOString(),
     sync_status: errorCount === 0 ? 'synced' : 'partial',
-    sync_log: { accounts: { success: successCount, errors: errorCount, details: results } },
+    sync_log: { accounts: { success: successCount, errors: errorCount, skipped: skippedCount, details: results } },
   }).eq('company_id', companyId)
 
-  return jsonResponse({ success: true, synced: successCount, errors: errorCount, details: results })
+  return jsonResponse({ success: true, synced: successCount, errors: errorCount, skipped: skippedCount, details: results })
 }
 
 // ===================== SYNC JOURNALS =====================
