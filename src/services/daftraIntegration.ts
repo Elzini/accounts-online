@@ -94,6 +94,7 @@ export async function alignCodesToDaftra(companyId: string, accounts: Array<{
   });
   if (error) throw new Error(error.message);
   return data;
+}
 
 // ==================== SYNC JOURNALS ====================
 
