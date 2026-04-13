@@ -2983,6 +2983,71 @@ export type Database = {
           },
         ]
       }
+      daftra_integrations: {
+        Row: {
+          access_token_encrypted: string | null
+          client_id: string
+          client_secret_encrypted: string
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_sync_at: string | null
+          password_encrypted: string
+          refresh_token: string | null
+          subdomain: string
+          sync_log: Json | null
+          sync_status: string | null
+          token_expires_at: string | null
+          updated_at: string
+          username_encrypted: string
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          client_id: string
+          client_secret_encrypted: string
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          password_encrypted: string
+          refresh_token?: string | null
+          subdomain: string
+          sync_log?: Json | null
+          sync_status?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          username_encrypted: string
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          client_id?: string
+          client_secret_encrypted?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          password_encrypted?: string
+          refresh_token?: string | null
+          subdomain?: string
+          sync_log?: Json | null
+          sync_status?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          username_encrypted?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daftra_integrations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dashboard_config: {
         Row: {
           analytics_settings: Json
