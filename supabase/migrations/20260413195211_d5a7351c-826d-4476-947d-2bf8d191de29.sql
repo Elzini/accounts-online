@@ -1,0 +1,1 @@
+UPDATE public.journal_entries SET is_posted = true WHERE is_posted = false;
