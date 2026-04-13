@@ -72,6 +72,15 @@ export function useDaftraSyncSuppliers() {
   });
 }
 
+export function useDaftraResetAndSync() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { companyId: string; accounts: Parameters<typeof daftraService.resetAndSyncAccountsToDaftra>[1] }) =>
+      daftraService.resetAndSyncAccountsToDaftra(params.companyId, params.accounts),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['daftra-config'] }),
+  });
+}
+
 export function useDaftraDeleteConfig() {
   const qc = useQueryClient();
   return useMutation({
