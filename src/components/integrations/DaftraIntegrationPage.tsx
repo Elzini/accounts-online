@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { useCompanyId } from '@/hooks/useCompanyId';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, untypedFrom } from '@/integrations/supabase/untypedFrom';
 import {
   useDaftraConfig,
   useDaftraAuthenticate,
@@ -115,8 +115,7 @@ export function DaftraIntegrationPage() {
   const handleSyncJournals = async () => {
     if (!companyId) return;
     try {
-      const { data: entries } = await supabase
-        .from('journal_entries')
+      const { data: entries } = await untypedFrom('journal_entries')
         .select('id, entry_number, description, entry_date')
         .eq('company_id', companyId)
         .eq('status', 'posted')
@@ -171,7 +170,7 @@ export function DaftraIntegrationPage() {
     try {
       const { data: clients } = await supabase
         .from('customers')
-        .select('name, email, phone, address, tax_number')
+        .select('name, phone, address')
         .eq('company_id', companyId);
 
       if (!clients?.length) {
@@ -181,12 +180,10 @@ export function DaftraIntegrationPage() {
 
       const result = await syncClients.mutateAsync({
         companyId,
-        clients: clients.map(c => ({
+        clients: clients.map((c: any) => ({
           name: c.name,
-          email: c.email || '',
           phone: c.phone || '',
           address: c.address || '',
-          tax_number: c.tax_number || '',
         })),
       });
 
@@ -201,7 +198,7 @@ export function DaftraIntegrationPage() {
     try {
       const { data: suppliers } = await supabase
         .from('suppliers')
-        .select('name, email, phone, address, tax_number')
+        .select('name, phone, address')
         .eq('company_id', companyId);
 
       if (!suppliers?.length) {
@@ -211,12 +208,10 @@ export function DaftraIntegrationPage() {
 
       const result = await syncSuppliers.mutateAsync({
         companyId,
-        suppliers: suppliers.map(s => ({
+        suppliers: suppliers.map((s: any) => ({
           name: s.name,
-          email: s.email || '',
           phone: s.phone || '',
           address: s.address || '',
-          tax_number: s.tax_number || '',
         })),
       });
 
