@@ -780,20 +780,29 @@ async function handleResetAndSyncAccounts(supabase: any, config: any, companyId:
     if (deletedThisPass === 0) break
   }
 
-  const remainingAccounts = Array.from(pending.values())
+  // Re-fetch ALL Daftra accounts after deletion to capture hidden/system accounts
+  let postDeleteAccounts: any[] = []
+  try {
+    postDeleteAccounts = await fetchAllDaftraAccounts(config)
+  } catch (err) {
+    console.log(`[Daftra] Warning: failed to re-fetch accounts after deletion: ${getErrorMessage(err)}`)
+  }
+
   const existingCodes = new Set(
-    [...protectedAccounts, ...remainingAccounts]
-      .map((account: any) => normalizeAccountCode(account?.code))
+    postDeleteAccounts
+      .map((raw: any) => normalizeAccountCode((raw?.JournalAccount || raw)?.code))
       .filter(Boolean)
   )
 
+  // Filter out accounts that already exist in Daftra (including hidden ones)
   const accountsToSync = accounts.filter((account: any) => !existingCodes.has(normalizeAccountCode(account.code)))
 
-  console.log(`[Daftra] Reset summary: deleted=${deleteSuccess}, remaining=${remainingAccounts.length}, protected=${protectedAccounts.length}, to_sync=${accountsToSync.length}`)
+  console.log(`[Daftra] Reset summary: deleted=${deleteSuccess}, remaining_in_daftra=${postDeleteAccounts.length}, existingCodes=${existingCodes.size}, to_sync=${accountsToSync.length}`)
 
+  // Send ALL accounts to sync (not just filtered) - it handles duplicates gracefully
   const syncResult = await handleSyncAccounts(supabase, config, companyId, {
     ...data,
-    accounts: accountsToSync,
+    accounts: accounts,
   })
   const syncBody = await syncResult.clone().json()
 
