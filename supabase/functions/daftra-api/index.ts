@@ -398,18 +398,15 @@ async function handleSyncJournals(supabase: any, config: any, companyId: string,
       const transactions = (entry.lines || []).map((line: any) => {
         const name = normalizeAccountName(line.account_name)
         const code = normalizeAccountCode(line.account_code)
-        // Try name first, then code
         const daftraId = accountNameToId.get(name) || accountCodeToId.get(code) || ''
         if (!daftraId) {
           console.log(`[Daftra] No mapping found for account: "${name}" (code: "${code}")`)
         }
         return {
-          journal_id: 0,
           debit: Number(line.debit || 0),
           credit: Number(line.credit || 0),
           journal_account_id: daftraId,
           description: line.description || entry.description || '',
-          currency_code: entry.currency || 'SAR',
         }
       })
 
