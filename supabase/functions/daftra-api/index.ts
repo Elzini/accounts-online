@@ -298,57 +298,105 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
     return jsonResponse({ error: 'No accounts provided' }, 400)
   }
 
-  // Fetch existing accounts from Daftra to skip duplicates
-  let existingCodes: Set<string> = new Set()
+  // 1. Fetch ALL existing Daftra accounts
+  let daftraAccounts: any[] = []
+  const codeToExisting: Map<string, { id: string; journal_cat_id: string }> = new Map()
   try {
-    const existing = await fetchAllDaftraAccounts(config)
-    for (const acc of existing) {
-      const { code } = getDaftraAccountIdentity(acc)
-      if (code) existingCodes.add(String(code))
+    daftraAccounts = await fetchAllDaftraAccounts(config)
+    for (const acc of daftraAccounts) {
+      const a = acc?.JournalAccount || acc
+      const code = normalizeAccountCode(a?.code)
+      if (code && a?.id) {
+        codeToExisting.set(code, { id: String(a.id), journal_cat_id: String(a.journal_cat_id || '0') })
+      }
     }
-    console.log(`[Daftra] Found ${existingCodes.size} existing accounts in Daftra`)
+    console.log(`[Daftra] Found ${codeToExisting.size} existing accounts in Daftra`)
   } catch (err) {
-    console.log(`[Daftra] Could not fetch existing accounts, proceeding with all: ${err.message}`)
+    console.log(`[Daftra] Could not fetch existing accounts: ${err.message}`)
+  }
+
+  // 2. Sort accounts by code length (parents first)
+  const sorted = [...accounts].sort((a: any, b: any) => {
+    const codeA = String(a.code || '')
+    const codeB = String(b.code || '')
+    return codeA.length - codeB.length || codeA.localeCompare(codeB)
+  })
+
+  // 3. Build local code→daftra_id map (for parent resolution)
+  const codeToDaftraId: Map<string, string> = new Map()
+  for (const [code, info] of codeToExisting) {
+    codeToDaftraId.set(code, info.id)
   }
 
   const results: any[] = []
   let successCount = 0
   let errorCount = 0
   let skippedCount = 0
+  let updatedCount = 0
 
-  for (const account of accounts) {
+  for (const account of sorted) {
     const normalizedCode = normalizeAccountCode(account.code)
+    const parentCode = normalizeAccountCode(account.parent_code)
+    const parentDaftraId = parentCode ? codeToDaftraId.get(parentCode) || '0' : '0'
 
-    // Skip if code already exists in Daftra
-    if (normalizedCode && existingCodes.has(normalizedCode)) {
+    const existing = normalizedCode ? codeToExisting.get(normalizedCode) : null
+
+    if (existing) {
+      // Account exists - check if it needs parent update (orphaned: journal_cat_id = "0")
+      if (existing.journal_cat_id === '0' && parentDaftraId !== '0') {
+        try {
+          await daftraFetch(config, `/api2/journal_accounts/${existing.id}.json`, 'PUT', {
+            JournalAccount: {
+              journal_cat_id: parentDaftraId,
+              name: account.name,
+            },
+          })
+          results.push({ code: account.code, name: account.name, status: 'updated', reason: 'تم ربطه بالحساب الأب' })
+          updatedCount++
+
+          // Update the parent_cat_ids chain
+          codeToDaftraId.set(normalizedCode, existing.id)
+          continue
+        } catch (err) {
+          console.log(`[Daftra] Failed to update parent for ${account.code}: ${err.message}`)
+          results.push({ code: account.code, name: account.name, status: 'skipped', reason: 'موجود - فشل تحديث الأب' })
+          skippedCount++
+          continue
+        }
+      }
+
+      // Already properly linked
       results.push({ code: account.code, name: account.name, status: 'skipped', reason: 'موجود مسبقاً في دفترة' })
       skippedCount++
       continue
     }
 
+    // Account doesn't exist - create with proper parent
     try {
       const payload = {
         JournalAccount: {
           name: account.name,
           code: normalizedCode || account.code,
-          type: mapAccountType(account.type),
+          type: String(mapAccountType(account.type)),
+          journal_cat_id: parentDaftraId,
           description: account.description || '',
-          parent_id: account.parent_daftra_id || null,
         },
       }
 
       const result = await daftraFetch(config, '/api2/journal_accounts.json', 'POST', payload)
-      if (normalizedCode) existingCodes.add(normalizedCode)
-      results.push({ code: account.code, name: account.name, status: 'success', daftra_id: result.id })
+      const newId = String(result.id || '')
+      if (normalizedCode && newId) {
+        codeToDaftraId.set(normalizedCode, newId)
+        codeToExisting.set(normalizedCode, { id: newId, journal_cat_id: parentDaftraId })
+      }
+      results.push({ code: account.code, name: account.name, status: 'success', daftra_id: newId })
       successCount++
     } catch (err) {
       if (isDaftraDuplicateCodeError(err)) {
-        if (normalizedCode) existingCodes.add(normalizedCode)
         results.push({ code: account.code, name: account.name, status: 'skipped', reason: 'موجود مسبقاً في دفترة' })
         skippedCount++
         continue
       }
-
       results.push({ code: account.code, name: account.name, status: 'error', error: err.message })
       errorCount++
     }
@@ -357,10 +405,10 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
   await supabase.from('daftra_integrations').update({
     last_sync_at: new Date().toISOString(),
     sync_status: errorCount === 0 ? 'synced' : 'partial',
-    sync_log: { accounts: { success: successCount, errors: errorCount, skipped: skippedCount, details: results } },
+    sync_log: { accounts: { success: successCount, updated: updatedCount, errors: errorCount, skipped: skippedCount, details: results } },
   }).eq('company_id', companyId)
 
-  return jsonResponse({ success: true, synced: successCount, errors: errorCount, skipped: skippedCount, details: results })
+  return jsonResponse({ success: true, synced: successCount, updated: updatedCount, errors: errorCount, skipped: skippedCount, details: results })
 }
 
 // ===================== SYNC JOURNALS =====================

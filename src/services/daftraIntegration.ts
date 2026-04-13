@@ -9,6 +9,7 @@ interface DaftraResponse {
   error?: string;
   details?: any;
   synced?: number;
+  updated?: number;
   errors?: number;
   skipped?: number;
   accounts?: any;
