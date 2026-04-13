@@ -214,6 +214,7 @@ export type ActivePage =
     | 'mobile-inventory'
      | 'mobile-invoice-reader'
      | 'developer-api'
+     | 'daftra-integration'
      // Purchase extensions
      | 'purchase-returns'
      | 'materials-request'

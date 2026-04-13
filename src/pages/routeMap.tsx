@@ -120,6 +120,7 @@ import { REProjectsPage, REUnitsPage, REContractorsPage, RECRMPage, REReportsPag
 import { MobileInventoryPage } from '@/components/mobile-inventory/MobileInventoryPage';
 import { MobileInvoiceReaderPage } from '@/components/mobile-invoice/MobileInvoiceReaderPage';
 import { DeveloperApiPage } from '@/components/developer-api/DeveloperApiPage';
+import { DaftraIntegrationPage } from '@/components/integrations/DaftraIntegrationPage';
 import { EcommercePage } from '@/components/ecommerce/EcommercePage';
 import { SmsMarketingPage } from '@/components/marketing/SmsMarketingPage';
 import { SocialMarketingPage } from '@/components/marketing/SocialMarketingPage';
@@ -299,6 +300,7 @@ export function renderPageContent({
     case 'mobile-inventory': return <MobileInventoryPage />;
     case 'mobile-invoice-reader': return <MobileInvoiceReaderPage />;
     case 'developer-api': return <DeveloperApiPage />;
+    case 'daftra-integration': return <DaftraIntegrationPage />;
     case 'ecommerce': return <EcommercePage />;
     case 'helpdesk': return <HelpdeskPage />;
     case 'cms': return <CMSPage />;
