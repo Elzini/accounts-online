@@ -290,19 +290,59 @@ async function handleSyncJournals(supabase: any, config: any, companyId: string,
     return jsonResponse({ error: 'No journal entries provided' }, 400)
   }
 
+  // Build name→id map from Daftra accounts
+  let accountNameToId: Map<string, string> = new Map()
+  let accountCodeToId: Map<string, string> = new Map()
+  try {
+    const daftraAccounts = await fetchAllDaftraAccounts(config)
+    for (const acc of daftraAccounts) {
+      const a = acc?.JournalAccount || acc
+      if (a?.id && a?.name) accountNameToId.set(a.name.trim(), String(a.id))
+      if (a?.id && a?.code) accountCodeToId.set(String(a.code).trim(), String(a.id))
+    }
+    console.log(`[Daftra] Loaded ${accountNameToId.size} account mappings for journal sync`)
+  } catch (err) {
+    console.error(`[Daftra] Failed to load accounts for mapping: ${err.message}`)
+    return jsonResponse({ error: 'فشل في جلب حسابات دفترة لربط القيود', details: err.message }, 500)
+  }
+
   const results: any[] = []
   let successCount = 0
   let errorCount = 0
 
   for (const entry of entries) {
     try {
-      const transactions = (entry.lines || []).map((line: any) => ({
-        debit: Number(line.debit || 0),
-        credit: Number(line.credit || 0),
-        journal_account_id: String(line.account_name || ''),
-        description: line.description || entry.description || '',
-        currency_code: entry.currency || 'SAR',
-      }))
+      const transactions = (entry.lines || []).map((line: any) => {
+        const name = String(line.account_name || '').trim()
+        const code = String(line.account_code || '').trim()
+        // Try name first, then code
+        const daftraId = accountNameToId.get(name) || accountCodeToId.get(code) || ''
+        if (!daftraId) {
+          console.log(`[Daftra] No mapping found for account: "${name}" (code: "${code}")`)
+        }
+        return {
+          debit: Number(line.debit || 0),
+          credit: Number(line.credit || 0),
+          journal_account_id: daftraId,
+          description: line.description || entry.description || '',
+          currency_code: entry.currency || 'SAR',
+        }
+      })
+
+      // Check if any transaction is missing account mapping
+      const unmapped = transactions.filter((t: any) => !t.journal_account_id)
+      if (unmapped.length > 0) {
+        const missingNames = (entry.lines || [])
+          .filter((_: any, i: number) => !transactions[i].journal_account_id)
+          .map((l: any) => l.account_name)
+        results.push({
+          entry_number: entry.entry_number,
+          status: 'error',
+          error: `حسابات غير موجودة في دفترة: ${missingNames.join(', ')}`,
+        })
+        errorCount++
+        continue
+      }
 
       const totalDebit = transactions.reduce((s: number, t: any) => s + t.debit, 0)
       const totalCredit = transactions.reduce((s: number, t: any) => s + t.credit, 0)
