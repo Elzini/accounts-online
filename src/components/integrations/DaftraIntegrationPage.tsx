@@ -150,7 +150,8 @@ export function DaftraIntegrationPage() {
           .map(l => {
             const account = l.account_id ? accountMap.get(l.account_id) : undefined;
             return {
-              account_name: account?.name || account?.code || '',
+              account_name: account?.name || '',
+              account_code: account?.code || '',
               debit: Number(l.debit || 0),
               credit: Number(l.credit || 0),
               description: l.description || '',
