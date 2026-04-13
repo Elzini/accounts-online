@@ -106,7 +106,7 @@ export function DaftraIntegrationPage() {
         })),
       });
 
-      toast.success(`تمت مزامنة ${result?.synced || 0} حساب • ${result?.errors || 0} أخطاء`);
+      toast.success(`تمت مزامنة ${result?.synced || 0} حساب • ${result?.skipped || 0} متجاوز • ${result?.errors || 0} أخطاء`);
     } catch (err: any) {
       toast.error(`خطأ في المزامنة: ${err.message}`);
     }
