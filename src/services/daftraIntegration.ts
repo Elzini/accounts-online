@@ -96,6 +96,26 @@ export async function alignCodesToDaftra(companyId: string, accounts: Array<{
   return data;
 }
 
+// ==================== RESET & SYNC ACCOUNTS ====================
+
+export async function resetAndSyncAccountsToDaftra(companyId: string, accounts: Array<{
+  code: string;
+  name: string;
+  type: string;
+  description?: string;
+  parent_daftra_id?: string;
+}>) {
+  const { data, error } = await supabase.functions.invoke<DaftraResponse>('daftra-api', {
+    body: {
+      action: 'reset_and_sync_accounts',
+      companyId,
+      data: { accounts },
+    },
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 // ==================== SYNC JOURNALS ====================
 
 export async function syncJournalsToDaftra(companyId: string, entries: Array<{

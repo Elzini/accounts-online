@@ -23,6 +23,7 @@ import {
   useDaftraSyncSuppliers,
   useDaftraDeleteConfig,
   useDaftraAlignCodes,
+  useDaftraResetAndSync,
 } from '@/hooks/useDaftraIntegration';
 import {
   Link2, Unlink, RefreshCw, CheckCircle2, XCircle, Loader2,
@@ -40,6 +41,7 @@ export function DaftraIntegrationPage() {
   const syncSuppliers = useDaftraSyncSuppliers();
   const deleteConfig = useDaftraDeleteConfig();
   const alignCodes = useDaftraAlignCodes();
+  const resetAndSync = useDaftraResetAndSync();
 
   const [credentials, setCredentials] = useState({
     subdomain: '',
@@ -147,6 +149,43 @@ export function DaftraIntegrationPage() {
       }
     } catch (err: any) {
       toast.error(`خطأ في مطابقة الأكواد: ${err.message}`);
+    }
+  };
+
+  const handleResetAndSync = async () => {
+    if (!companyId) return;
+    if (!confirm('⚠️ تحذير: سيتم حذف جميع الحسابات في دفترة وإعادة إنشائها من نظامنا. هل أنت متأكد؟')) return;
+    try {
+      const { data: accounts } = await supabase
+        .from('account_categories')
+        .select('id, code, name, type, description, parent_id')
+        .eq('company_id', companyId);
+
+      if (!accounts?.length) {
+        toast.error('لا توجد حسابات للمزامنة');
+        return;
+      }
+
+      const idToCode = new Map<string, string>();
+      for (const a of accounts) idToCode.set(a.id, a.code);
+
+      const result = await resetAndSync.mutateAsync({
+        companyId,
+        accounts: accounts.map(a => ({
+          code: a.code,
+          name: a.name,
+          type: a.type,
+          description: a.description || '',
+          parent_code: a.parent_id ? idToCode.get(a.parent_id) || '' : '',
+        })),
+      });
+
+      const d = result as any;
+      const del = d?.phase1_delete;
+      const sync = d?.phase2_sync;
+      toast.success(`تم حذف ${del?.deleted || 0} حساب • إنشاء ${sync?.synced || 0} حساب جديد • ${sync?.errors || 0} أخطاء`);
+    } catch (err: any) {
+      toast.error(`خطأ: ${err.message}`);
     }
   };
 
@@ -482,6 +521,37 @@ export function DaftraIntegrationPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              <Card className="border-destructive/30">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-destructive/10 p-2 rounded-lg text-destructive">
+                      <RefreshCw className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">حذف وإعادة إنشاء الحسابات</CardTitle>
+                      <CardDescription>حذف جميع الحسابات من دفترة وإعادة إنشائها بأكواد نظامنا</CardDescription>
+                    </div>
+                  </div>
+                  <Button variant="destructive" onClick={handleResetAndSync} disabled={resetAndSync.isPending}>
+                    {resetAndSync.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 ml-2" />
+                    )}
+                    حذف وإعادة إنشاء
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                    <p className="text-sm text-destructive">
+                      ⚠️ تحذير: هذا الإجراء سيحذف جميع الحسابات في دفترة (ما عدا حسابات النظام والحسابات المرتبطة بقيود). ثم سيُعيد إنشاء شجرة الحسابات من نظامنا.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
               <SyncCard
                 title="مزامنة شجرة الحسابات"
                 description="إرسال جميع الحسابات من دليل الحسابات إلى دفترة تلقائياً"

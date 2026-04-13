@@ -6,7 +6,7 @@ const corsHeaders = {
 }
 
 interface DaftraAction {
-  action: 'authenticate' | 'sync_accounts' | 'sync_journals' | 'sync_clients' | 'sync_suppliers' | 'test_connection' | 'get_accounts' | 'align_codes';
+  action: 'authenticate' | 'sync_accounts' | 'sync_journals' | 'sync_clients' | 'sync_suppliers' | 'test_connection' | 'get_accounts' | 'align_codes' | 'reset_and_sync_accounts';
   companyId: string;
   data?: any;
 }
@@ -64,6 +64,8 @@ Deno.serve(async (req) => {
         return await handleSyncAccounts(serviceClient, config, companyId, data)
       case 'align_codes':
         return await handleAlignCodes(serviceClient, config, companyId, data)
+      case 'reset_and_sync_accounts':
+        return await handleResetAndSyncAccounts(serviceClient, config, companyId, data)
       case 'sync_journals':
         return await handleSyncJournals(serviceClient, config, companyId, data)
       case 'sync_clients':
@@ -559,6 +561,74 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
   }).eq('company_id', companyId)
 
   return jsonResponse({ success: true, synced: successCount, updated: updatedCount, errors: errorCount, skipped: skippedCount, details: results })
+}
+
+// ===================== RESET & SYNC ACCOUNTS =====================
+
+async function handleResetAndSyncAccounts(supabase: any, config: any, companyId: string, data: any) {
+  const accounts = data?.accounts || []
+  if (!accounts.length) {
+    return jsonResponse({ error: 'No accounts provided' }, 400)
+  }
+
+  // 1. Fetch all existing Daftra accounts
+  let daftraAccounts: any[] = []
+  try {
+    daftraAccounts = await fetchAllDaftraAccounts(config)
+  } catch (err) {
+    return jsonResponse({ error: 'فشل في جلب حسابات دفترة', details: getErrorMessage(err) }, 500)
+  }
+
+  console.log(`[Daftra] Reset: Found ${daftraAccounts.length} accounts to delete`)
+
+  // 2. Sort by level DESC (delete children first) then delete all
+  const sortedForDelete = [...daftraAccounts].sort((a: any, b: any) => {
+    const aLevel = Number((a?.JournalAccount || a)?.level || 0)
+    const bLevel = Number((b?.JournalAccount || b)?.level || 0)
+    return bLevel - aLevel // deepest first
+  })
+
+  let deleteSuccess = 0
+  let deleteFailed = 0
+  const deleteErrors: any[] = []
+
+  for (const acc of sortedForDelete) {
+    const a = acc?.JournalAccount || acc
+    const id = a?.id
+    if (!id) continue
+
+    // Skip system/default accounts that can't be deleted (entity_type is set)
+    const entityType = a?.entity_type
+    if (entityType && entityType !== 'null' && entityType !== '') {
+      console.log(`[Daftra] Skip system account: ${a?.name} (entity_type: ${entityType})`)
+      continue
+    }
+
+    try {
+      await daftraFetch(config, `/api2/journal_accounts/${id}.json`, 'DELETE')
+      deleteSuccess++
+    } catch (err) {
+      const msg = getErrorMessage(err)
+      // If account has transactions, skip silently
+      if (msg.includes('transaction') || msg.includes('cannot') || msg.includes('لا يمكن')) {
+        console.log(`[Daftra] Cannot delete account ${a?.name}: ${msg}`)
+      }
+      deleteFailed++
+      deleteErrors.push({ id, name: a?.name, code: a?.code, error: msg })
+    }
+  }
+
+  console.log(`[Daftra] Reset: Deleted ${deleteSuccess}, failed ${deleteFailed}`)
+
+  // 3. Now sync accounts fresh (reuse handleSyncAccounts logic)
+  const syncResult = await handleSyncAccounts(supabase, config, companyId, data)
+  const syncBody = await syncResult.clone().json()
+
+  return jsonResponse({
+    success: true,
+    phase1_delete: { deleted: deleteSuccess, failed: deleteFailed, errors: deleteErrors.slice(0, 20) },
+    phase2_sync: syncBody,
+  })
 }
 
 // ===================== ALIGN CODES =====================
