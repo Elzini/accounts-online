@@ -72,6 +72,17 @@ export function useDaftraSyncSuppliers() {
   });
 }
 
+export function useDaftraImportAccounts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (companyId: string) => daftraService.importAccountsFromDaftra(companyId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['daftra-config'] });
+      qc.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+}
+
 export function useDaftraResetAndSync() {
   const qc = useQueryClient();
   return useMutation({
