@@ -97,7 +97,43 @@ function normalizeAccountCode(value: unknown) {
 }
 
 function normalizeAccountName(value: unknown) {
-  return String(value ?? '').trim().replace(/\s+/g, ' ')
+  return normalizeArabic(String(value ?? '').trim().replace(/\s+/g, ' '))
+}
+
+// Deep Arabic text normalization for fuzzy matching
+function normalizeArabic(text: string): string {
+  return text
+    // Remove diacritics (tashkeel)
+    .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g, '')
+    // Normalize alef variations (أ إ آ ٱ → ا)
+    .replace(/[أإآٱ]/g, 'ا')
+    // Normalize taa marbuta → haa
+    .replace(/ة/g, 'ه')
+    // Normalize alef maqsura → yaa
+    .replace(/ى/g, 'ي')
+    // Remove tatweel (kashida)
+    .replace(/ـ/g, '')
+    // Normalize common punctuation/brackets
+    .replace(/[()（）\[\]【】]/g, '')
+    // Collapse whitespace
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+}
+
+// Fuzzy name matching: checks if one name contains the other or similarity is high
+function fuzzyNameMatch(name1: string, name2: string): boolean {
+  if (name1 === name2) return true
+  if (!name1 || !name2) return false
+  // One contains the other
+  if (name1.includes(name2) || name2.includes(name1)) return true
+  // Check word overlap: if 80%+ words match
+  const words1 = name1.split(' ').filter(w => w.length > 1)
+  const words2 = name2.split(' ').filter(w => w.length > 1)
+  if (words1.length === 0 || words2.length === 0) return false
+  const common = words1.filter(w => words2.includes(w))
+  const overlapRatio = common.length / Math.min(words1.length, words2.length)
+  return overlapRatio >= 0.7
 }
 
 function extractDaftraAccounts(payload: any) {
@@ -539,28 +575,42 @@ async function handleAlignCodes(supabase: any, config: any, companyId: string, d
     return jsonResponse({ error: 'فشل في جلب حسابات دفترة', details: getErrorMessage(err) }, 500)
   }
 
-  // 2. Build Daftra name→code map
+  // 2. Build Daftra name→code map (exact + list for fuzzy)
   const daftraNameToCode: Map<string, string> = new Map()
+  const daftraNamesList: Array<{ name: string; code: string }> = []
   for (const acc of daftraAccounts) {
     const a = acc?.JournalAccount || acc
     const name = normalizeAccountName(a?.name)
     const code = normalizeAccountCode(a?.code)
     if (name && code) {
       daftraNameToCode.set(name, code)
+      daftraNamesList.push({ name, code })
     }
   }
 
   console.log(`[Daftra] Align: ${daftraNameToCode.size} Daftra accounts, ${ourAccounts.length} our accounts`)
 
-  // 3. Match by name and build updates
-  const updates: Array<{ id: string; our_code: string; daftra_code: string; name: string }> = []
+  // 3. Match by name (exact first, then fuzzy) and build updates
+  const updates: Array<{ id: string; our_code: string; daftra_code: string; name: string; matchType: string }> = []
   const unmatched: Array<{ code: string; name: string }> = []
 
   for (const acc of ourAccounts) {
     const normalizedName = normalizeAccountName(acc.name)
-    const daftraCode = daftraNameToCode.get(normalizedName)
+    let daftraCode = daftraNameToCode.get(normalizedName)
+    let matchType = 'exact'
+
+    // Fuzzy fallback if exact match not found
+    if (!daftraCode) {
+      const fuzzyMatch = daftraNamesList.find(d => fuzzyNameMatch(normalizedName, d.name))
+      if (fuzzyMatch) {
+        daftraCode = fuzzyMatch.code
+        matchType = 'fuzzy'
+        console.log(`[Daftra] Fuzzy match: "${acc.name}" → "${fuzzyMatch.name}" (code: ${fuzzyMatch.code})`)
+      }
+    }
+
     if (daftraCode && daftraCode !== normalizeAccountCode(acc.code)) {
-      updates.push({ id: acc.id, our_code: acc.code, daftra_code: daftraCode, name: acc.name })
+      updates.push({ id: acc.id, our_code: acc.code, daftra_code: daftraCode, name: acc.name, matchType })
     } else if (!daftraCode) {
       unmatched.push({ code: acc.code, name: acc.name })
     }
