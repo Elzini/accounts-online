@@ -438,8 +438,8 @@ async function handleSyncJournals(supabase: any, config: any, companyId: string,
           total_credit: totalCredit,
           currency_code: entry.currency || 'SAR',
           staff_id: 1,
+          JournalTransaction: transactions,
         },
-        JournalTransaction: transactions,
       }
 
       const result = await daftraFetch(config, '/api2/journals.json', 'POST', payload)
