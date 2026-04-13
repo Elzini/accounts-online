@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     }
   } catch (err) {
     console.error('Daftra API error:', err)
-    return jsonResponse({ error: err.message || 'Internal error' }, 500)
+    return jsonResponse({ error: getErrorMessage(err) || 'Internal error' }, 500)
   }
 })
 
@@ -114,6 +114,11 @@ function getDaftraAccountIdentity(rawAccount: any) {
     code: normalizeAccountCode(account?.code),
     name: normalizeAccountName(account?.name),
   }
+}
+
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
 }
 
 function parseDaftraError(error: unknown) {
@@ -233,7 +238,7 @@ async function handleTestConnection(config: any) {
     const result = await daftraFetch(config, '/api2/site_info.json')
     return jsonResponse({ success: true, site: result })
   } catch (err) {
-    return jsonResponse({ success: false, error: err.message }, 400)
+    return jsonResponse({ success: false, error: getErrorMessage(err) }, 400)
   }
 }
 
@@ -286,7 +291,7 @@ async function handleGetAccounts(config: any) {
     const accounts = await fetchAllDaftraAccounts(config)
     return jsonResponse({ success: true, accounts })
   } catch (err) {
-    return jsonResponse({ success: false, error: err.message }, 400)
+    return jsonResponse({ success: false, error: getErrorMessage(err) }, 400)
   }
 }
 
@@ -312,7 +317,7 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
     }
     console.log(`[Daftra] Found ${codeToExisting.size} existing accounts in Daftra`)
   } catch (err) {
-    console.log(`[Daftra] Could not fetch existing accounts: ${err.message}`)
+    console.log(`[Daftra] Could not fetch existing accounts: ${getErrorMessage(err)}`)
   }
 
   // 2. Sort accounts by code length (parents first)
@@ -354,11 +359,11 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
           results.push({ code: account.code, name: account.name, status: 'updated', reason: 'تم ربطه بالحساب الأب' })
           updatedCount++
 
-          // Update the parent_cat_ids chain
           codeToDaftraId.set(normalizedCode, existing.id)
+          codeToExisting.set(normalizedCode, { id: existing.id, journal_cat_id: parentDaftraId })
           continue
         } catch (err) {
-          console.log(`[Daftra] Failed to update parent for ${account.code}: ${err.message}`)
+          console.log(`[Daftra] Failed to update parent for ${account.code}: ${getErrorMessage(err)}`)
           results.push({ code: account.code, name: account.name, status: 'skipped', reason: 'موجود - فشل تحديث الأب' })
           skippedCount++
           continue
@@ -384,11 +389,31 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
       }
 
       const result = await daftraFetch(config, '/api2/journal_accounts.json', 'POST', payload)
-      const newId = String(result.id || '')
-      if (normalizedCode && newId) {
+      const createdAccount = result?.JournalAccount || result?.data?.JournalAccount || result?.data || result
+      const newId = String(createdAccount?.id || result?.id || '')
+      const createdParentId = String(createdAccount?.journal_cat_id ?? parentDaftraId ?? '0')
+
+      if (!newId) {
+        console.log(`[Daftra] Account created but id missing in response for code ${normalizedCode}; refetching accounts`)
+        try {
+          const refreshedAccounts = await fetchAllDaftraAccounts(config)
+          for (const refreshed of refreshedAccounts) {
+            const info = refreshed?.JournalAccount || refreshed
+            const refreshedCode = normalizeAccountCode(info?.code)
+            if (refreshedCode === normalizedCode && info?.id) {
+              codeToDaftraId.set(normalizedCode, String(info.id))
+              codeToExisting.set(normalizedCode, { id: String(info.id), journal_cat_id: String(info.journal_cat_id || createdParentId || '0') })
+              break
+            }
+          }
+        } catch (refreshError) {
+          console.log(`[Daftra] Failed to refetch accounts after create for ${normalizedCode}: ${getErrorMessage(refreshError)}`)
+        }
+      } else if (normalizedCode) {
         codeToDaftraId.set(normalizedCode, newId)
-        codeToExisting.set(normalizedCode, { id: newId, journal_cat_id: parentDaftraId })
+        codeToExisting.set(normalizedCode, { id: newId, journal_cat_id: createdParentId })
       }
+
       results.push({ code: account.code, name: account.name, status: 'success', daftra_id: newId })
       successCount++
     } catch (err) {
@@ -397,7 +422,7 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
         skippedCount++
         continue
       }
-      results.push({ code: account.code, name: account.name, status: 'error', error: err.message })
+      results.push({ code: account.code, name: account.name, status: 'error', error: getErrorMessage(err) })
       errorCount++
     }
   }
@@ -433,8 +458,8 @@ async function handleSyncJournals(supabase: any, config: any, companyId: string,
     }
     console.log(`[Daftra] Loaded ${accountNameToId.size} account mappings for journal sync`)
   } catch (err) {
-    console.error(`[Daftra] Failed to load accounts for mapping: ${err.message}`)
-    return jsonResponse({ error: 'فشل في جلب حسابات دفترة لربط القيود', details: err.message }, 500)
+    console.error(`[Daftra] Failed to load accounts for mapping: ${getErrorMessage(err)}`)
+    return jsonResponse({ error: 'فشل في جلب حسابات دفترة لربط القيود', details: getErrorMessage(err) }, 500)
   }
 
   const results: any[] = []
@@ -494,7 +519,7 @@ async function handleSyncJournals(supabase: any, config: any, companyId: string,
       results.push({ entry_number: entry.entry_number, status: 'success', daftra_id: result.id })
       successCount++
     } catch (err) {
-      results.push({ entry_number: entry.entry_number, status: 'error', error: err.message })
+      results.push({ entry_number: entry.entry_number, status: 'error', error: getErrorMessage(err) })
       errorCount++
     }
   }
@@ -536,7 +561,7 @@ async function handleSyncClients(supabase: any, config: any, companyId: string, 
       results.push({ name: client.name, status: 'success', daftra_id: result.id })
       successCount++
     } catch (err) {
-      results.push({ name: client.name, status: 'error', error: err.message })
+      results.push({ name: client.name, status: 'error', error: getErrorMessage(err) })
       errorCount++
     }
   }
@@ -577,7 +602,7 @@ async function handleSyncSuppliers(supabase: any, config: any, companyId: string
       results.push({ name: supplier.name, status: 'success', daftra_id: result.id })
       successCount++
     } catch (err) {
-      results.push({ name: supplier.name, status: 'error', error: err.message })
+      results.push({ name: supplier.name, status: 'error', error: getErrorMessage(err) })
       errorCount++
     }
   }
