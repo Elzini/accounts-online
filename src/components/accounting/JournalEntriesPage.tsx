@@ -3,7 +3,7 @@
  * Logic extracted to useJournalEntryForm hook.
  * UI split into JournalEntryFormDialog and JournalEntriesListCard.
  */
-import { Loader2, FileText, Printer } from 'lucide-react';
+import { Loader2, FileText, Printer, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useJournalEntryForm } from './hooks/useJournalEntryForm';
 import { JournalEntryFormDialog } from './sections/JournalEntryFormDialog';
@@ -12,6 +12,7 @@ import { JournalEntryEditDialog } from './JournalEntryEditDialog';
 import { JournalAttachments } from './JournalAttachments';
 import { JournalEntryPrintDialog } from './JournalEntryPrintDialog';
 import { RealEstateJournalTemplates } from './RealEstateJournalTemplates';
+import { exportJournalEntriesToDaftraCsv } from './utils/exportDaftraCsv';
 
 export function JournalEntriesPage() {
   const hook = useJournalEntryForm();
@@ -41,6 +42,14 @@ export function JournalEntriesPage() {
           <p className="text-muted-foreground">{t.je_subtitle}</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => exportJournalEntriesToDaftraCsv(filteredEntries)} 
+            className="gap-2"
+          >
+            <Download className="w-4 h-4" />
+            {language === 'ar' ? 'تصدير CSV (دفترة)' : 'Export CSV (Daftra)'}
+          </Button>
           <Button variant="outline" onClick={printJournalSheet} className="gap-2">
             <FileText className="w-4 h-4" />
             {language === 'ar' ? 'طباعة كشف القيود' : 'Print Journal Sheet'}
