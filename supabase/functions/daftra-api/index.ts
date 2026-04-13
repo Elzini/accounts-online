@@ -575,28 +575,42 @@ async function handleAlignCodes(supabase: any, config: any, companyId: string, d
     return jsonResponse({ error: 'فشل في جلب حسابات دفترة', details: getErrorMessage(err) }, 500)
   }
 
-  // 2. Build Daftra name→code map
+  // 2. Build Daftra name→code map (exact + list for fuzzy)
   const daftraNameToCode: Map<string, string> = new Map()
+  const daftraNamesList: Array<{ name: string; code: string }> = []
   for (const acc of daftraAccounts) {
     const a = acc?.JournalAccount || acc
     const name = normalizeAccountName(a?.name)
     const code = normalizeAccountCode(a?.code)
     if (name && code) {
       daftraNameToCode.set(name, code)
+      daftraNamesList.push({ name, code })
     }
   }
 
   console.log(`[Daftra] Align: ${daftraNameToCode.size} Daftra accounts, ${ourAccounts.length} our accounts`)
 
-  // 3. Match by name and build updates
-  const updates: Array<{ id: string; our_code: string; daftra_code: string; name: string }> = []
+  // 3. Match by name (exact first, then fuzzy) and build updates
+  const updates: Array<{ id: string; our_code: string; daftra_code: string; name: string; matchType: string }> = []
   const unmatched: Array<{ code: string; name: string }> = []
 
   for (const acc of ourAccounts) {
     const normalizedName = normalizeAccountName(acc.name)
-    const daftraCode = daftraNameToCode.get(normalizedName)
+    let daftraCode = daftraNameToCode.get(normalizedName)
+    let matchType = 'exact'
+
+    // Fuzzy fallback if exact match not found
+    if (!daftraCode) {
+      const fuzzyMatch = daftraNamesList.find(d => fuzzyNameMatch(normalizedName, d.name))
+      if (fuzzyMatch) {
+        daftraCode = fuzzyMatch.code
+        matchType = 'fuzzy'
+        console.log(`[Daftra] Fuzzy match: "${acc.name}" → "${fuzzyMatch.name}" (code: ${fuzzyMatch.code})`)
+      }
+    }
+
     if (daftraCode && daftraCode !== normalizeAccountCode(acc.code)) {
-      updates.push({ id: acc.id, our_code: acc.code, daftra_code: daftraCode, name: acc.name })
+      updates.push({ id: acc.id, our_code: acc.code, daftra_code: daftraCode, name: acc.name, matchType })
     } else if (!daftraCode) {
       unmatched.push({ code: acc.code, name: acc.name })
     }
