@@ -43,6 +43,7 @@ export function DaftraIntegrationPage() {
   const deleteConfig = useDaftraDeleteConfig();
   const alignCodes = useDaftraAlignCodes();
   const resetAndSync = useDaftraResetAndSync();
+  const importAccounts = useDaftraImportAccounts();
 
   const [credentials, setCredentials] = useState({
     subdomain: '',
