@@ -64,6 +64,8 @@ Deno.serve(async (req) => {
         return await handleSyncAccounts(serviceClient, config, companyId, data)
       case 'align_codes':
         return await handleAlignCodes(serviceClient, config, companyId, data)
+      case 'reset_and_sync_accounts':
+        return await handleResetAndSyncAccounts(serviceClient, config, companyId, data)
       case 'sync_journals':
         return await handleSyncJournals(serviceClient, config, companyId, data)
       case 'sync_clients':
