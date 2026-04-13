@@ -116,6 +116,11 @@ function getDaftraAccountIdentity(rawAccount: any) {
   }
 }
 
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
+}
+
 function parseDaftraError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error)
   const jsonMatch = message.match(/\{[\s\S]*\}$/)
