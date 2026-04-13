@@ -88,12 +88,18 @@ export function DaftraIntegrationPage() {
     try {
       const { data: accounts } = await supabase
         .from('account_categories')
-        .select('code, name, type, description')
+        .select('id, code, name, type, description, parent_id')
         .eq('company_id', companyId);
 
       if (!accounts?.length) {
         toast.error('لا توجد حسابات للمزامنة');
         return;
+      }
+
+      // Build id→code map for parent resolution
+      const idToCode = new Map<string, string>();
+      for (const a of accounts) {
+        idToCode.set(a.id, a.code);
       }
 
       const result = await syncAccounts.mutateAsync({
@@ -103,6 +109,7 @@ export function DaftraIntegrationPage() {
           name: a.name,
           type: a.type,
           description: a.description || '',
+          parent_code: a.parent_id ? idToCode.get(a.parent_id) || '' : '',
         })),
       });
 
