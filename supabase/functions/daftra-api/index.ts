@@ -90,6 +90,48 @@ function daftraBaseUrl(subdomain: string) {
   return `https://${subdomain}.daftra.com`
 }
 
+function normalizeAccountCode(value: unknown) {
+  return String(value ?? '').trim().replace(/\s+/g, '')
+}
+
+function normalizeAccountName(value: unknown) {
+  return String(value ?? '').trim().replace(/\s+/g, ' ')
+}
+
+function extractDaftraAccounts(payload: any) {
+  if (Array.isArray(payload?.data)) return payload.data
+  if (Array.isArray(payload?.accounts)) return payload.accounts
+  if (Array.isArray(payload?.JournalAccount)) return payload.JournalAccount
+  if (Array.isArray(payload)) return payload
+  return []
+}
+
+function getDaftraAccountIdentity(rawAccount: any) {
+  const account = rawAccount?.JournalAccount || rawAccount || {}
+  return {
+    raw: rawAccount,
+    id: String(account?.id ?? '').trim(),
+    code: normalizeAccountCode(account?.code),
+    name: normalizeAccountName(account?.name),
+  }
+}
+
+function parseDaftraError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+  const jsonMatch = message.match(/\{[\s\S]*\}$/)
+  if (!jsonMatch) return null
+
+  try {
+    return JSON.parse(jsonMatch[0])
+  } catch {
+    return null
+  }
+}
+
+function isDaftraDuplicateCodeError(error: unknown) {
+  return parseDaftraError(error)?.validation_errors?.code === 'Code already exists'
+}
+
 async function daftraFetch(config: any, path: string, method = 'GET', body?: any) {
   const url = `${daftraBaseUrl(config.subdomain)}${path}`
   const headers: Record<string, string> = {
@@ -196,17 +238,44 @@ async function handleTestConnection(config: any) {
 // ===================== GET ACCOUNTS =====================
 
 async function fetchAllDaftraAccounts(config: any) {
-  // Fetch all pages of accounts from Daftra
   let allAccounts: any[] = []
-  let page = 1
-  while (true) {
+  const seenPageFingerprints = new Set<string>()
+  const seenAccountKeys = new Set<string>()
+
+  for (let page = 1; page <= 200; page++) {
     const result = await daftraFetch(config, `/api2/journal_accounts.json?page=${page}`)
-    const accounts = result?.data || result?.JournalAccount || result || []
-    if (!Array.isArray(accounts) || accounts.length === 0) break
-    allAccounts = allAccounts.concat(accounts)
-    if (accounts.length < 25) break // Daftra default page size
-    page++
+    const accounts = extractDaftraAccounts(result)
+
+    if (!accounts.length) break
+
+    const pageFingerprint = accounts
+      .map((account: any) => {
+        const identity = getDaftraAccountIdentity(account)
+        return identity.id || identity.code || identity.name || JSON.stringify(account)
+      })
+      .join('|')
+
+    if (seenPageFingerprints.has(pageFingerprint)) break
+    seenPageFingerprints.add(pageFingerprint)
+
+    let addedOnPage = 0
+    for (const account of accounts) {
+      const identity = getDaftraAccountIdentity(account)
+      const key = identity.id ? `id:${identity.id}` : identity.code ? `code:${identity.code}` : identity.name ? `name:${identity.name}` : JSON.stringify(account)
+      if (seenAccountKeys.has(key)) continue
+      seenAccountKeys.add(key)
+      allAccounts.push(account)
+      addedOnPage++
+    }
+
+    const pagination = result?.pagination || result?.meta?.pagination || result?.pager || null
+    const currentPage = Number(pagination?.current_page ?? pagination?.page ?? page)
+    const totalPages = Number(pagination?.total_pages ?? pagination?.last_page ?? pagination?.pages ?? 0)
+
+    if (totalPages && currentPage >= totalPages) break
+    if (addedOnPage === 0) break
   }
+
   return allAccounts
 }
 
@@ -232,7 +301,7 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
   try {
     const existing = await fetchAllDaftraAccounts(config)
     for (const acc of existing) {
-      const code = acc?.JournalAccount?.code || acc?.code
+      const { code } = getDaftraAccountIdentity(acc)
       if (code) existingCodes.add(String(code))
     }
     console.log(`[Daftra] Found ${existingCodes.size} existing accounts in Daftra`)
@@ -246,8 +315,10 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
   let skippedCount = 0
 
   for (const account of accounts) {
+    const normalizedCode = normalizeAccountCode(account.code)
+
     // Skip if code already exists in Daftra
-    if (existingCodes.has(String(account.code))) {
+    if (normalizedCode && existingCodes.has(normalizedCode)) {
       results.push({ code: account.code, name: account.name, status: 'skipped', reason: 'موجود مسبقاً في دفترة' })
       skippedCount++
       continue
@@ -257,7 +328,7 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
       const payload = {
         JournalAccount: {
           name: account.name,
-          code: account.code,
+          code: normalizedCode || account.code,
           type: mapAccountType(account.type),
           description: account.description || '',
           parent_id: account.parent_daftra_id || null,
@@ -265,9 +336,17 @@ async function handleSyncAccounts(supabase: any, config: any, companyId: string,
       }
 
       const result = await daftraFetch(config, '/api2/journal_accounts.json', 'POST', payload)
+      if (normalizedCode) existingCodes.add(normalizedCode)
       results.push({ code: account.code, name: account.name, status: 'success', daftra_id: result.id })
       successCount++
     } catch (err) {
+      if (isDaftraDuplicateCodeError(err)) {
+        if (normalizedCode) existingCodes.add(normalizedCode)
+        results.push({ code: account.code, name: account.name, status: 'skipped', reason: 'موجود مسبقاً في دفترة' })
+        skippedCount++
+        continue
+      }
+
       results.push({ code: account.code, name: account.name, status: 'error', error: err.message })
       errorCount++
     }
@@ -297,8 +376,10 @@ async function handleSyncJournals(supabase: any, config: any, companyId: string,
     const daftraAccounts = await fetchAllDaftraAccounts(config)
     for (const acc of daftraAccounts) {
       const a = acc?.JournalAccount || acc
-      if (a?.id && a?.name) accountNameToId.set(a.name.trim(), String(a.id))
-      if (a?.id && a?.code) accountCodeToId.set(String(a.code).trim(), String(a.id))
+      const normalizedName = normalizeAccountName(a?.name)
+      const normalizedCode = normalizeAccountCode(a?.code)
+      if (a?.id && normalizedName) accountNameToId.set(normalizedName, String(a.id))
+      if (a?.id && normalizedCode) accountCodeToId.set(normalizedCode, String(a.id))
     }
     console.log(`[Daftra] Loaded ${accountNameToId.size} account mappings for journal sync`)
   } catch (err) {
@@ -313,8 +394,8 @@ async function handleSyncJournals(supabase: any, config: any, companyId: string,
   for (const entry of entries) {
     try {
       const transactions = (entry.lines || []).map((line: any) => {
-        const name = String(line.account_name || '').trim()
-        const code = String(line.account_code || '').trim()
+        const name = normalizeAccountName(line.account_name)
+        const code = normalizeAccountCode(line.account_code)
         // Try name first, then code
         const daftraId = accountNameToId.get(name) || accountCodeToId.get(code) || ''
         if (!daftraId) {
