@@ -37,6 +37,8 @@ export interface InvoiceTemplateData {
   taxSettings?: TaxSettings | null;
   companyLogoUrl?: string | null;
   uuid?: string;
+  officialQrData?: string | null;
+  zatcaStatus?: string | null;
   // Extra
   branchName?: string;
   salesmanName?: string;

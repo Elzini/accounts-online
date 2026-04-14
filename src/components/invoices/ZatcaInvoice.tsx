@@ -6,6 +6,7 @@ import { TaxSettings } from '@/services/accounting';
 import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import logoImage from '@/assets/logo.png';
 import { InvoiceCustomLabels, defaultInvoiceLabels } from './templates/types';
+import { getZatcaPhase2DisplayState } from '@/lib/zatcaPhase2Status';
 
 interface InvoiceItem {
   description: string;
@@ -57,6 +58,8 @@ interface InvoiceData {
   notes?: string;
   customLabels?: InvoiceCustomLabels;
   plateNumber?: string;
+  officialQrData?: string | null;
+  zatcaStatus?: string | null;
 }
 
 interface ZatcaInvoiceProps {
@@ -131,7 +134,12 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
       invoiceTotal: total,
       vatAmount: taxAmount,
       invoiceNumber: String(invoiceNumber || ''),
+      officialQrData: data.officialQrData,
     });
+    const phase2State = useMemo(() => getZatcaPhase2DisplayState({
+      officialQrData: data.officialQrData,
+      zatcaStatus: data.zatcaStatus,
+    }), [data.officialQrData, data.zatcaStatus]);
 
     const itemsWithTax = items.map(item => ({
       ...item,
@@ -201,6 +209,9 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                     <p className="font-bold">{formattedTime}</p>
                   </div>
                 </div>
+                <p className="mt-2 max-w-[160px] text-center text-xs font-semibold leading-tight">
+                  {phase2State.label}
+                </p>
               </div>
             )}
 

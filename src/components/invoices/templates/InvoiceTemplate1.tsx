@@ -5,6 +5,7 @@ import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import { numberToArabicWords } from '@/lib/numberToArabicWords';
 import logoImage from '@/assets/logo.png';
 import { InvoiceTemplateData, defaultInvoiceLabels } from './types';
+import { getZatcaPhase2DisplayState } from '@/lib/zatcaPhase2Status';
 
 interface Props { data: InvoiceTemplateData; }
 
@@ -28,7 +29,9 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
     invoiceDateTime: invoiceDate,
     invoiceTotal: total, vatAmount: taxAmount,
     invoiceNumber,
+    officialQrData: data.officialQrData,
   });
+  const phase2State = getZatcaPhase2DisplayState({ officialQrData: data.officialQrData, zatcaStatus: data.zatcaStatus });
 
   const itemsWithTax = items.map(item => ({
     ...item,
@@ -54,6 +57,7 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
           </div>
           <div className="text-left text-xs">
             <QRCodeSVG value={qrData} size={90} level="L" includeMargin={true} />
+            <div className="mt-1 text-center text-[9px] font-semibold">{phase2State.label}</div>
           </div>
         </div>
       </div>
@@ -133,7 +137,10 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
            <div className="flex justify-between py-1 font-bold text-base border-t mt-1 pt-2"><span>{L.grandTotalLabel}</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
         </div>
         <div className="p-3 border-r flex items-center">
-          <QRCodeSVG value={qrData} size={120} level="L" includeMargin={true} />
+          <div>
+            <QRCodeSVG value={qrData} size={120} level="L" includeMargin={true} />
+            <div className="mt-1 text-center text-[9px] font-semibold">{phase2State.label}</div>
+          </div>
         </div>
       </div>
 

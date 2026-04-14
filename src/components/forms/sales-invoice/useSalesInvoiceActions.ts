@@ -132,7 +132,12 @@ export function createSalesInvoiceActions(deps: ActionDeps) {
           throw itemsError;
         }
 
-        setSavedSaleData({ id: invoice.id, customer: selectedCustomer, inventoryItems: selectedInventoryItems });
+        setSavedSaleData({
+          ...invoice,
+          customer: selectedCustomer,
+          invoice_items: invoiceItems,
+          inventoryItems: selectedInventoryItems,
+        });
         toast.success('✅ تم حفظ الفاتورة كمسودة - يمكنك تعديلها أو اعتمادها محاسبياً');
         setIsViewingExisting(true); setCurrentSaleId(invoice.id); setCurrentSaleStatus('draft');
 
@@ -227,6 +232,14 @@ export function createSalesInvoiceActions(deps: ActionDeps) {
         await invoicePosting.postInvoice(currentSaleId);
         const { data: updatedInvoices } = await supabase.from('invoices').select('*, invoice_items(*)').eq('company_id', companyId).eq('invoice_type', 'sales').order('created_at', { ascending: true });
         setExistingInvoices(updatedInvoices || []);
+        const currentInvoice = updatedInvoices?.find(inv => inv.id === currentSaleId);
+        if (currentInvoice) {
+          setSavedSaleData({
+            ...currentInvoice,
+            customer: selectedCustomer,
+            inventoryItems: selectedInventoryItems,
+          });
+        }
       } else { await approveSale.mutateAsync(currentSaleId); }
       setCurrentSaleStatus('approved'); setIsEditing(false); toast.success(t.inv_approved_success); setApproveDialogOpen(false);
     } catch (error) { console.error('Approve sale error:', error); toast.error(t.inv_approved_error); }
