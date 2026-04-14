@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Printer, FileSpreadsheet, Search, Check, ChevronsUpDown, FileText, X } from 'lucide-react';
+import { Loader2, Printer, FileSpreadsheet, Search, Check, ChevronsUpDown, FileText, X, Stamp } from 'lucide-react';
+import { Input as InputField } from '@/components/ui/input';
 import { useAccounts, useGeneralLedger } from '@/hooks/useAccounting';
 import { useUnifiedPrintReport, UnifiedReportColumn } from '@/hooks/useUnifiedPrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
@@ -30,6 +31,9 @@ export function AccountStatementReport() {
   const [documentType, setDocumentType] = useState<string>('all');
   const [showOpeningBalance, setShowOpeningBalance] = useState(true);
   const [showReport, setShowReport] = useState(false);
+  const [showStamp, setShowStamp] = useState(false);
+  const [stampName, setStampName] = useState('');
+  const [stampExtra, setStampExtra] = useState('');
 
   const { data: ledgerData, isLoading: ledgerLoading } = useGeneralLedger(
     selectedAccountId || null,
@@ -161,6 +165,9 @@ export function AccountStatementReport() {
         { label: 'رصيد الإغلاق', value: formatCurrency(processedData.closingBalance) },
       ],
       columns, data, showSignatures: false,
+      showStamp,
+      stampName: stampName || undefined,
+      stampExtra: stampExtra || undefined,
     });
   };
 
@@ -285,7 +292,26 @@ export function AccountStatementReport() {
                 <Label htmlFor="openingBalance" className="cursor-pointer">{t.as_show_opening}</Label>
               </div>
             </div>
+            <div className="flex items-end gap-2">
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <Checkbox id="showStamp" checked={showStamp} onCheckedChange={(checked) => setShowStamp(!!checked)} />
+                <Label htmlFor="showStamp" className="cursor-pointer flex items-center gap-1"><Stamp className="h-4 w-4" /> إضافة ختم رسمي</Label>
+              </div>
+            </div>
           </div>
+
+          {showStamp && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5">
+              <div className="space-y-2">
+                <Label>اسم المؤسسة على الختم</Label>
+                <Input type="text" value={stampName} onChange={(e) => setStampName(e.target.value)} placeholder="مثال: مؤسسة ليوم لاقامة المعارض" />
+              </div>
+              <div className="space-y-2">
+                <Label>بيانات إضافية (اختياري)</Label>
+                <Input type="text" value={stampExtra} onChange={(e) => setStampExtra(e.target.value)} placeholder="مثال: الرقم الضريبي" />
+              </div>
+            </div>
+          )}
 
           <Separator />
 
