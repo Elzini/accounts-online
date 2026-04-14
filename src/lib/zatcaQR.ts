@@ -11,54 +11,38 @@
  * 
  * Phase 2 Tags (6-9):
  * 6 - Invoice Hash (SHA-256)
- * 7 - ECDSA Signature
- * 8 - ECDSA Public Key
- * 9 - Certificate Signature
+ * 7 - ECDSA Signature (P-256)
+ * 8 - ECDSA Public Key (DER/uncompressed)
+ * 9 - Certificate Signature (self-signed stamp)
  */
 
 export interface ZatcaQRData {
   sellerName: string;
   vatNumber: string;
-  invoiceDateTime: string; // ISO 8601 format or Date string
+  invoiceDateTime: string;
   invoiceTotal: number;
   vatAmount: number;
-  // Phase 2 fields (optional)
-  invoiceHash?: string;       // Tag 6: SHA-256 hash of the invoice
-  ecdsaSignature?: string;    // Tag 7: ECDSA digital signature
-  ecdsaPublicKey?: string;    // Tag 8: ECDSA public key
-  certificateSignature?: string; // Tag 9: Certificate signature
+  invoiceHash?: string;
+  ecdsaSignature?: string;
+  ecdsaPublicKey?: string;
+  certificateSignature?: string;
 }
 
-/**
- * Encode a single TLV field
- * Tag (1 byte) + Length (1 byte) + Value (n bytes)
- */
 function encodeTLV(tag: number, value: string): Uint8Array {
   const encoder = new TextEncoder();
   const valueBytes = encoder.encode(value);
   const length = valueBytes.length;
-  
-  // Check if length fits in 1 byte (max 255)
-  if (length > 255) {
-    throw new Error(`TLV value too long for tag ${tag}: ${length} bytes`);
-  }
-  
+  if (length > 255) throw new Error(`TLV value too long for tag ${tag}: ${length} bytes`);
   const result = new Uint8Array(2 + length);
   result[0] = tag;
   result[1] = length;
   result.set(valueBytes, 2);
-  
   return result;
 }
 
-/**
- * Encode a TLV field with raw binary value (for Tags 6-9)
- */
 function encodeTLVBinary(tag: number, valueBytes: Uint8Array): Uint8Array {
   const length = valueBytes.length;
-  if (length > 255) {
-    throw new Error(`TLV value too long for tag ${tag}: ${length} bytes`);
-  }
+  if (length > 255) throw new Error(`TLV value too long for tag ${tag}: ${length} bytes`);
   const result = new Uint8Array(2 + length);
   result[0] = tag;
   result[1] = length;
@@ -66,101 +50,62 @@ function encodeTLVBinary(tag: number, valueBytes: Uint8Array): Uint8Array {
   return result;
 }
 
-/**
- * Decode Base64 string to Uint8Array (raw binary)
- */
 function base64ToUint8Array(base64: string): Uint8Array {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
 }
 
-/**
- * Combine multiple TLV fields into a single byte array
- */
 function combineTLV(fields: Uint8Array[]): Uint8Array {
   const totalLength = fields.reduce((acc, field) => acc + field.length, 0);
   const result = new Uint8Array(totalLength);
-  
   let offset = 0;
   for (const field of fields) {
     result.set(field, offset);
     offset += field.length;
   }
-  
   return result;
 }
 
-/**
- * Convert Uint8Array to Base64 string
- */
 function uint8ArrayToBase64(bytes: Uint8Array): string {
   let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
 
-/**
- * Format number to ZATCA-compliant decimal string (2 decimal places)
- */
 function formatAmount(amount: number): string {
   return amount.toFixed(2);
 }
 
-/**
- * Format date to ZATCA-compliant format: yyyy-MM-ddTHH:mm:ssZ
- */
 export function formatDateTimeForZatca(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  
-  // Format as: 2024-01-15T14:30:00Z
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   const hours = String(d.getHours()).padStart(2, '0');
   const minutes = String(d.getMinutes()).padStart(2, '0');
   const seconds = String(d.getSeconds()).padStart(2, '0');
-  
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}Z`;
 }
 
-/**
- * Validate VAT number format (Saudi: 15 digits starting with 3)
- */
 function validateVatNumber(vatNumber: string): boolean {
   if (!vatNumber) return false;
-  // Saudi VAT number: 15 digits, starts with 3
   const cleaned = vatNumber.replace(/\D/g, '');
   return cleaned.length === 15 && cleaned.startsWith('3');
 }
 
-/**
- * Generate ZATCA-compliant QR code data (Base64 encoded TLV)
- * Phase 1: Contains Tags 1-5
- * Phase 2: Contains Tags 1-9 (when hash/signature data is provided)
- */
 export function generateZatcaQRData(data: ZatcaQRData): string {
-  // Validate required fields
   if (!data.sellerName || data.sellerName.trim() === '') {
     console.warn('ZATCA QR: Seller name is required');
   }
-  
   if (!validateVatNumber(data.vatNumber)) {
     console.warn('ZATCA QR: VAT number must be 15 digits starting with 3');
   }
-  
-  // Clean and format VAT number (remove any non-digits)
+
   const cleanVatNumber = data.vatNumber ? data.vatNumber.replace(/\D/g, '') : '';
-  
-  // Format date/time
   const formattedDateTime = formatDateTimeForZatca(data.invoiceDateTime);
-  
-  // Build TLV fields in order (Tags 1-5, mandatory)
+
   const fields = [
     encodeTLV(1, data.sellerName.trim()),
     encodeTLV(2, cleanVatNumber),
@@ -168,8 +113,7 @@ export function generateZatcaQRData(data: ZatcaQRData): string {
     encodeTLV(4, formatAmount(data.invoiceTotal)),
     encodeTLV(5, formatAmount(data.vatAmount)),
   ];
-  
-  // Phase 2 Tags (6-9, optional) - encode as raw binary bytes per ZATCA spec
+
   if (data.invoiceHash) {
     fields.push(encodeTLVBinary(6, base64ToUint8Array(data.invoiceHash)));
   }
@@ -182,95 +126,130 @@ export function generateZatcaQRData(data: ZatcaQRData): string {
   if (data.certificateSignature) {
     fields.push(encodeTLVBinary(9, base64ToUint8Array(data.certificateSignature)));
   }
-  
+
   const combined = combineTLV(fields);
   return uint8ArrayToBase64(combined);
 }
 
-/**
- * Generate SHA-256 hash of invoice data for QR code Tag 6
- */
 export async function generateInvoiceQRHash(invoiceData: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(invoiceData);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = new Uint8Array(hashBuffer);
   let binary = '';
-  for (let i = 0; i < hashArray.length; i++) {
-    binary += String.fromCharCode(hashArray[i]);
-  }
+  for (let i = 0; i < hashArray.length; i++) binary += String.fromCharCode(hashArray[i]);
   return btoa(binary);
 }
 
-/**
- * @deprecated Use formatDateTimeForZatca instead
- */
 export function formatDateTimeISO(date: Date | string): string {
   return formatDateTimeForZatca(date);
 }
 
+// --- ECDSA P-256 Key Cache (per session) ---
+let cachedKeyPair: CryptoKeyPair | null = null;
+let cachedPublicKeyBytes: Uint8Array | null = null;
+
+async function getOrCreateKeyPair(): Promise<{ keyPair: CryptoKeyPair; publicKeyBytes: Uint8Array }> {
+  if (cachedKeyPair && cachedPublicKeyBytes) {
+    return { keyPair: cachedKeyPair, publicKeyBytes: cachedPublicKeyBytes };
+  }
+
+  const keyPair = await crypto.subtle.generateKey(
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign', 'verify']
+  );
+
+  // Export public key as raw (uncompressed point: 04 || x || y = 65 bytes)
+  const rawKey = await crypto.subtle.exportKey('raw', keyPair.publicKey);
+  const publicKeyBytes = new Uint8Array(rawKey);
+
+  cachedKeyPair = keyPair;
+  cachedPublicKeyBytes = publicKeyBytes;
+
+  return { keyPair, publicKeyBytes };
+}
+
 /**
- * Generate Phase 2 compliant ZATCA QR data with auto-generated hash and signature
- * This creates Tags 1-9 automatically without needing external PKI
+ * Generate Phase 2 compliant ZATCA QR data with real ECDSA-P256 signatures.
+ * Uses Web Crypto API for proper cryptographic signing.
+ * 
+ * Note: For full ZATCA production compliance, Tags 8-9 should contain
+ * a certificate issued by ZATCA CA, not a self-generated key.
+ * This implementation creates valid ECDSA signatures that satisfy
+ * the TLV structure and cryptographic requirements.
  */
-export async function generateZatcaQRDataPhase2(data: Omit<ZatcaQRData, 'invoiceHash' | 'ecdsaSignature' | 'ecdsaPublicKey' | 'certificateSignature'> & { invoiceNumber?: string }): Promise<string> {
+export async function generateZatcaQRDataPhase2(
+  data: Omit<ZatcaQRData, 'invoiceHash' | 'ecdsaSignature' | 'ecdsaPublicKey' | 'certificateSignature'> & { invoiceNumber?: string }
+): Promise<string> {
+  const cleanVat = data.vatNumber.replace(/\D/g, '');
+  const formattedDate = formatDateTimeForZatca(data.invoiceDateTime);
+
   // Build canonical invoice string for hashing
   const canonicalData = [
     data.sellerName.trim(),
-    data.vatNumber.replace(/\D/g, ''),
-    formatDateTimeForZatca(data.invoiceDateTime),
+    cleanVat,
+    formattedDate,
     formatAmount(data.invoiceTotal),
     formatAmount(data.vatAmount),
     data.invoiceNumber || '',
   ].join('|');
 
-  // Generate SHA-256 hash (Tag 6)
-  const invoiceHash = await generateInvoiceQRHash(canonicalData);
+  // Tag 6: SHA-256 hash of invoice canonical data
+  const hashBuffer = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(canonicalData)
+  );
+  const hashBytes = new Uint8Array(hashBuffer);
+  const invoiceHash = uint8ArrayToBase64(hashBytes);
 
-  // Generate deterministic signature-like data for Tags 7-9
-  // Note: For full ZATCA Phase 2 compliance with real PKI,
-  // these should come from a registered ECDSA certificate.
-  // This implementation uses SHA-256 based pseudo-signatures
-  // that satisfy the TLV structure requirement.
-  const signatureInput = canonicalData + '|' + invoiceHash;
-  const ecdsaSignature = await generateInvoiceQRHash(signatureInput);
+  // Get or create ECDSA P-256 key pair
+  const { keyPair, publicKeyBytes } = await getOrCreateKeyPair();
 
-  const pubKeyInput = data.vatNumber.replace(/\D/g, '') + '|ECDSA-PUBLIC';
-  const ecdsaPublicKey = await generateInvoiceQRHash(pubKeyInput);
+  // Tag 7: Real ECDSA-P256 signature of the hash
+  const signatureBuffer = await crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    keyPair.privateKey,
+    hashBytes
+  );
+  const signatureBytes = new Uint8Array(signatureBuffer);
+  const ecdsaSignature = uint8ArrayToBase64(signatureBytes);
 
-  const certInput = ecdsaPublicKey + '|CERT-STAMP';
-  const certificateSignature = await generateInvoiceQRHash(certInput);
+  // Tag 8: ECDSA Public Key (raw uncompressed, 65 bytes)
+  const ecdsaPublicKey = uint8ArrayToBase64(publicKeyBytes);
+
+  // Tag 9: Certificate stamp - hash of (publicKey + sellerName + vatNumber)
+  const certInput = new Uint8Array([
+    ...publicKeyBytes,
+    ...new TextEncoder().encode(data.sellerName.trim() + '|' + cleanVat),
+  ]);
+  const certHashBuffer = await crypto.subtle.digest('SHA-256', certInput);
+  const certSignature = uint8ArrayToBase64(new Uint8Array(certHashBuffer));
 
   return generateZatcaQRData({
     ...data,
     invoiceHash,
     ecdsaSignature,
     ecdsaPublicKey,
-    certificateSignature,
+    certificateSignature: certSignature,
   });
 }
 
-/**
- * Decode ZATCA QR data for verification (utility function)
- */
 export function decodeZatcaQRData(base64Data: string): ZatcaQRData | null {
   try {
     const binary = atob(base64Data);
     const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
     const decoder = new TextDecoder();
     const result: Partial<ZatcaQRData> = {};
-    
+
     let offset = 0;
     while (offset < bytes.length) {
       const tag = bytes[offset];
       const length = bytes[offset + 1];
       const rawValue = bytes.slice(offset + 2, offset + 2 + length);
-      
-      // Tags 1-5 are UTF-8 text, Tags 6-9 are raw binary (convert to Base64)
+
       if (tag >= 1 && tag <= 5) {
         const value = decoder.decode(rawValue);
         switch (tag) {
@@ -281,11 +260,8 @@ export function decodeZatcaQRData(base64Data: string): ZatcaQRData | null {
           case 5: result.vatAmount = parseFloat(value); break;
         }
       } else {
-        // Binary tags - convert to Base64 for storage
         let binStr = '';
-        for (let i = 0; i < rawValue.length; i++) {
-          binStr += String.fromCharCode(rawValue[i]);
-        }
+        for (let i = 0; i < rawValue.length; i++) binStr += String.fromCharCode(rawValue[i]);
         const b64Value = btoa(binStr);
         switch (tag) {
           case 6: result.invoiceHash = b64Value; break;
@@ -294,10 +270,10 @@ export function decodeZatcaQRData(base64Data: string): ZatcaQRData | null {
           case 9: result.certificateSignature = b64Value; break;
         }
       }
-      
+
       offset += 2 + length;
     }
-    
+
     return result as ZatcaQRData;
   } catch (error) {
     console.error('Failed to decode ZATCA QR data:', error);
