@@ -24,25 +24,16 @@ export function getZatcaPhase2DisplayState(input: {
   const normalizedStatus = normalizeZatcaStatus(input.zatcaStatus);
   const hasOfficialQr = Boolean(input.officialQrData?.trim());
 
-  if (normalizedStatus && APPROVED_PHASE2_STATUSES.has(normalizedStatus) && hasOfficialQr) {
+  // Show Phase 2 approved for cleared/reported status regardless of official QR
+  if (normalizedStatus && APPROVED_PHASE2_STATUSES.has(normalizedStatus)) {
     return {
       normalizedStatus,
       hasOfficialQr,
       isPhase2Approved: true,
       label: 'معتمد مرحلة ثانية',
       description: normalizedStatus === 'cleared'
-        ? 'تم عرض QR الرسمي بعد الاعتماد النهائي.'
-        : 'تم عرض QR الرسمي بعد التبليغ الرسمي.',
-    };
-  }
-
-  if (normalizedStatus && APPROVED_PHASE2_STATUSES.has(normalizedStatus) && !hasOfficialQr) {
-    return {
-      normalizedStatus,
-      hasOfficialQr,
-      isPhase2Approved: false,
-      label: 'حالة معتمدة بدون QR رسمي',
-      description: 'تم حفظ الحالة لكن QR الرسمي غير موجود في الفاتورة بعد.',
+        ? 'تم الاعتماد النهائي من هيئة الزكاة والضريبة والجمارك.'
+        : 'تم التبليغ الرسمي لهيئة الزكاة والضريبة والجمارك.',
     };
   }
 
@@ -52,7 +43,7 @@ export function getZatcaPhase2DisplayState(input: {
       hasOfficialQr,
       isPhase2Approved: false,
       label: 'مرفوض مرحلة ثانية',
-      description: 'الهيئة رفضت الإرسال أو الاعتماد، لذلك تم إبقاء QR المحلي فقط.',
+      description: 'الهيئة رفضت الإرسال أو الاعتماد.',
     };
   }
 
@@ -62,9 +53,7 @@ export function getZatcaPhase2DisplayState(input: {
       hasOfficialQr,
       isPhase2Approved: false,
       label: 'قيد اعتماد المرحلة الثانية',
-      description: hasOfficialQr
-        ? 'تم حفظ QR من الربط الخلفي لكن الحالة النهائية لم تكتمل بعد.'
-        : 'بانتظار QR الرسمي من الربط الخلفي بعد التبليغ أو الاعتماد.',
+      description: 'بانتظار اكتمال الاعتماد.',
     };
   }
 
@@ -73,6 +62,6 @@ export function getZatcaPhase2DisplayState(input: {
     hasOfficialQr,
     isPhase2Approved: false,
     label: 'QR للعرض فقط',
-    description: 'المرحلة الثانية تحتاج QR رسمي من الربط الخلفي، وليس من التوليد المحلي داخل المتصفح.',
+    description: 'لم يتم الاعتماد بعد.',
   };
 }
