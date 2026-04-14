@@ -37,64 +37,25 @@ export function useZatcaPhase2QR(params: UseZatcaPhase2QRParams): string {
       return;
     }
 
-    let cancelled = false;
+    try {
+      const cleanVat = (params.vatNumber || '300000000000003').replace(/\D/g, '');
+      const formattedDate = formatDateTimeForZatca(params.invoiceDateTime);
 
-    const cleanVat = (params.vatNumber || '300000000000003').replace(/\D/g, '');
-    const formattedDate = formatDateTimeForZatca(params.invoiceDateTime);
-
-    // Build canonical invoice string for hashing
-    const canonicalData = [
-      params.sellerName.trim(),
-      cleanVat,
-      formattedDate,
-      formatAmount(params.invoiceTotal),
-      formatAmount(params.vatAmount),
-      String(params.invoiceNumber || ''),
-    ].join('|');
-
-    // Compute SHA-256 hash for Tag 6
-    crypto.subtle
-      .digest('SHA-256', new TextEncoder().encode(canonicalData))
-      .then((hashBuffer) => {
-        if (cancelled) return;
-        const hashBytes = new Uint8Array(hashBuffer);
-        // Convert to base64 for the invoiceHash parameter
-        let binary = '';
-        for (let i = 0; i < hashBytes.length; i++) {
-          binary += String.fromCharCode(hashBytes[i]);
-        }
-        const invoiceHash = btoa(binary);
-
-        // Generate QR with Tags 1-5 + Tag 6 (hash only, no fake signatures)
-        const data = generateZatcaQRData({
-          sellerName: params.sellerName,
-          vatNumber: cleanVat,
-          invoiceDateTime: formattedDate,
-          invoiceTotal: params.invoiceTotal,
-          vatAmount: params.vatAmount,
-          invoiceHash,
-        });
-        setQrData(data);
-      })
-      .catch(() => {
-        // Fallback to Tags 1-5 only
-        if (!cancelled) {
-          try {
-            const fallback = generateZatcaQRData({
-              sellerName: params.sellerName,
-              vatNumber: cleanVat,
-              invoiceDateTime: formattedDate,
-              invoiceTotal: params.invoiceTotal,
-              vatAmount: params.vatAmount,
-            });
-            setQrData(fallback);
-          } catch {
-            setQrData('');
-          }
-        }
+      // For local/browser-generated QR, keep Phase 1 TLV only.
+      // Phase 2 approval must come from an official backend-issued QR.
+      const data = generateZatcaQRData({
+        sellerName: params.sellerName,
+        vatNumber: cleanVat,
+        invoiceDateTime: formattedDate,
+        invoiceTotal: params.invoiceTotal,
+        vatAmount: params.vatAmount,
       });
+      setQrData(data);
+    } catch {
+      setQrData('');
+    }
 
-    return () => { cancelled = true; };
+    return undefined;
   }, [params.officialQrData, params.sellerName, params.vatNumber, params.invoiceDateTime, params.invoiceTotal, params.vatAmount, params.invoiceNumber]);
 
   return qrData;
