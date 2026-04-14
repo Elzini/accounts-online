@@ -228,7 +228,7 @@ export class SupabaseInvoiceRepository implements IInvoiceRepository {
   async findById(invoiceId: string) {
     const { data, error } = await supabase
       .from('invoices')
-      .select('id, company_id, fiscal_year_id, invoice_type, invoice_number, invoice_date, customer_name, supplier_id, subtotal, vat_amount, total, payment_account_id')
+      .select('id, company_id, fiscal_year_id, invoice_type, invoice_number, invoice_date, customer_name, customer_id, supplier_id, subtotal, vat_amount, total, payment_account_id')
       .eq('id', invoiceId)
       .single();
     if (error || !data) return null;

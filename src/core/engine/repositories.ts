@@ -111,6 +111,7 @@ export interface IInvoiceRepository {
     invoice_number: string;
     invoice_date: string | null;
     customer_name: string | null;
+    customer_id: string | null;
     supplier_id: string | null;
     subtotal: number;
     vat_amount: number;
