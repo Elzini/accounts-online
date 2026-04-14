@@ -231,16 +231,29 @@ export class InvoicePostingEngine {
     inv: InvoiceData, subtotal: number, vatAmount: number, total: number
   ): JournalEntryLine[] {
     const lines: JournalEntryLine[] = [];
-    const cashAccount = inv.payment_account_id
+
+    // Determine debit account: customer receivable (آجل) or cash (نقدي)
+    let debitAccount = inv.payment_account_id
       ? this.resolver.resolveFlexible(inv.payment_account_id, 'sales_cash')
-      : this.resolver.resolve('sales_cash');
+      : null;
+
+    // If no explicit payment account AND customer exists, use customer's receivable account
+    if (!debitAccount && inv.customer_id && inv.customer_name) {
+      debitAccount = this.resolver.findByNameUnderCode(inv.customer_name, '12');
+    }
+
+    // Fallback to cash account
+    if (!debitAccount) {
+      debitAccount = this.resolver.resolve('sales_cash');
+    }
+
     const revenueAccount = this.resolver.resolve('sales_revenue');
     const vatOutputAccount = this.resolver.resolve('vat_output');
 
-    if (!cashAccount || !revenueAccount) return [];
+    if (!debitAccount || !revenueAccount) return [];
 
     lines.push({
-      account_id: cashAccount.id,
+      account_id: debitAccount.id,
       description: `مبيعات - ${inv.customer_name || inv.invoice_number}`,
       debit: total,
       credit: 0,
