@@ -100,41 +100,75 @@ export function MobileInvoiceReaderPage() {
 
   const startCamera = useCallback(async () => {
     setCameraError(null);
+
+    // Check permissions proactively
+    if (navigator.permissions) {
+      try {
+        const camPerm = await navigator.permissions.query({ name: 'camera' as PermissionName });
+        if (camPerm.state === 'denied') {
+          setCameraError('تم حظر الكاميرا. يرجى تفعيل إذن الكاميرا من إعدادات المتصفح ثم إعادة المحاولة.');
+          return;
+        }
+      } catch {
+        // permissions API not supported, continue
+      }
+    }
+
     try {
       const html5Qrcode = new Html5Qrcode(scannerContainerId);
       scannerRef.current = html5Qrcode;
 
+      // Prefer rear camera directly via facingMode for fastest start
       let cameraSource: string | MediaTrackConstraints = { facingMode: 'environment' };
       try {
         const cameras = await Html5Qrcode.getCameras();
+        if (cameras.length === 0) {
+          setCameraError('لم يتم العثور على كاميرا. تأكد أن الجهاز يحتوي على كاميرا.');
+          return;
+        }
         const rearCamera = cameras.find((cam) => /back|rear|environment|خلف/i.test(cam.label));
         if (rearCamera?.id) {
           cameraSource = rearCamera.id;
         } else if (cameras[0]?.id) {
           cameraSource = cameras[0].id;
         }
-      } catch (cameraListError) {
-        console.warn('Could not list cameras, falling back to facingMode:', cameraListError);
+      } catch {
+        // Fall back to facingMode
       }
 
       await html5Qrcode.start(
         cameraSource,
         {
-          fps: 15,
-          qrbox: { width: 320, height: 320 },
+          fps: 30,
+          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+            const minDim = Math.min(viewfinderWidth, viewfinderHeight);
+            const size = Math.floor(minDim * 0.8);
+            return { width: size, height: size };
+          },
           aspectRatio: 1,
+          disableFlip: false,
         },
         (decodedText) => {
           processQRData(decodedText);
         },
         () => {
-          // Ignore scan failures (no QR in frame)
+          // No QR in frame - ignore
         }
       );
       setCameraActive(true);
     } catch (err: any) {
       console.error('Camera error:', err);
-      setCameraError(err?.message || 'تعذر الوصول إلى الكاميرا أو قراءة QR. قرّب الكاميرا من الرمز وتأكد من وضوحه.');
+      if (err?.name === 'NotAllowedError' || err?.message?.includes('Permission')) {
+        setCameraError('تم رفض إذن الكاميرا. اسمح بالوصول للكاميرا من إعدادات المتصفح ثم أعد المحاولة.');
+      } else if (err?.name === 'NotFoundError') {
+        setCameraError('لم يتم العثور على كاميرا. تأكد أن الجهاز يحتوي على كاميرا متصلة.');
+      } else if (err?.name === 'NotReadableError') {
+        setCameraError('الكاميرا مستخدمة من تطبيق آخر. أغلق التطبيقات الأخرى وأعد المحاولة.');
+      } else if (err?.name === 'OverconstrainedError') {
+        setCameraError('الكاميرا لا تدعم الإعدادات المطلوبة. جرّب متصفحاً آخر.');
+      } else {
+        setCameraError(err?.message || 'تعذر فتح الكاميرا. تأكد من إذن الكاميرا وأعد المحاولة.');
+      }
       setCameraActive(false);
     }
   }, [processQRData]);
