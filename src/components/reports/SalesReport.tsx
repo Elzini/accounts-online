@@ -78,14 +78,14 @@ export function SalesReport() {
     });
   }, [unifiedSales, startDate, endDate, filterByFiscalYear]);
 
+  const { decimals } = useNumberFormat();
+
   if (isLoading || invoicesLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
 
   const salesData = filteredSales;
   const totalSales = salesData.reduce((sum: number, sale: any) => sum + Number(isCarDealership ? sale.sale_price : (sale._total || sale.sale_price)), 0);
   const totalProfit = salesData.reduce((sum: number, sale: any) => sum + Number(sale.profit), 0);
   const totalCommissions = salesData.reduce((sum: number, sale: any) => sum + Number(sale.commission || 0), 0);
-
-  const { decimals } = useNumberFormat();
   const formatCurrency = (amount: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'SAR', minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(amount) : amount);
   const formatCurrencySimple = (value: number) => new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(decimals === 0 ? Math.round(value) : value);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale);
