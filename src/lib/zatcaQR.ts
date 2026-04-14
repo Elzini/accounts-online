@@ -80,13 +80,10 @@ function formatAmount(amount: number): string {
 
 export function formatDateTimeForZatca(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  const seconds = String(d.getSeconds()).padStart(2, '0');
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}Z`;
+  if (Number.isNaN(d.getTime())) {
+    return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  }
+  return d.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
 function validateVatNumber(vatNumber: string): boolean {
