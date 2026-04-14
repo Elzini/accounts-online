@@ -219,10 +219,10 @@ export async function generateZatcaQRDataPhase2(
   const ecdsaPublicKey = uint8ArrayToBase64(publicKeyBytes);
 
   // Tag 9: Certificate stamp - hash of (publicKey + sellerName + vatNumber)
-  const certInput = new Uint8Array([
-    ...publicKeyBytes,
-    ...new TextEncoder().encode(data.sellerName.trim() + '|' + cleanVat),
-  ]);
+  const sellerVatBytes = new TextEncoder().encode(data.sellerName.trim() + '|' + cleanVat);
+  const certInput = new Uint8Array(publicKeyBytes.length + sellerVatBytes.length);
+  certInput.set(publicKeyBytes, 0);
+  certInput.set(sellerVatBytes, publicKeyBytes.length);
   const certHashBuffer = await crypto.subtle.digest('SHA-256', certInput);
   const certSignature = uint8ArrayToBase64(new Uint8Array(certHashBuffer));
 
