@@ -66,7 +66,11 @@ export interface UnifiedReportOptions {
   dateRange?: { from?: string; to?: string };
   showSignatures?: boolean;
   signatureLabels?: string[];
+  showStamp?: boolean;
+  stampName?: string;
+  stampExtra?: string;
 }
+
 
 export function escapeHtml(text: string | number | null | undefined): string {
   if (text === null || text === undefined) return '';
