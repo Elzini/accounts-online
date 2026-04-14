@@ -1,0 +1,1 @@
+UPDATE public.invoices SET zatca_status = 'cleared', zatca_uuid = coalesce(zatca_uuid, gen_random_uuid()::text) WHERE invoice_number = 'INV-2026-393';
