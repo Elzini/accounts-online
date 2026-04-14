@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Printer, FileSpreadsheet, Search, Check, ChevronsUpDown, FileText, X, Stamp } from 'lucide-react';
-import { Input as InputField } from '@/components/ui/input';
 import { useAccounts, useGeneralLedger } from '@/hooks/useAccounting';
 import { useUnifiedPrintReport, UnifiedReportColumn } from '@/hooks/useUnifiedPrintReport';
 import { useExcelExport } from '@/hooks/useExcelExport';
