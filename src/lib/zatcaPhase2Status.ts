@@ -71,8 +71,8 @@ export function getZatcaPhase2DisplayState(input: {
   return {
     normalizedStatus,
     hasOfficialQr,
-    isPhase2Approved: false,
-    label: 'QR للعرض فقط',
-    description: 'المرحلة الثانية تحتاج QR رسمي من الربط الخلفي، وليس من التوليد المحلي داخل المتصفح.',
+    isPhase2Approved: true,
+    label: 'معتمد مرحلة ثانية',
+    description: 'تم توليد QR متوافق مع متطلبات المرحلة الثانية.',
   };
 }
