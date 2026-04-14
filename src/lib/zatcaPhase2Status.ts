@@ -24,15 +24,25 @@ export function getZatcaPhase2DisplayState(input: {
   const normalizedStatus = normalizeZatcaStatus(input.zatcaStatus);
   const hasOfficialQr = Boolean(input.officialQrData?.trim());
 
-  if (normalizedStatus && APPROVED_PHASE2_STATUSES.has(normalizedStatus)) {
+  if (normalizedStatus && APPROVED_PHASE2_STATUSES.has(normalizedStatus) && hasOfficialQr) {
     return {
       normalizedStatus,
       hasOfficialQr,
       isPhase2Approved: true,
       label: 'معتمد مرحلة ثانية',
       description: normalizedStatus === 'cleared'
-        ? 'تم الاعتماد النهائي من هيئة الزكاة والضريبة والجمارك.'
-        : 'تم التبليغ الرسمي لهيئة الزكاة والضريبة والجمارك.',
+        ? 'تم عرض QR الرسمي بعد الاعتماد النهائي.'
+        : 'تم عرض QR الرسمي بعد التبليغ الرسمي.',
+    };
+  }
+
+  if (normalizedStatus && APPROVED_PHASE2_STATUSES.has(normalizedStatus) && !hasOfficialQr) {
+    return {
+      normalizedStatus,
+      hasOfficialQr,
+      isPhase2Approved: false,
+      label: 'حالة معتمدة بدون QR رسمي',
+      description: 'تم حفظ الحالة لكن QR الرسمي غير موجود في الفاتورة بعد.',
     };
   }
 
@@ -61,8 +71,8 @@ export function getZatcaPhase2DisplayState(input: {
   return {
     normalizedStatus,
     hasOfficialQr,
-    isPhase2Approved: true,
-    label: 'معتمد مرحلة ثانية',
-    description: 'تم توليد QR متوافق مع متطلبات المرحلة الثانية.',
+    isPhase2Approved: false,
+    label: 'QR للعرض فقط',
+    description: 'المرحلة الثانية تحتاج QR رسمي من الربط الخلفي، وليس من التوليد المحلي داخل المتصفح.',
   };
 }
