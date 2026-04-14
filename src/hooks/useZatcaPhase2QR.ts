@@ -17,10 +17,15 @@ interface UseZatcaPhase2QRParams {
   invoiceTotal: number;
   vatAmount: number;
   invoiceNumber?: string | number;
+  officialQrData?: string | null;
 }
 
 export function useZatcaPhase2QR(params: UseZatcaPhase2QRParams): string {
   return useMemo(() => {
+    if (params.officialQrData?.trim()) {
+      return params.officialQrData.trim();
+    }
+
     try {
       return generateZatcaQRData({
         sellerName: params.sellerName,
@@ -32,5 +37,5 @@ export function useZatcaPhase2QR(params: UseZatcaPhase2QRParams): string {
     } catch {
       return '';
     }
-  }, [params.sellerName, params.vatNumber, params.invoiceDateTime, params.invoiceTotal, params.vatAmount]);
+  }, [params.officialQrData, params.sellerName, params.vatNumber, params.invoiceDateTime, params.invoiceTotal, params.vatAmount]);
 }

@@ -365,9 +365,11 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   // === Invoice preview data ===
   const invoicePreviewData = useMemo(() => {
     if (!savedSaleData) return null;
+
+    const storedInvoiceDate = savedSaleData?.invoice_date || null;
     return {
-      invoiceNumber: savedSaleData.sale_number || invoiceData.invoice_number || String(nextInvoiceNumber),
-      invoiceDate: `${invoiceData.sale_date}T${invoiceData.issue_time || '00:00'}:00`,
+      invoiceNumber: savedSaleData.invoice_number || savedSaleData.sale_number || invoiceData.invoice_number || String(nextInvoiceNumber),
+      invoiceDate: storedInvoiceDate || `${invoiceData.sale_date}T${invoiceData.issue_time || '00:00'}:00`,
       invoiceType: 'sale' as const,
       sellerName: taxSettings?.company_name_ar || company?.name || '',
       sellerTaxNumber: taxSettings?.tax_number || '',
@@ -383,13 +385,16 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
       taxAmount: displayTotals.totalVAT || Number(savedSaleData?.vat_amount) || 0,
       total: displayTotals.finalTotal || Number(savedSaleData?.total) || 0,
       taxSettings, companyLogoUrl: (company as any)?.invoice_logo_url || company?.logo_url,
+      uuid: savedSaleData?.zatca_uuid || savedSaleData?.uuid || undefined,
+      officialQrData: savedSaleData?.zatca_qr || null,
+      zatcaStatus: savedSaleData?.zatca_status || null,
       salesmanName: invoiceData.seller_name || savedSaleData?.seller_name || '', branchName: '',
       paymentMethod: (() => { const acc = accounts.find(a => a.id === invoiceData.payment_account_id); if (!acc) return 'cash'; if (acc.code === '1201') return 'credit'; if (acc.code.startsWith('1102') || acc.code === '1103') return 'bank'; return 'cash'; })(),
       notes: invoiceData.notes || savedSaleData?.notes || '',
-      paidAmount: paidAmount || 0,
+      paidAmount: Number(savedSaleData?.amount_paid) || paidAmount || 0,
       buyerCommercialRegister: (selectedCustomer as any)?.commercial_register || '',
-      poDetails: invoiceData.po_details || '',
-      projectReference: invoiceData.project_reference || '',
+      poDetails: savedSaleData?.po_details || invoiceData.po_details || '',
+      projectReference: savedSaleData?.project_reference || invoiceData.project_reference || '',
     };
   }, [savedSaleData, invoiceData, selectedCustomer, calculations, taxSettings, company, taxRate, nextInvoiceNumber, accounts]);
 

@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import logoImage from '@/assets/logo.png';
 import { InvoiceTemplateData, defaultInvoiceLabels } from './types';
+import { getZatcaPhase2DisplayState } from '@/lib/zatcaPhase2Status';
 
 interface Props { data: InvoiceTemplateData; }
 
@@ -29,7 +30,9 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
     invoiceDateTime: invoiceDate,
     invoiceTotal: total, vatAmount: taxAmount,
     invoiceNumber,
+    officialQrData: data.officialQrData,
   });
+  const phase2State = getZatcaPhase2DisplayState({ officialQrData: data.officialQrData, zatcaStatus: data.zatcaStatus });
 
   const itemsWithTax = items.map(item => ({
     ...item,
@@ -59,6 +62,7 @@ export const InvoiceTemplate3 = forwardRef<HTMLDivElement, Props>(({ data }, ref
           {/* QR Left */}
           <div className="text-left">
             <QRCodeSVG value={qrData} size={100} level="L" includeMargin={true} />
+            <div className="mt-1 text-center text-[9px] font-semibold">{phase2State.label}</div>
           </div>
         </div>
       </div>

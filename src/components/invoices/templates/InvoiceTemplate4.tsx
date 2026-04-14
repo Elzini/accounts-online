@@ -5,6 +5,7 @@ import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import { numberToArabicWords } from '@/lib/numberToArabicWords';
 import logoImage from '@/assets/logo.png';
 import { InvoiceTemplateData, defaultInvoiceLabels } from './types';
+import { getZatcaPhase2DisplayState } from '@/lib/zatcaPhase2Status';
 
 interface Props { data: InvoiceTemplateData; }
 
@@ -29,7 +30,9 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
     invoiceDateTime: invoiceDate,
     invoiceTotal: total, vatAmount: taxAmount,
     invoiceNumber,
+    officialQrData: data.officialQrData,
   });
+  const phase2State = getZatcaPhase2DisplayState({ officialQrData: data.officialQrData, zatcaStatus: data.zatcaStatus });
 
   const itemsWithTax = items.map(item => ({
     ...item,
@@ -134,7 +137,10 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       <div className="flex border-t-2 border-gray-800">
         {/* QR Code Left */}
         <div className="p-3 flex items-start">
-          <QRCodeSVG value={qrData} size={120} level="L" includeMargin={true} />
+          <div>
+            <QRCodeSVG value={qrData} size={120} level="L" includeMargin={true} />
+            <div className="mt-1 text-center text-[9px] font-semibold">{phase2State.label}</div>
+          </div>
         </div>
         {/* Totals Right */}
         <div className="flex-1 text-[10px]">

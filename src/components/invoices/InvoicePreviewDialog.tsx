@@ -1,6 +1,7 @@
 import { useRef, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ZatcaInvoice } from './ZatcaInvoice';
 import { Printer, Download, X, FileCode, FileJson, Copy, Check, Send, LayoutTemplate } from 'lucide-react';
 import { TaxSettings } from '@/services/accounting';
@@ -14,6 +15,7 @@ import { InvoiceTemplateSelector } from './InvoiceTemplateSelector';
 import { InvoiceLabelCustomizer } from './InvoiceLabelCustomizer';
 import { InvoiceTemplate1, InvoiceTemplate2, InvoiceTemplate3, InvoiceTemplate4, InvoiceTemplate5 } from './templates';
 import { InvoiceTemplateName, InvoiceTemplateData, InvoiceCustomLabels, defaultInvoiceLabels } from './templates/types';
+import { getZatcaPhase2DisplayState } from '@/lib/zatcaPhase2Status';
 
 interface InvoiceItem {
   description: string;
@@ -55,6 +57,9 @@ interface InvoiceData {
   salesmanName?: string;
   branchName?: string;
   paymentMethod?: string;
+  uuid?: string;
+  officialQrData?: string | null;
+  zatcaStatus?: string | null;
 }
 
 interface InvoicePreviewDialogProps {
@@ -71,7 +76,11 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
   const [customLabels, setCustomLabels] = useState<InvoiceCustomLabels>({ ...defaultInvoiceLabels });
   const [plateNumber, setPlateNumber] = useState('');
 
-  const invoiceUUID = useMemo(() => generateInvoiceUUID(), [data.invoiceNumber]);
+  const invoiceUUID = useMemo(() => data.uuid || generateInvoiceUUID(), [data.uuid, data.invoiceNumber]);
+  const phase2State = useMemo(() => getZatcaPhase2DisplayState({
+    officialQrData: data.officialQrData,
+    zatcaStatus: data.zatcaStatus,
+  }), [data.officialQrData, data.zatcaStatus]);
 
   const handlePrint = useReactToPrint({
     contentRef: invoiceRef,
@@ -145,6 +154,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     buyerTaxNumber: data.buyerTaxNumber, buyerIdNumber: data.buyerIdNumber,
     items: data.items, subtotal: data.subtotal, taxAmount: data.taxAmount, total: data.total,
     taxSettings: data.taxSettings, companyLogoUrl: data.companyLogoUrl, uuid: invoiceUUID,
+    officialQrData: data.officialQrData, zatcaStatus: data.zatcaStatus,
     sellerCommercialRegister: data.taxSettings?.commercial_register,
     voucherNumber: (data as any).voucherNumber,
     salesmanName: data.salesmanName || '',
@@ -209,6 +219,19 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
             <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleCopyUUID}>
               {uuidCopied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
             </Button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
+            <Badge
+              className={phase2State.isPhase2Approved
+                ? 'bg-primary text-primary-foreground'
+                : phase2State.normalizedStatus === 'rejected' || phase2State.normalizedStatus === 'failed' || phase2State.normalizedStatus === 'error' || phase2State.normalizedStatus === 'invalid'
+                  ? 'border border-destructive/20 bg-destructive/10 text-destructive'
+                  : 'bg-secondary text-secondary-foreground'}
+            >
+              {phase2State.label}
+            </Badge>
+            <p className="text-xs text-muted-foreground">{phase2State.description}</p>
           </div>
 
           <InvoiceLabelCustomizer labels={customLabels} onChange={setCustomLabels} />
