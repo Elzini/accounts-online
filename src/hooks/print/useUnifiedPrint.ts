@@ -155,6 +155,13 @@ export function useUnifiedPrintReport() {
           .signature-label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 25px; }
           .signature-line { border-top: 1px solid #1f2937; margin-top: 25px; width: 100%; }
           .signature-date { font-size: 10px; color: #6b7280; margin-top: 5px; }
+          .official-stamp { display: flex; justify-content: center; margin-top: 30px; }
+          .stamp-border { border: 3px double #1e40af; border-radius: 50%; width: 180px; height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 15px; position: relative; transform: rotate(-8deg); }
+          .stamp-border::before { content: ''; position: absolute; inset: 4px; border: 1px solid #1e40af; border-radius: 50%; }
+          .stamp-title { font-size: 10px; color: #1e40af; font-weight: 700; letter-spacing: 2px; margin-bottom: 4px; }
+          .stamp-name { font-size: 11px; color: #1e3a5f; font-weight: 800; line-height: 1.3; max-width: 140px; }
+          .stamp-extra { font-size: 9px; color: #475569; margin-top: 3px; }
+          .stamp-date { font-size: 9px; color: #6b7280; margin-top: 4px; border-top: 1px solid #93c5fd; padding-top: 3px; }
           .footer { margin-top: ${reportSettings.footer_margin_top}px; padding-top: 8px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af; }
           .print-actions { position: fixed; bottom: 20px; left: 20px; display: flex; gap: 10px; z-index: 1000; }
           .print-btn { padding: 10px 22px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
@@ -174,7 +181,7 @@ export function useUnifiedPrintReport() {
           .settings-close-btn { position: absolute; top: 12px; left: 12px; background: #f3f4f6; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
           .settings-close-btn:hover { background: #e5e7eb; }
           .settings-section-title { font-size: 13px; font-weight: 700; color: ${headerColor}; margin: 12px 0 8px; }
-          @media print { .print-actions { display: none !important; } .settings-panel { display: none !important; } body { padding: 0; } th { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .summary-row { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+          @media print { .print-actions { display: none !important; } .settings-panel { display: none !important; } body { padding: 0; } th { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .summary-row { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .stamp-border { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
         </style>
       </head>
       <body>
@@ -216,6 +223,7 @@ export function useUnifiedPrintReport() {
         ${headerInfoHtml}
         ${tableHtml}
         ${signaturesHtml}
+        ${stampHtml}
         
         ${reportSettings.show_footer ? `<div class="footer"><div>${formattedDate} ${formattedTime}</div>${reportSettings.show_page_numbers ? '<div>صفحة 1</div>' : ''}</div>` : ''}
         
