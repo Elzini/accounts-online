@@ -98,6 +98,17 @@ export function useUnifiedPrintReport() {
       </div>
     ` : '';
 
+    const stampHtml = options.showStamp ? `
+      <div class="official-stamp">
+        <div class="stamp-border">
+          <div class="stamp-title">ختم رسمي</div>
+          <div class="stamp-name">${escapeHtml(options.stampName || companyName)}</div>
+          ${options.stampExtra ? `<div class="stamp-extra">${escapeHtml(options.stampExtra)}</div>` : ''}
+          <div class="stamp-date">${formattedDate}</div>
+        </div>
+      </div>
+    ` : '';
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert('يرجى السماح بالنوافذ المنبثقة لطباعة التقرير');
