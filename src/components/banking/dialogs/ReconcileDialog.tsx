@@ -434,14 +434,11 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                   </div>
                 )}
 
-                {/* Total difference */}
-                <div className="flex justify-between py-2 border-t-2 border-primary/30 mt-2 font-bold text-primary">
-                  <span>{ar ? 'إجمالي الفرق بين الكشف والدفاتر:' : 'Total Difference (Statement vs Books):'}</span>
-                  <span className={netDifference === 0 ? 'text-green-600' : 'text-destructive'}>{formatCurrency(Math.abs(netDifference))}</span>
-                </div>
                 {netDifference === 0 && (
-                  <p className="text-center text-green-600 text-xs font-bold">✅ {ar ? 'الرصيد متطابق - لا يوجد فرق' : 'Balanced - No difference'}</p>
+                  <p className="text-center text-green-600 text-xs font-bold mt-2">✅ {ar ? 'الرصيد متطابق تماماً - لا يوجد فرق' : 'Perfectly Balanced - No difference'}</p>
                 )}
+              </div>
+            </div>
               </div>
             </div>
 
