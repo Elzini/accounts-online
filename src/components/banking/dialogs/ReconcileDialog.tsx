@@ -178,6 +178,20 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
   const bookOnlyDebitSum = reconciled.filter(r => r.type === 'book_only').reduce((s, r) => s + (r.bookDebit || 0), 0);
   const bookOnlyCreditSum = reconciled.filter(r => r.type === 'book_only').reduce((s, r) => s + (r.bookCredit || 0), 0);
 
+  // Compute totals for reconciliation statement
+  const bankTotalDebit = bankTransactions.reduce((s, t) => s + Number(t.debit || 0), 0);
+  const bankTotalCredit = bankTransactions.reduce((s, t) => s + Number(t.credit || 0), 0);
+  const journalTotalDebit = journalLines.reduce((s, l) => s + Number(l.debit || 0), 0);
+  const journalTotalCredit = journalLines.reduce((s, l) => s + Number(l.credit || 0), 0);
+
+  // Opening balance from bank account
+  const openingBalance = Number(bankAccount?.opening_balance || 0);
+  // Closing per statement: opening + credits - debits (from bank's perspective)
+  const statementClosing = openingBalance + bankTotalCredit - bankTotalDebit;
+  // Closing per books: opening + journal debits - journal credits (debit = money in for bank account in books)
+  const booksClosing = openingBalance + journalTotalDebit - journalTotalCredit;
+  const netDifference = statementClosing - booksClosing;
+
   const formatCurrency = (v: number) => new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA', { minimumFractionDigits: 2 }).format(v);
   const isLoading = loadingTxns || loadingJournal;
 
