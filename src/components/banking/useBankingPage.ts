@@ -17,7 +17,7 @@ export function useBankingPage() {
   const { data: allStatements = [] } = useBankStatements();
   const { data: allReconciliations = [] } = useBankReconciliations();
   const { data: accounts = [] } = useAccounts();
-  const { filterByFiscalYear } = useFiscalYearFilter();
+  
 
   const statements = allStatements;
   const reconciliations = allReconciliations;
