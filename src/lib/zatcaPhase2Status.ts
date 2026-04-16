@@ -30,7 +30,7 @@ export function getZatcaPhase2DisplayState(input: {
       normalizedStatus,
       hasOfficialQr,
       isPhase2Approved: true,
-      label: 'معتمد مرحلة ثانية',
+      label: '✅ مطابق ومعتمد - مرحلة ثانية',
       description: normalizedStatus === 'cleared'
         ? 'تم الاعتماد النهائي من هيئة الزكاة والضريبة والجمارك.'
         : 'تم التبليغ الرسمي لهيئة الزكاة والضريبة والجمارك.',
