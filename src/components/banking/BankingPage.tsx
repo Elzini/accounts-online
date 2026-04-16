@@ -42,7 +42,7 @@ export function BankingPage() {
       />
 
       {/* Tabs */}
-      <Tabs defaultValue="accounts">
+      <Tabs value={ctx.activeTab} onValueChange={ctx.setActiveTab}>
         <TabsList>
           <TabsTrigger value="accounts">{t.bank_accounts_tab}</TabsTrigger>
           <TabsTrigger value="statements">{t.bank_statements_tab}</TabsTrigger>

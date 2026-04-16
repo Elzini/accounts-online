@@ -31,7 +31,8 @@ export function useBankingPage() {
   const deleteStatement = useDeleteBankStatement();
   const createReconciliation = useCreateBankReconciliation();
 
-  // Dialog states
+  // Tab & Dialog states
+  const [activeTab, setActiveTab] = useState('accounts');
   const [showAccountDialog, setShowAccountDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showReconciliationDialog, setShowReconciliationDialog] = useState(false);
@@ -103,6 +104,7 @@ export function useBankingPage() {
       toast.success(language === 'ar' ? 'تم استيراد كشف الحساب بنجاح' : 'Statement imported');
       setShowImportDialog(false);
       setImportData(null);
+      setActiveTab('statements');
     } catch (e: any) { toast.error(e?.message || (language === 'ar' ? 'حدث خطأ أثناء الاستيراد' : 'Error importing')); }
   };
 
@@ -135,5 +137,6 @@ export function useBankingPage() {
     currency, formatCurrency,
     handleAddAccount, handleFileUpload, handleImportStatement, handleCreateReconciliation,
     bankCategoryAccounts, totalBalance, activeAccounts, pendingStatements,
+    activeTab, setActiveTab,
   };
 }
