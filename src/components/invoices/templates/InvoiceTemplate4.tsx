@@ -138,7 +138,7 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
         {/* QR Code Left */}
         <div className="p-3 flex items-start">
           <div>
-            <QRCodeSVG value={qrData} size={120} level="L" includeMargin={true} />
+            <QRCodeSVG value={qrData} size={150} level="L" includeMargin={true} />
             <div className="mt-1 text-center text-[9px] font-semibold">{phase2State.label}</div>
           </div>
         </div>
