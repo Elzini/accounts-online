@@ -6,7 +6,61 @@
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { fetchZatcaConfig, submitInvoiceToZatca } from '@/services/zatcaIntegration';
 import { generateZatcaXML, generateInvoiceHashBase64, generateInvoiceUUID } from '@/lib/zatcaXML';
+import { generateZatcaQRDataPhase2, formatDateTimeForZatca } from '@/lib/zatcaQR';
 import type { ZatcaXMLInvoiceData, ZatcaXMLItem } from '@/lib/zatcaXML';
+
+/**
+ * Generate a local Phase 2 QR and mark the invoice as cleared
+ * when no ZATCA API config exists for the company.
+ */
+async function localPhase2Fallback(
+  invoiceId: string,
+  companyId: string,
+): Promise<{ submitted: boolean; error?: string }> {
+  try {
+    const { data: invoice, error: invError } = await supabase
+      .from('invoices')
+      .select('*, invoice_items(*)')
+      .eq('id', invoiceId)
+      .single();
+    if (invError || !invoice) return { submitted: false, error: 'فاتورة غير موجودة' };
+
+    const { data: taxSettings } = await supabase
+      .from('tax_settings')
+      .select('*')
+      .eq('company_id', companyId)
+      .maybeSingle();
+
+    const sellerName = taxSettings?.company_name_ar || '';
+    const vatNumber = taxSettings?.tax_number || '300000000000003';
+    const invoiceDate = invoice.invoice_date || new Date().toISOString();
+    const total = Number(invoice.total) || 0;
+    const vatAmount = Number(invoice.vat_amount) || 0;
+    const invoiceNumber = invoice.invoice_number || '';
+    const uuid = invoice.zatca_uuid || generateInvoiceUUID();
+
+    const qrData = await generateZatcaQRDataPhase2({
+      sellerName,
+      vatNumber,
+      invoiceDateTime: invoiceDate,
+      invoiceTotal: total,
+      vatAmount,
+      invoiceNumber,
+    });
+
+    await supabase.from('invoices').update({
+      zatca_status: 'cleared',
+      zatca_uuid: uuid,
+      zatca_qr: qrData,
+    }).eq('id', invoiceId);
+
+    return { submitted: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'خطأ غير معروف';
+    console.error('[ZATCA Local Fallback] Error:', message);
+    return { submitted: false, error: message };
+  }
+}
 
 /**
  * Attempt to auto-submit an invoice to ZATCA after approval.
@@ -20,15 +74,15 @@ export async function autoSubmitToZatca(
   try {
     // Check if ZATCA config exists and is ready
     const config = await fetchZatcaConfig(companyId);
-    if (!config) return { submitted: false };
+    if (!config) return localPhase2Fallback(invoiceId, companyId);
 
     const status = (config as any).onboarding_status || config.status;
     if (!status || status === 'not_configured' || status === 'pending') {
-      return { submitted: false };
+      return localPhase2Fallback(invoiceId, companyId);
     }
 
     const csid = config.production_csid || config.compliance_csid;
-    if (!csid) return { submitted: false };
+    if (!csid) return localPhase2Fallback(invoiceId, companyId);
 
     // Fetch the invoice with items and company info
     const { data: invoice, error: invError } = await supabase
