@@ -1,4 +1,4 @@
-import { Eye, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Eye, Edit, Trash2, CheckCircle, XCircle, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -31,7 +31,8 @@ export function BankStatementsTab({ ctx }: { ctx: ReturnType<typeof useBankingPa
             <TableCell><Badge className={statement.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>{statement.status === 'completed' ? t.bank_completed : t.bank_processing}</Badge></TableCell>
             <TableCell>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" onClick={() => { ctx.setSelectedStatement(statement); ctx.setShowTransactionsDialog(true); }}><Eye className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="sm" title={language === 'ar' ? 'عرض المعاملات' : 'View Transactions'} onClick={() => { ctx.setSelectedStatement(statement); ctx.setShowTransactionsDialog(true); }}><Eye className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="sm" title={language === 'ar' ? 'مطابقة' : 'Reconcile'} className="text-primary" onClick={() => { ctx.setSelectedStatement(statement); ctx.setShowReconcileDialog(true); }}><ArrowLeftRight className="w-4 h-4" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => { ctx.setEditingStatement(statement); ctx.setEditStatementForm({ statement_date: statement.statement_date, notes: statement.notes || '', file_name: statement.file_name || '' }); ctx.setShowEditStatementDialog(true); }}><Edit className="w-4 h-4" /></Button>
                 <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => ctx.setDeleteStatementId(statement.id)}><Trash2 className="w-4 h-4" /></Button>
               </div>

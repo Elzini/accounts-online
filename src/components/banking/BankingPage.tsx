@@ -12,6 +12,7 @@ import { BankStatementsTab } from './tabs/BankStatementsTab';
 import { BankReconciliationsTab } from './tabs/BankReconciliationsTab';
 import { AddAccountDialog, ImportStatementDialog, ReconciliationDialog, EditStatementDialog, DeleteStatementDialog, EditAccountDialog, DeleteAccountDialog } from './dialogs/BankingDialogs';
 import { TransactionsDialog } from './dialogs/TransactionsDialog';
+import { ReconcileDialog } from './dialogs/ReconcileDialog';
 
 export function BankingPage() {
   const ctx = useBankingPage();
@@ -62,6 +63,7 @@ export function BankingPage() {
       <EditAccountDialog ctx={ctx} />
       <DeleteAccountDialog ctx={ctx} />
       <TransactionsDialog open={ctx.showTransactionsDialog} onOpenChange={ctx.setShowTransactionsDialog} statement={ctx.selectedStatement} />
+      <ReconcileDialog open={ctx.showReconcileDialog} onOpenChange={ctx.setShowReconcileDialog} statement={ctx.selectedStatement} />
     </div>
   );
 }

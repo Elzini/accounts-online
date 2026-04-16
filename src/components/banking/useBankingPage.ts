@@ -36,6 +36,7 @@ export function useBankingPage() {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showReconciliationDialog, setShowReconciliationDialog] = useState(false);
   const [showTransactionsDialog, setShowTransactionsDialog] = useState(false);
+  const [showReconcileDialog, setShowReconcileDialog] = useState(false);
   const [selectedStatement, setSelectedStatement] = useState<any>(null);
   const [showEditStatementDialog, setShowEditStatementDialog] = useState(false);
   const [editingStatement, setEditingStatement] = useState<any>(null);
@@ -126,6 +127,7 @@ export function useBankingPage() {
     addBankAccount, updateBankAccount, deleteBankAccount, importStatement, updateStatement, deleteStatement, createReconciliation,
     showAccountDialog, setShowAccountDialog, showImportDialog, setShowImportDialog,
     showReconciliationDialog, setShowReconciliationDialog, showTransactionsDialog, setShowTransactionsDialog,
+    showReconcileDialog, setShowReconcileDialog,
     selectedStatement, setSelectedStatement,
     showEditStatementDialog, setShowEditStatementDialog, editingStatement, setEditingStatement, editStatementForm, setEditStatementForm,
     deleteStatementId, setDeleteStatementId,
