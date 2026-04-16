@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { linkTransferToSale } from '@/hooks/useTransfers';
 import { getServiceContainer } from '@/core/engine/serviceContainer';
+import { autoSubmitToZatca } from '@/services/zatcaAutoSubmit';
 import { SelectedCarItem, SelectedInventoryItem, InvoiceFormData } from './types';
 
 interface ActionDeps {
