@@ -149,15 +149,26 @@ serve(async (req) => {
         }
         result = await response.json();
 
-        // Auto-update sale record with ZATCA status
+        // Auto-update invoice/sale record with ZATCA status and official QR
         if (body.saleId && result.reportingStatus === 'REPORTED') {
           const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-          await serviceClient.from('sales').update({
+          const officialQr = extractOfficialQrFromZatcaResponse(result);
+
+          const invoiceUpdate = await serviceClient.from('invoices').update({
             zatca_status: 'reported',
             zatca_uuid: body.uuid,
             zatca_invoice_hash: body.invoiceHash,
-            zatca_qr: result.clearedInvoice || null,
+            zatca_qr: officialQr,
           }).eq('id', body.saleId);
+
+          if (invoiceUpdate.error) {
+            await serviceClient.from('sales').update({
+              zatca_status: 'reported',
+              zatca_uuid: body.uuid,
+              zatca_invoice_hash: body.invoiceHash,
+              zatca_qr: officialQr,
+            }).eq('id', body.saleId);
+          }
         }
         break;
       }
@@ -184,16 +195,26 @@ serve(async (req) => {
         }
         result = await response.json();
 
-        // Auto-update sale record with cleared status and QR
+        // Auto-update invoice/sale record with cleared status and official QR
         if (body.saleId && result.clearanceStatus === 'CLEARED') {
           const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-          const qrFromZatca = result.clearedInvoice || null;
-          await serviceClient.from('sales').update({
+          const officialQr = extractOfficialQrFromZatcaResponse(result);
+
+          const invoiceUpdate = await serviceClient.from('invoices').update({
             zatca_status: 'cleared',
             zatca_uuid: body.uuid,
             zatca_invoice_hash: body.invoiceHash,
-            zatca_qr: qrFromZatca,
+            zatca_qr: officialQr,
           }).eq('id', body.saleId);
+
+          if (invoiceUpdate.error) {
+            await serviceClient.from('sales').update({
+              zatca_status: 'cleared',
+              zatca_uuid: body.uuid,
+              zatca_invoice_hash: body.invoiceHash,
+              zatca_qr: officialQr,
+            }).eq('id', body.saleId);
+          }
         }
         break;
       }
