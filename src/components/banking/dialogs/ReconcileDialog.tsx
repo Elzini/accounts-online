@@ -236,11 +236,39 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                   </div>
                 </div>
               </button>
-              <div className="p-3 rounded-lg border bg-muted/50">
-                <p className="text-xs text-muted-foreground">{ar ? 'الفرق' : 'Difference'}</p>
-                <div className="mt-1 space-y-0.5 text-xs">
-                  <p>{ar ? 'في الكشف ولم يُسجل:' : 'In statement, not recorded:'} <span className="font-bold text-orange-600">{formatCurrency(bankOnlyCreditSum - bankOnlyDebitSum)}</span></p>
-                  <p>{ar ? 'مسجل ولم يظهر بالكشف:' : 'Recorded, not in statement:'} <span className="font-bold text-blue-600">{formatCurrency(bookOnlyDebitSum - bookOnlyCreditSum)}</span></p>
+              <div className="p-3 rounded-lg border bg-muted/50 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground">{ar ? 'ملخص الفروقات' : 'Differences Summary'}</p>
+                <div className="space-y-1.5 text-xs">
+                  <div className="p-2 rounded bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800">
+                    <p className="font-medium text-orange-700 mb-1">{ar ? '🟠 في الكشف ولم يُسجل قيد:' : '🟠 In statement, no journal entry:'}</p>
+                    <div className="flex justify-between">
+                      <span className="text-orange-600">{ar ? 'مسحوبات (مدين):' : 'Withdrawals (debit):'}</span>
+                      <span className="font-bold text-red-600">{formatCurrency(bankOnlyDebitSum)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-orange-600">{ar ? 'إيداعات (دائن):' : 'Deposits (credit):'}</span>
+                      <span className="font-bold text-green-600">{formatCurrency(bankOnlyCreditSum)}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-orange-200 dark:border-orange-700 mt-1 pt-1">
+                      <span className="text-orange-700 font-medium">{ar ? 'الصافي:' : 'Net:'}</span>
+                      <span className="font-bold text-orange-700">{formatCurrency(bankOnlyCreditSum - bankOnlyDebitSum)}</span>
+                    </div>
+                  </div>
+                  <div className="p-2 rounded bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                    <p className="font-medium text-blue-700 mb-1">{ar ? '🔵 مسجل قيد ولم يظهر بالكشف:' : '🔵 Has journal entry, not in statement:'}</p>
+                    <div className="flex justify-between">
+                      <span className="text-blue-600">{ar ? 'مدين:' : 'Debit:'}</span>
+                      <span className="font-bold text-red-600">{formatCurrency(bookOnlyDebitSum)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-blue-600">{ar ? 'دائن:' : 'Credit:'}</span>
+                      <span className="font-bold text-green-600">{formatCurrency(bookOnlyCreditSum)}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-blue-200 dark:border-blue-700 mt-1 pt-1">
+                      <span className="text-blue-700 font-medium">{ar ? 'الصافي:' : 'Net:'}</span>
+                      <span className="font-bold text-blue-700">{formatCurrency(bookOnlyDebitSum - bookOnlyCreditSum)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
