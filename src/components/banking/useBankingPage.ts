@@ -2,14 +2,13 @@
  * Banking Page - Custom Hook
  * Extracts all state management and handlers from BankingPage
  */
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { useBankAccounts, useBankStatements, useBankReconciliations, useAddBankAccount, useUpdateBankAccount, useDeleteBankAccount, useImportBankStatement, useUpdateBankStatement, useDeleteBankStatement, useCreateBankReconciliation } from '@/hooks/useBanking';
 import { useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { parseBankStatementFile } from '@/services/bankStatementParser';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function useBankingPage() {
   const { t, language } = useLanguage();
@@ -18,10 +17,10 @@ export function useBankingPage() {
   const { data: allStatements = [] } = useBankStatements();
   const { data: allReconciliations = [] } = useBankReconciliations();
   const { data: accounts = [] } = useAccounts();
-  const { filterByFiscalYear } = useFiscalYearFilter();
+  
 
-  const statements = useMemo(() => filterByFiscalYear(allStatements, 'statement_date'), [allStatements, filterByFiscalYear]);
-  const reconciliations = useMemo(() => filterByFiscalYear(allReconciliations, 'reconciliation_date'), [allReconciliations, filterByFiscalYear]);
+  const statements = allStatements;
+  const reconciliations = allReconciliations;
 
   const addBankAccount = useAddBankAccount();
   const updateBankAccount = useUpdateBankAccount();
