@@ -64,7 +64,7 @@ export async function generateCertificateStamp(
   const rawSigBuffer = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     keyPair.privateKey,
-    spkiBytes,
+    spkiBytes.buffer as ArrayBuffer,
   );
   return rawSignatureToDER(new Uint8Array(rawSigBuffer));
 }
