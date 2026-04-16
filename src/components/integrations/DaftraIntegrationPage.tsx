@@ -205,6 +205,18 @@ export function DaftraIntegrationPage() {
     }
   };
 
+  const handleReplaceWithDaftra = async () => {
+    if (!companyId) return;
+    if (!confirm('⚠️ تحذير: سيتم استبدال شجرة الحسابات بالكامل بشجرة دفترة.\n\n• الحسابات المتطابقة بالكود: سيتم تحديث اسمها ونوعها\n• الحسابات غير الموجودة في دفترة: سيتم حذفها (إلا المرتبطة بقيود)\n• الحسابات الجديدة من دفترة: سيتم إضافتها\n\nهل تريد المتابعة؟')) return;
+    try {
+      const result = await replaceWithDaftra.mutateAsync(companyId);
+      const d = result as any;
+      toast.success(`تم الاستبدال ✅ | تحديث: ${d?.updated || 0} • إضافة: ${d?.inserted || 0} • حذف: ${d?.deleted || 0} • محمي: ${d?.kept || 0} • أخطاء: ${d?.errors || 0}`);
+    } catch (err: any) {
+      toast.error(`خطأ في الاستبدال: ${err.message}`);
+    }
+  };
+
   const handleSyncJournals = async () => {
     if (!companyId) return;
     try {
