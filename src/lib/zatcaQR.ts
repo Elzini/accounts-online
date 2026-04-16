@@ -42,12 +42,23 @@ function encodeTLV(tag: number, value: string): Uint8Array {
 
 function encodeTLVBinary(tag: number, valueBytes: Uint8Array): Uint8Array {
   const length = valueBytes.length;
-  if (length > 255) throw new Error(`TLV value too long for tag ${tag}: ${length} bytes`);
-  const result = new Uint8Array(2 + length);
-  result[0] = tag;
-  result[1] = length;
-  result.set(valueBytes, 2);
-  return result;
+  // ZATCA TLV supports multi-byte length: 1 byte if <256, 2 bytes if >=256
+  if (length < 256) {
+    const result = new Uint8Array(2 + length);
+    result[0] = tag;
+    result[1] = length;
+    result.set(valueBytes, 2);
+    return result;
+  } else {
+    // 2-byte length encoding for values >= 256 bytes (e.g. X.509 certificate)
+    const result = new Uint8Array(4 + length);
+    result[0] = tag;
+    result[1] = 0x82; // indicates 2-byte length follows
+    result[2] = (length >> 8) & 0xFF;
+    result[3] = length & 0xFF;
+    result.set(valueBytes, 4);
+    return result;
+  }
 }
 
 function base64ToUint8Array(base64: string): Uint8Array {
