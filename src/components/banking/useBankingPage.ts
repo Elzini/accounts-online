@@ -137,5 +137,6 @@ export function useBankingPage() {
     currency, formatCurrency,
     handleAddAccount, handleFileUpload, handleImportStatement, handleCreateReconciliation,
     bankCategoryAccounts, totalBalance, activeAccounts, pendingStatements,
+    activeTab, setActiveTab,
   };
 }
