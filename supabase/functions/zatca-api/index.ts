@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,220 +14,231 @@ const ZATCA_PRODUCTION_URL = 'https://gw-fatoora.zatca.gov.sa/e-invoicing/core';
 interface ZatcaRequest {
   action: 'compliance' | 'reporting' | 'clearance' | 'get-csid' | 'renew-csid';
   environment: 'sandbox' | 'simulation' | 'production';
-  // For get-csid
   csr?: string;
   otp?: string;
-  // For reporting/clearance
   invoiceHash?: string;
   uuid?: string;
   invoice?: string; // Base64 encoded XML
-  // Auth
   csid?: string;
   csidSecret?: string;
+  // Auto-update sale record
+  saleId?: string;
+  companyId?: string;
+}
+
+function getBaseUrl(environment: string): string {
+  switch (environment) {
+    case 'sandbox': return ZATCA_SANDBOX_URL;
+    case 'simulation': return ZATCA_SIMULATION_URL;
+    case 'production': return ZATCA_PRODUCTION_URL;
+    default: throw new Error(`Unknown environment: ${environment}`);
+  }
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // JWT Authentication
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return new Response(JSON.stringify({ error: 'غير مصرح - يرجى تسجيل الدخول' }), {
+      status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: userData, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !userData?.user) {
+    return new Response(JSON.stringify({ error: 'جلسة غير صالحة' }), {
+      status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
     const body: ZatcaRequest = await req.json();
     const { action, environment } = body;
-
-    // Select base URL based on environment
-    let baseUrl: string;
-    switch (environment) {
-      case 'sandbox':
-        baseUrl = ZATCA_SANDBOX_URL;
-        break;
-      case 'simulation':
-        baseUrl = ZATCA_SIMULATION_URL;
-        break;
-      case 'production':
-        baseUrl = ZATCA_PRODUCTION_URL;
-        break;
-      default:
-        throw new Error(`Unknown environment: ${environment}`);
-    }
+    const baseUrl = getBaseUrl(environment);
 
     let result: any;
 
     switch (action) {
       case 'get-csid': {
-        // Step 1: Get Compliance CSID using CSR and OTP
-        if (!body.csr || !body.otp) {
-          throw new Error('CSR and OTP are required for get-csid action');
-        }
+        if (!body.csr || !body.otp) throw new Error('CSR و OTP مطلوبان');
 
-        const requestUrl = `${baseUrl}/compliance`;
-        const requestBody = JSON.stringify({ csr: body.csr });
-        
-        console.log('ZATCA get-csid request:', {
-          url: requestUrl,
-          otp: body.otp,
-          csrLength: body.csr.length,
-          csrPreview: body.csr.substring(0, 50) + '...',
-        });
+        console.log('ZATCA get-csid:', { env: environment, csrLen: body.csr.length });
 
-        const complianceResponse = await fetch(requestUrl, {
+        const response = await fetch(`${baseUrl}/compliance`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept-Version': 'V2',
-            'OTP': body.otp,
-          },
-          body: requestBody,
+          headers: { 'Content-Type': 'application/json', 'Accept-Version': 'V2', 'OTP': body.otp },
+          body: JSON.stringify({ csr: body.csr }),
         });
 
-        const responseText = await complianceResponse.text();
-        console.log('ZATCA response status:', complianceResponse.status, 'body:', responseText);
+        const responseText = await response.text();
+        console.log('ZATCA response:', response.status);
 
-        if (!complianceResponse.ok) {
-          throw new Error(`ZATCA Compliance API error [${complianceResponse.status}]: ${responseText}`);
-        }
-
+        if (!response.ok) throw new Error(`خطأ ZATCA [${response.status}]: ${responseText}`);
         result = JSON.parse(responseText);
+
+        // Auto-save CSID to zatca_config if companyId provided
+        if (body.companyId && result.binarySecurityToken && result.secret) {
+          const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+          await serviceClient.from('zatca_config').upsert({
+            company_id: body.companyId,
+            compliance_csid: result.binarySecurityToken,
+            compliance_secret: result.secret,
+            compliance_request_id: result.requestID,
+            environment,
+            onboarding_status: 'compliance_csid_obtained',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'company_id' });
+        }
         break;
       }
 
       case 'compliance': {
-        // Step 2: Submit invoice for compliance check
         if (!body.csid || !body.csidSecret || !body.invoice || !body.invoiceHash || !body.uuid) {
-          throw new Error('CSID, secret, invoice, hash, and UUID are required for compliance check');
+          throw new Error('CSID والسر والفاتورة والهاش و UUID مطلوبون');
         }
 
         const authToken = btoa(`${body.csid}:${body.csidSecret}`);
-
-        const complianceCheckResponse = await fetch(`${baseUrl}/compliance/invoices`, {
+        const response = await fetch(`${baseUrl}/compliance/invoices`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Accept-Version': 'V2',
-            'Accept-Language': 'ar',
-            'Authorization': `Basic ${authToken}`,
+            'Content-Type': 'application/json', 'Accept-Version': 'V2',
+            'Accept-Language': 'ar', 'Authorization': `Basic ${authToken}`,
           },
-          body: JSON.stringify({
-            invoiceHash: body.invoiceHash,
-            uuid: body.uuid,
-            invoice: body.invoice,
-          }),
+          body: JSON.stringify({ invoiceHash: body.invoiceHash, uuid: body.uuid, invoice: body.invoice }),
         });
 
-        if (!complianceCheckResponse.ok) {
-          const errorText = await complianceCheckResponse.text();
-          throw new Error(`ZATCA Compliance Check error [${complianceCheckResponse.status}]: ${errorText}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`خطأ فحص الامتثال [${response.status}]: ${errorText}`);
         }
-
-        result = await complianceCheckResponse.json();
+        result = await response.json();
         break;
       }
 
       case 'reporting': {
-        // Step 3: Report simplified invoice (B2C)
         if (!body.csid || !body.csidSecret || !body.invoice || !body.invoiceHash || !body.uuid) {
-          throw new Error('CSID, secret, invoice, hash, and UUID are required for reporting');
+          throw new Error('CSID والسر والفاتورة والهاش و UUID مطلوبون');
         }
 
         const authToken = btoa(`${body.csid}:${body.csidSecret}`);
-
-        const reportingResponse = await fetch(`${baseUrl}/invoices/reporting/single`, {
+        const response = await fetch(`${baseUrl}/invoices/reporting/single`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Accept-Version': 'V2',
-            'Accept-Language': 'ar',
-            'Authorization': `Basic ${authToken}`,
+            'Content-Type': 'application/json', 'Accept-Version': 'V2',
+            'Accept-Language': 'ar', 'Authorization': `Basic ${authToken}`,
             'Clearance-Status': '0',
           },
-          body: JSON.stringify({
-            invoiceHash: body.invoiceHash,
-            uuid: body.uuid,
-            invoice: body.invoice,
-          }),
+          body: JSON.stringify({ invoiceHash: body.invoiceHash, uuid: body.uuid, invoice: body.invoice }),
         });
 
-        if (!reportingResponse.ok) {
-          const errorText = await reportingResponse.text();
-          throw new Error(`ZATCA Reporting error [${reportingResponse.status}]: ${errorText}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`خطأ الإبلاغ [${response.status}]: ${errorText}`);
         }
+        result = await response.json();
 
-        result = await reportingResponse.json();
+        // Auto-update sale record with ZATCA status
+        if (body.saleId && result.reportingStatus === 'REPORTED') {
+          const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+          await serviceClient.from('sales').update({
+            zatca_status: 'reported',
+            zatca_uuid: body.uuid,
+            zatca_invoice_hash: body.invoiceHash,
+            zatca_qr: result.clearedInvoice || null,
+          }).eq('id', body.saleId);
+        }
         break;
       }
 
       case 'clearance': {
-        // Step 4: Clear standard invoice (B2B)
         if (!body.csid || !body.csidSecret || !body.invoice || !body.invoiceHash || !body.uuid) {
-          throw new Error('CSID, secret, invoice, hash, and UUID are required for clearance');
+          throw new Error('CSID والسر والفاتورة والهاش و UUID مطلوبون');
         }
 
         const authToken = btoa(`${body.csid}:${body.csidSecret}`);
-
-        const clearanceResponse = await fetch(`${baseUrl}/invoices/clearance/single`, {
+        const response = await fetch(`${baseUrl}/invoices/clearance/single`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Accept-Version': 'V2',
-            'Accept-Language': 'ar',
-            'Authorization': `Basic ${authToken}`,
+            'Content-Type': 'application/json', 'Accept-Version': 'V2',
+            'Accept-Language': 'ar', 'Authorization': `Basic ${authToken}`,
             'Clearance-Status': '1',
           },
-          body: JSON.stringify({
-            invoiceHash: body.invoiceHash,
-            uuid: body.uuid,
-            invoice: body.invoice,
-          }),
+          body: JSON.stringify({ invoiceHash: body.invoiceHash, uuid: body.uuid, invoice: body.invoice }),
         });
 
-        if (!clearanceResponse.ok) {
-          const errorText = await clearanceResponse.text();
-          throw new Error(`ZATCA Clearance error [${clearanceResponse.status}]: ${errorText}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`خطأ الاعتماد [${response.status}]: ${errorText}`);
         }
+        result = await response.json();
 
-        result = await clearanceResponse.json();
+        // Auto-update sale record with cleared status and QR
+        if (body.saleId && result.clearanceStatus === 'CLEARED') {
+          const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+          const qrFromZatca = result.clearedInvoice || null;
+          await serviceClient.from('sales').update({
+            zatca_status: 'cleared',
+            zatca_uuid: body.uuid,
+            zatca_invoice_hash: body.invoiceHash,
+            zatca_qr: qrFromZatca,
+          }).eq('id', body.saleId);
+        }
         break;
       }
 
       case 'renew-csid': {
-        // Step 5: Get Production CSID
         if (!body.csid || !body.csidSecret || !body.csr) {
-          throw new Error('Compliance CSID, secret, and CSR are required for production CSID');
+          throw new Error('CSID الامتثال والسر و CSR مطلوبون');
         }
 
         const authToken = btoa(`${body.csid}:${body.csidSecret}`);
-
-        const productionResponse = await fetch(`${baseUrl}/production/csids`, {
+        const response = await fetch(`${baseUrl}/production/csids`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Accept-Version': 'V2',
+            'Content-Type': 'application/json', 'Accept-Version': 'V2',
             'Authorization': `Basic ${authToken}`,
           },
-          body: JSON.stringify({
-            csr: body.csr,
-          }),
+          body: JSON.stringify({ csr: body.csr }),
         });
 
-        if (!productionResponse.ok) {
-          const errorText = await productionResponse.text();
-          throw new Error(`ZATCA Production CSID error [${productionResponse.status}]: ${errorText}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`خطأ CSID الإنتاج [${response.status}]: ${errorText}`);
         }
+        result = await response.json();
 
-        result = await productionResponse.json();
+        // Auto-save production CSID
+        if (body.companyId && result.binarySecurityToken && result.secret) {
+          const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+          await serviceClient.from('zatca_config').upsert({
+            company_id: body.companyId,
+            production_csid: result.binarySecurityToken,
+            production_secret: result.secret,
+            production_request_id: result.requestID,
+            onboarding_status: 'production_ready',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'company_id' });
+        }
         break;
       }
 
       default:
-        throw new Error(`Unknown action: ${action}`);
+        throw new Error(`إجراء غير معروف: ${action}`);
     }
 
     return new Response(JSON.stringify({
-      success: true,
-      data: result,
-      environment,
-      action,
+      success: true, data: result, environment, action,
       timestamp: new Date().toISOString(),
     }), {
       status: 200,
@@ -235,12 +247,10 @@ serve(async (req) => {
 
   } catch (error: unknown) {
     console.error('ZATCA API error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+    const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف';
+
     return new Response(JSON.stringify({
-      success: false,
-      error: errorMessage,
-      timestamp: new Date().toISOString(),
+      success: false, error: errorMessage, timestamp: new Date().toISOString(),
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
