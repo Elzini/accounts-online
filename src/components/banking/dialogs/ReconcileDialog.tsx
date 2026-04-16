@@ -220,7 +220,8 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                 <div className="flex items-center justify-between">
                   <XCircle className="w-5 h-5 text-orange-600" />
                   <div>
-                    <p className="text-xs text-orange-600">{ar ? 'في البنك فقط' : 'Bank Only'}</p>
+                    <p className="text-xs text-orange-600 font-medium">{ar ? 'في الكشف المستورد فقط' : 'In Imported Statement Only'}</p>
+                    <p className="text-[10px] text-orange-500 mt-0.5">{ar ? 'موجود في كشف البنك ولم يُسجل قيد محاسبي له' : 'In bank statement but no journal entry recorded'}</p>
                     <p className="text-2xl font-bold text-orange-700">{bankOnlyCount}</p>
                   </div>
                 </div>
@@ -229,7 +230,8 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                 <div className="flex items-center justify-between">
                   <AlertTriangle className="w-5 h-5 text-blue-600" />
                   <div>
-                    <p className="text-xs text-blue-600">{ar ? 'في الدفاتر فقط' : 'Books Only'}</p>
+                    <p className="text-xs text-blue-600 font-medium">{ar ? 'في القيود المحاسبية فقط' : 'In Journal Entries Only'}</p>
+                    <p className="text-[10px] text-blue-500 mt-0.5">{ar ? 'مسجل في البرنامج ولم يظهر في كشف البنك المستورد' : 'Recorded in system but not in bank statement'}</p>
                     <p className="text-2xl font-bold text-blue-700">{bookOnlyCount}</p>
                   </div>
                 </div>
