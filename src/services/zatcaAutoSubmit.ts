@@ -51,12 +51,12 @@ export async function autoSubmitToZatca(
     if (invoice.customer_id) {
       const { data: customer } = await supabase
         .from('customers')
-        .select('name, vat_number, id_number, address, phone')
+        .select('name, registration_number, id_number, address, phone')
         .eq('id', invoice.customer_id)
         .maybeSingle();
       if (customer) {
         buyerName = customer.name || buyerName;
-        buyerTaxNumber = customer.vat_number || '';
+        buyerTaxNumber = customer.registration_number || '';
       }
     }
 
