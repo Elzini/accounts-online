@@ -179,6 +179,8 @@ async function getOrCreateKeyPair(): Promise<{ keyPair: CryptoKeyPair; publicKey
 export async function generateZatcaQRDataPhase2(
   data: Omit<ZatcaQRData, 'invoiceHash' | 'ecdsaSignature' | 'ecdsaPublicKey' | 'certificateSignature'> & { invoiceNumber?: string }
 ): Promise<string> {
+  const { rawSignatureToDER, getOrCreateCertificate } = await import('@/lib/zatcaCertificate');
+
   const cleanVat = data.vatNumber.replace(/\D/g, '');
   const formattedDate = formatDateTimeForZatca(data.invoiceDateTime);
 
@@ -198,38 +200,41 @@ export async function generateZatcaQRDataPhase2(
     new TextEncoder().encode(canonicalData)
   );
   const hashBytes = new Uint8Array(hashBuffer);
-  const invoiceHash = uint8ArrayToBase64(hashBytes);
 
   // Get or create ECDSA P-256 key pair
   const { keyPair, publicKeyBytes } = await getOrCreateKeyPair();
 
-  // Tag 7: Real ECDSA-P256 signature of the hash
-  const signatureBuffer = await crypto.subtle.sign(
+  // Tag 7: ECDSA-P256 signature in DER/ASN.1 format (ZATCA compliant)
+  const rawSignatureBuffer = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
     keyPair.privateKey,
     hashBytes
   );
-  const signatureBytes = new Uint8Array(signatureBuffer);
-  const ecdsaSignature = uint8ArrayToBase64(signatureBytes);
+  const derSignature = rawSignatureToDER(new Uint8Array(rawSignatureBuffer));
 
-  // Tag 8: ECDSA Public Key (raw uncompressed, 65 bytes)
-  const ecdsaPublicKey = uint8ArrayToBase64(publicKeyBytes);
+  // Tag 8 & 9: Self-signed X.509 certificate (DER) and its signature
+  const { certificateDER, certificateSignature } = await getOrCreateCertificate(
+    keyPair,
+    publicKeyBytes,
+    data.sellerName.trim(),
+    cleanVat,
+  );
 
-  // Tag 9: Certificate stamp - hash of (publicKey + sellerName + vatNumber)
-  const sellerVatBytes = new TextEncoder().encode(data.sellerName.trim() + '|' + cleanVat);
-  const certInput = new Uint8Array(publicKeyBytes.length + sellerVatBytes.length);
-  certInput.set(publicKeyBytes, 0);
-  certInput.set(sellerVatBytes, publicKeyBytes.length);
-  const certHashBuffer = await crypto.subtle.digest('SHA-256', certInput);
-  const certSignature = uint8ArrayToBase64(new Uint8Array(certHashBuffer));
+  // Build TLV with proper binary tags
+  const fields = [
+    encodeTLV(1, data.sellerName.trim()),
+    encodeTLV(2, cleanVat),
+    encodeTLV(3, formattedDate),
+    encodeTLV(4, formatAmount(data.invoiceTotal)),
+    encodeTLV(5, formatAmount(data.vatAmount)),
+    encodeTLVBinary(6, hashBytes),
+    encodeTLVBinary(7, derSignature),
+    encodeTLVBinary(8, certificateDER),
+    encodeTLVBinary(9, certificateSignature),
+  ];
 
-  return generateZatcaQRData({
-    ...data,
-    invoiceHash,
-    ecdsaSignature,
-    ecdsaPublicKey,
-    certificateSignature: certSignature,
-  });
+  const combined = combineTLV(fields);
+  return uint8ArrayToBase64(combined);
 }
 
 export function decodeZatcaQRData(base64Data: string): ZatcaQRData | null {
