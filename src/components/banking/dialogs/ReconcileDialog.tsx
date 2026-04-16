@@ -285,8 +285,8 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
             </Table>
 
             <div className="text-xs text-muted-foreground text-center">
-              {ar ? `إجمالي: ${reconciled.length} عملية | ${matchedCount} مطابقة | ${bankOnlyCount} في البنك فقط | ${bookOnlyCount} في الدفاتر فقط` :
-                `Total: ${reconciled.length} items | ${matchedCount} matched | ${bankOnlyCount} bank only | ${bookOnlyCount} books only`}
+              {ar ? `إجمالي: ${reconciled.length} عملية | ${matchedCount} مطابقة | ${bankOnlyCount} في الكشف فقط | ${bookOnlyCount} في القيود فقط` :
+                `Total: ${reconciled.length} items | ${matchedCount} matched | ${bankOnlyCount} statement only | ${bookOnlyCount} journal only`}
             </div>
           </div>
         )}
