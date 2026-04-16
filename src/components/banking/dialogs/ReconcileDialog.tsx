@@ -341,10 +341,25 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                 {ar ? '📊 كشف التسوية البنكية - تفصيل الفرق' : '📊 Bank Reconciliation Statement'}
               </h3>
               <div className="space-y-2 text-sm">
-                {/* Books side */}
-                <div className="flex justify-between py-1">
-                  <span>{ar ? 'رصيد الدفاتر المحاسبية (القيود المرحّلة):' : 'Book Balance (Posted Journals):'}</span>
-                  <span className="font-bold">{formatCurrency(booksClosing)}</span>
+                {/* Statement balances */}
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div className="p-2 rounded bg-muted/50 border">
+                    <p className="text-[10px] text-muted-foreground">{ar ? 'رصيد الإغلاق حسب الكشف المستورد' : 'Closing Balance per Statement'}</p>
+                    <p className="text-lg font-bold">{formatCurrency(statementClosing)}</p>
+                  </div>
+                  <div className="p-2 rounded bg-muted/50 border">
+                    <p className="text-[10px] text-muted-foreground">{ar ? 'رصيد الإغلاق حسب الدفاتر المحاسبية' : 'Closing Balance per Books'}</p>
+                    <p className="text-lg font-bold">{formatCurrency(booksClosing)}</p>
+                  </div>
+                </div>
+                <div className="flex justify-between py-1 px-2 rounded bg-destructive/10 border border-destructive/20">
+                  <span className="font-bold">{ar ? '⚠️ الفرق (كشف البنك - الدفاتر):' : '⚠️ Difference (Statement - Books):'}</span>
+                  <span className={`font-bold text-lg ${netDifference === 0 ? 'text-green-600' : 'text-destructive'}`}>{formatCurrency(Math.abs(netDifference))}</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground text-center">{ar ? `رصيد افتتاحي: ${formatCurrency(openingBalance)} | رصيد افتتاحي الكشف: ${formatCurrency(statementOpening)}` : `Opening: ${formatCurrency(openingBalance)} | Statement Opening: ${formatCurrency(statementOpening)}`}</p>
+                
+                <div className="border-t pt-2 mt-2">
+                  <p className="text-xs font-bold mb-2">{ar ? '📋 تفصيل الفرق:' : '📋 Difference Breakdown:'}</p>
                 </div>
 
                 {/* Bank Only items - deposits not recorded */}
