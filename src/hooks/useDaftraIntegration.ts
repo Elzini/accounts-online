@@ -83,6 +83,19 @@ export function useDaftraImportAccounts() {
   });
 }
 
+export function useDaftraReplaceWithDaftra() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (companyId: string) => daftraService.replaceWithDaftra(companyId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['daftra-config'] });
+      qc.invalidateQueries({ queryKey: ['accounts'] });
+      qc.invalidateQueries({ queryKey: ['account-categories'] });
+    },
+  });
+}
+
+
 export function useDaftraResetAndSync() {
   const qc = useQueryClient();
   return useMutation({
