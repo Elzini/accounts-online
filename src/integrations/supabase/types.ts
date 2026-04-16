@@ -10377,13 +10377,18 @@ export type Database = {
           certificate: string | null
           company_id: string
           compliance_csid: string | null
+          compliance_request_id: string | null
+          compliance_secret: string | null
           created_at: string
           environment: string | null
           id: string
           last_sync_at: string | null
+          onboarding_status: string | null
           otp: string | null
           private_key: string | null
           production_csid: string | null
+          production_request_id: string | null
+          production_secret: string | null
           status: string | null
           updated_at: string
         }
@@ -10392,13 +10397,18 @@ export type Database = {
           certificate?: string | null
           company_id: string
           compliance_csid?: string | null
+          compliance_request_id?: string | null
+          compliance_secret?: string | null
           created_at?: string
           environment?: string | null
           id?: string
           last_sync_at?: string | null
+          onboarding_status?: string | null
           otp?: string | null
           private_key?: string | null
           production_csid?: string | null
+          production_request_id?: string | null
+          production_secret?: string | null
           status?: string | null
           updated_at?: string
         }
@@ -10407,13 +10417,18 @@ export type Database = {
           certificate?: string | null
           company_id?: string
           compliance_csid?: string | null
+          compliance_request_id?: string | null
+          compliance_secret?: string | null
           created_at?: string
           environment?: string | null
           id?: string
           last_sync_at?: string | null
+          onboarding_status?: string | null
           otp?: string | null
           private_key?: string | null
           production_csid?: string | null
+          production_request_id?: string | null
+          production_secret?: string | null
           status?: string | null
           updated_at?: string
         }
