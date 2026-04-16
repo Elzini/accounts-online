@@ -370,7 +370,7 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                   <span className="font-bold">{ar ? '⚠️ الفرق (كشف البنك - الدفاتر):' : '⚠️ Difference (Statement - Books):'}</span>
                   <span className={`font-bold text-lg ${netDifference === 0 ? 'text-green-600' : 'text-destructive'}`}>{formatCurrency(Math.abs(netDifference))}</span>
                 </div>
-                <p className="text-[10px] text-muted-foreground text-center">{ar ? `رصيد افتتاحي: ${formatCurrency(openingBalance)} | رصيد افتتاحي الكشف: ${formatCurrency(statementOpening)}` : `Opening: ${formatCurrency(openingBalance)} | Statement Opening: ${formatCurrency(statementOpening)}`}</p>
+                <p className="text-[10px] text-muted-foreground text-center">{ar ? `رصيد افتتاحي الكشف: ${formatCurrency(statementOpening)}` : `Statement Opening: ${formatCurrency(statementOpening)}`}</p>
                 
                 <div className="border-t pt-2 mt-2">
                   <p className="text-xs font-bold mb-2">{ar ? '📋 تفصيل الفرق:' : '📋 Difference Breakdown:'}</p>
