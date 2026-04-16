@@ -179,16 +179,24 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
   const bookOnlyCreditSum = reconciled.filter(r => r.type === 'book_only').reduce((s, r) => s + (r.bookCredit || 0), 0);
 
   // Compute totals for reconciliation statement
-  const bankTotalDebit = bankTransactions.reduce((s, t) => s + Number(t.debit || 0), 0);
-  const bankTotalCredit = bankTransactions.reduce((s, t) => s + Number(t.credit || 0), 0);
   const journalTotalDebit = journalLines.reduce((s, l) => s + Number(l.debit || 0), 0);
   const journalTotalCredit = journalLines.reduce((s, l) => s + Number(l.credit || 0), 0);
 
-  // Opening balance from bank account
+  // Get closing balance from the LAST transaction in the statement (balance field)
+  const sortedByDate = [...bankTransactions].sort((a, b) => {
+    const d = a.transaction_date.localeCompare(b.transaction_date);
+    return d !== 0 ? d : (a.created_at || '').localeCompare(b.created_at || '');
+  });
+  const lastTxn = sortedByDate[sortedByDate.length - 1];
+  const firstTxn = sortedByDate[0];
+  
+  // Statement closing = last transaction's balance
+  const statementClosing = lastTxn ? Number(lastTxn.balance || 0) : 0;
+  // Statement opening = first transaction's balance + first debit - first credit (reverse to get before)
+  const statementOpening = firstTxn ? Number(firstTxn.balance || 0) + Number(firstTxn.debit || 0) - Number(firstTxn.credit || 0) : 0;
+  
+  // Books closing = opening + journal debits - journal credits (debit on bank account = money in)
   const openingBalance = Number(bankAccount?.opening_balance || 0);
-  // Closing per statement: opening + credits - debits (from bank's perspective)
-  const statementClosing = openingBalance + bankTotalCredit - bankTotalDebit;
-  // Closing per books: opening + journal debits - journal credits (debit = money in for bank account in books)
   const booksClosing = openingBalance + journalTotalDebit - journalTotalCredit;
   const netDifference = statementClosing - booksClosing;
 
@@ -333,10 +341,25 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                 {ar ? '📊 كشف التسوية البنكية - تفصيل الفرق' : '📊 Bank Reconciliation Statement'}
               </h3>
               <div className="space-y-2 text-sm">
-                {/* Books side */}
-                <div className="flex justify-between py-1">
-                  <span>{ar ? 'رصيد الدفاتر المحاسبية (القيود المرحّلة):' : 'Book Balance (Posted Journals):'}</span>
-                  <span className="font-bold">{formatCurrency(booksClosing)}</span>
+                {/* Statement balances */}
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div className="p-2 rounded bg-muted/50 border">
+                    <p className="text-[10px] text-muted-foreground">{ar ? 'رصيد الإغلاق حسب الكشف المستورد' : 'Closing Balance per Statement'}</p>
+                    <p className="text-lg font-bold">{formatCurrency(statementClosing)}</p>
+                  </div>
+                  <div className="p-2 rounded bg-muted/50 border">
+                    <p className="text-[10px] text-muted-foreground">{ar ? 'رصيد الإغلاق حسب الدفاتر المحاسبية' : 'Closing Balance per Books'}</p>
+                    <p className="text-lg font-bold">{formatCurrency(booksClosing)}</p>
+                  </div>
+                </div>
+                <div className="flex justify-between py-1 px-2 rounded bg-destructive/10 border border-destructive/20">
+                  <span className="font-bold">{ar ? '⚠️ الفرق (كشف البنك - الدفاتر):' : '⚠️ Difference (Statement - Books):'}</span>
+                  <span className={`font-bold text-lg ${netDifference === 0 ? 'text-green-600' : 'text-destructive'}`}>{formatCurrency(Math.abs(netDifference))}</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground text-center">{ar ? `رصيد افتتاحي: ${formatCurrency(openingBalance)} | رصيد افتتاحي الكشف: ${formatCurrency(statementOpening)}` : `Opening: ${formatCurrency(openingBalance)} | Statement Opening: ${formatCurrency(statementOpening)}`}</p>
+                
+                <div className="border-t pt-2 mt-2">
+                  <p className="text-xs font-bold mb-2">{ar ? '📋 تفصيل الفرق:' : '📋 Difference Breakdown:'}</p>
                 </div>
 
                 {/* Bank Only items - deposits not recorded */}
@@ -411,13 +434,8 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                   </div>
                 )}
 
-                {/* Total difference */}
-                <div className="flex justify-between py-2 border-t-2 border-primary/30 mt-2 font-bold text-primary">
-                  <span>{ar ? 'إجمالي الفرق بين الكشف والدفاتر:' : 'Total Difference (Statement vs Books):'}</span>
-                  <span className={netDifference === 0 ? 'text-green-600' : 'text-destructive'}>{formatCurrency(Math.abs(netDifference))}</span>
-                </div>
                 {netDifference === 0 && (
-                  <p className="text-center text-green-600 text-xs font-bold">✅ {ar ? 'الرصيد متطابق - لا يوجد فرق' : 'Balanced - No difference'}</p>
+                  <p className="text-center text-green-600 text-xs font-bold mt-2">✅ {ar ? 'الرصيد متطابق تماماً - لا يوجد فرق' : 'Perfectly Balanced - No difference'}</p>
                 )}
               </div>
             </div>
