@@ -242,27 +242,32 @@ export function createSalesInvoiceActions(deps: ActionDeps) {
           });
         }
 
-        // Auto-submit to ZATCA (non-blocking)
+        // Auto-submit to ZATCA (blocking so QR data is ready for display)
         if (companyId) {
-          autoSubmitToZatca(currentSaleId, companyId).then(result => {
-            if (result.submitted) {
-              toast.success('✅ تم إرسال الفاتورة لهيئة الزكاة والضريبة تلقائياً');
-            } else if (result.error) {
-              toast.warning(`⚠️ فشل الإرسال التلقائي لـ ZATCA: ${result.error}`);
-            }
-          });
+          const zatcaResult = await autoSubmitToZatca(currentSaleId, companyId);
+          if (zatcaResult.submitted) {
+            toast.success('✅ تم اعتماد الفاتورة من هيئة الزكاة والضريبة');
+          } else if (zatcaResult.error) {
+            toast.warning(`⚠️ فشل الإرسال التلقائي لـ ZATCA: ${zatcaResult.error}`);
+          }
+          // Re-fetch to get updated zatca_qr and zatca_status
+          const { data: refreshedInvoices } = await supabase.from('invoices').select('*, invoice_items(*)').eq('company_id', companyId).eq('invoice_type', 'sales').order('created_at', { ascending: true });
+          setExistingInvoices(refreshedInvoices || []);
+          const refreshedInvoice = refreshedInvoices?.find(inv => inv.id === currentSaleId);
+          if (refreshedInvoice) {
+            setSavedSaleData({ ...refreshedInvoice, customer: selectedCustomer, inventoryItems: selectedInventoryItems });
+          }
         }
       } else {
         await approveSale.mutateAsync(currentSaleId);
-        // Auto-submit car sale to ZATCA (non-blocking)
+        // Auto-submit car sale to ZATCA (blocking)
         if (companyId) {
-          autoSubmitToZatca(currentSaleId, companyId).then(result => {
-            if (result.submitted) {
-              toast.success('✅ تم إرسال الفاتورة لهيئة الزكاة والضريبة تلقائياً');
-            } else if (result.error) {
-              toast.warning(`⚠️ فشل الإرسال التلقائي لـ ZATCA: ${result.error}`);
-            }
-          });
+          const zatcaResult = await autoSubmitToZatca(currentSaleId, companyId);
+          if (zatcaResult.submitted) {
+            toast.success('✅ تم اعتماد الفاتورة من هيئة الزكاة والضريبة');
+          } else if (zatcaResult.error) {
+            toast.warning(`⚠️ فشل الإرسال التلقائي لـ ZATCA: ${zatcaResult.error}`);
+          }
         }
       }
       setCurrentSaleStatus('approved'); setIsEditing(false); toast.success(t.inv_approved_success); setApproveDialogOpen(false);
