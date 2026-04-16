@@ -252,7 +252,19 @@ export function createSalesInvoiceActions(deps: ActionDeps) {
             }
           });
         }
-      } else { await approveSale.mutateAsync(currentSaleId); }
+      } else {
+        await approveSale.mutateAsync(currentSaleId);
+        // Auto-submit car sale to ZATCA (non-blocking)
+        if (companyId) {
+          autoSubmitToZatca(currentSaleId, companyId).then(result => {
+            if (result.submitted) {
+              toast.success('✅ تم إرسال الفاتورة لهيئة الزكاة والضريبة تلقائياً');
+            } else if (result.error) {
+              toast.warning(`⚠️ فشل الإرسال التلقائي لـ ZATCA: ${result.error}`);
+            }
+          });
+        }
+      }
       setCurrentSaleStatus('approved'); setIsEditing(false); toast.success(t.inv_approved_success); setApproveDialogOpen(false);
     } catch (error) { console.error('Approve sale error:', error); toast.error(t.inv_approved_error); }
   };
