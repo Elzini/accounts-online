@@ -179,16 +179,24 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
   const bookOnlyCreditSum = reconciled.filter(r => r.type === 'book_only').reduce((s, r) => s + (r.bookCredit || 0), 0);
 
   // Compute totals for reconciliation statement
-  const bankTotalDebit = bankTransactions.reduce((s, t) => s + Number(t.debit || 0), 0);
-  const bankTotalCredit = bankTransactions.reduce((s, t) => s + Number(t.credit || 0), 0);
   const journalTotalDebit = journalLines.reduce((s, l) => s + Number(l.debit || 0), 0);
   const journalTotalCredit = journalLines.reduce((s, l) => s + Number(l.credit || 0), 0);
 
-  // Opening balance from bank account
+  // Get closing balance from the LAST transaction in the statement (balance field)
+  const sortedByDate = [...bankTransactions].sort((a, b) => {
+    const d = a.transaction_date.localeCompare(b.transaction_date);
+    return d !== 0 ? d : (a.created_at || '').localeCompare(b.created_at || '');
+  });
+  const lastTxn = sortedByDate[sortedByDate.length - 1];
+  const firstTxn = sortedByDate[0];
+  
+  // Statement closing = last transaction's balance
+  const statementClosing = lastTxn ? Number(lastTxn.balance || 0) : 0;
+  // Statement opening = first transaction's balance + first debit - first credit (reverse to get before)
+  const statementOpening = firstTxn ? Number(firstTxn.balance || 0) + Number(firstTxn.debit || 0) - Number(firstTxn.credit || 0) : 0;
+  
+  // Books closing = opening + journal debits - journal credits (debit on bank account = money in)
   const openingBalance = Number(bankAccount?.opening_balance || 0);
-  // Closing per statement: opening + credits - debits (from bank's perspective)
-  const statementClosing = openingBalance + bankTotalCredit - bankTotalDebit;
-  // Closing per books: opening + journal debits - journal credits (debit = money in for bank account in books)
   const booksClosing = openingBalance + journalTotalDebit - journalTotalCredit;
   const netDifference = statementClosing - booksClosing;
 
