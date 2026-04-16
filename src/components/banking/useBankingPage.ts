@@ -2,14 +2,13 @@
  * Banking Page - Custom Hook
  * Extracts all state management and handlers from BankingPage
  */
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { useBankAccounts, useBankStatements, useBankReconciliations, useAddBankAccount, useUpdateBankAccount, useDeleteBankAccount, useImportBankStatement, useUpdateBankStatement, useDeleteBankStatement, useCreateBankReconciliation } from '@/hooks/useBanking';
 import { useAccounts } from '@/hooks/useAccounting';
 import { useCompany } from '@/contexts/CompanyContext';
 import { parseBankStatementFile } from '@/services/bankStatementParser';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useFiscalYearFilter } from '@/hooks/useFiscalYearFilter';
 
 export function useBankingPage() {
   const { t, language } = useLanguage();
