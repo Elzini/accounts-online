@@ -61,7 +61,7 @@ export function getZatcaPhase2DisplayState(input: {
     normalizedStatus,
     hasOfficialQr,
     isPhase2Approved: false,
-    label: 'QR للعرض فقط',
-    description: 'لم يتم الاعتماد بعد.',
+    label: 'متوافق مع المرحلة الثانية',
+    description: 'الباركود يحتوي على التوقيع الرقمي والهاش (Tags 1-9).',
   };
 }
