@@ -220,7 +220,8 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                 <div className="flex items-center justify-between">
                   <XCircle className="w-5 h-5 text-orange-600" />
                   <div>
-                    <p className="text-xs text-orange-600">{ar ? 'في البنك فقط' : 'Bank Only'}</p>
+                    <p className="text-xs text-orange-600 font-medium">{ar ? 'في الكشف المستورد فقط' : 'In Imported Statement Only'}</p>
+                    <p className="text-[10px] text-orange-500 mt-0.5">{ar ? 'موجود في كشف البنك ولم يُسجل قيد محاسبي له' : 'In bank statement but no journal entry recorded'}</p>
                     <p className="text-2xl font-bold text-orange-700">{bankOnlyCount}</p>
                   </div>
                 </div>
@@ -229,7 +230,8 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                 <div className="flex items-center justify-between">
                   <AlertTriangle className="w-5 h-5 text-blue-600" />
                   <div>
-                    <p className="text-xs text-blue-600">{ar ? 'في الدفاتر فقط' : 'Books Only'}</p>
+                    <p className="text-xs text-blue-600 font-medium">{ar ? 'في القيود المحاسبية فقط' : 'In Journal Entries Only'}</p>
+                    <p className="text-[10px] text-blue-500 mt-0.5">{ar ? 'مسجل في البرنامج ولم يظهر في كشف البنك المستورد' : 'Recorded in system but not in bank statement'}</p>
                     <p className="text-2xl font-bold text-blue-700">{bookOnlyCount}</p>
                   </div>
                 </div>
@@ -237,8 +239,8 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
               <div className="p-3 rounded-lg border bg-muted/50">
                 <p className="text-xs text-muted-foreground">{ar ? 'الفرق' : 'Difference'}</p>
                 <div className="mt-1 space-y-0.5 text-xs">
-                  <p>{ar ? 'بنك غير مسجل:' : 'Unrecorded bank:'} <span className="font-bold text-orange-600">{formatCurrency(bankOnlyCreditSum - bankOnlyDebitSum)}</span></p>
-                  <p>{ar ? 'دفاتر غير ظاهرة:' : 'Missing from bank:'} <span className="font-bold text-blue-600">{formatCurrency(bookOnlyDebitSum - bookOnlyCreditSum)}</span></p>
+                  <p>{ar ? 'في الكشف ولم يُسجل:' : 'In statement, not recorded:'} <span className="font-bold text-orange-600">{formatCurrency(bankOnlyCreditSum - bankOnlyDebitSum)}</span></p>
+                  <p>{ar ? 'مسجل ولم يظهر بالكشف:' : 'Recorded, not in statement:'} <span className="font-bold text-blue-600">{formatCurrency(bookOnlyDebitSum - bookOnlyCreditSum)}</span></p>
                 </div>
               </div>
             </div>
@@ -265,8 +267,8 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                   }>
                     <TableCell>
                       {item.type === 'matched' && <Badge className="bg-green-100 text-green-800 gap-1"><CheckCircle className="w-3 h-3" />{ar ? 'مطابق' : 'Match'}</Badge>}
-                      {item.type === 'bank_only' && <Badge className="bg-orange-100 text-orange-800 gap-1"><XCircle className="w-3 h-3" />{ar ? 'بنك فقط' : 'Bank'}</Badge>}
-                      {item.type === 'book_only' && <Badge className="bg-blue-100 text-blue-800 gap-1"><AlertTriangle className="w-3 h-3" />{ar ? 'دفاتر فقط' : 'Books'}</Badge>}
+                      {item.type === 'bank_only' && <Badge className="bg-orange-100 text-orange-800 gap-1"><XCircle className="w-3 h-3" />{ar ? 'في الكشف فقط' : 'Statement Only'}</Badge>}
+                      {item.type === 'book_only' && <Badge className="bg-blue-100 text-blue-800 gap-1"><AlertTriangle className="w-3 h-3" />{ar ? 'في القيود فقط' : 'Journal Only'}</Badge>}
                     </TableCell>
                     <TableCell className="text-sm">{item.date}</TableCell>
                     <TableCell className="text-sm max-w-[200px] truncate" title={item.description}>{item.description || '-'}</TableCell>
@@ -283,8 +285,8 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
             </Table>
 
             <div className="text-xs text-muted-foreground text-center">
-              {ar ? `إجمالي: ${reconciled.length} عملية | ${matchedCount} مطابقة | ${bankOnlyCount} في البنك فقط | ${bookOnlyCount} في الدفاتر فقط` :
-                `Total: ${reconciled.length} items | ${matchedCount} matched | ${bankOnlyCount} bank only | ${bookOnlyCount} books only`}
+              {ar ? `إجمالي: ${reconciled.length} عملية | ${matchedCount} مطابقة | ${bankOnlyCount} في الكشف فقط | ${bookOnlyCount} في القيود فقط` :
+                `Total: ${reconciled.length} items | ${matchedCount} matched | ${bankOnlyCount} statement only | ${bookOnlyCount} journal only`}
             </div>
           </div>
         )}
