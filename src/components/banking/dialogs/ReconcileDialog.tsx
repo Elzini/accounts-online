@@ -439,8 +439,6 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                 )}
               </div>
             </div>
-              </div>
-            </div>
 
             <div className="text-xs text-muted-foreground text-center">
               {ar ? `إجمالي: ${reconciled.length} عملية | ${matchedCount} مطابقة | ${bankOnlyCount} في الكشف فقط | ${bookOnlyCount} في القيود فقط` :
