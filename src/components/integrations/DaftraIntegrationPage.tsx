@@ -25,6 +25,7 @@ import {
   useDaftraAlignCodes,
   useDaftraResetAndSync,
   useDaftraImportAccounts,
+  useDaftraReplaceWithDaftra,
 } from '@/hooks/useDaftraIntegration';
 import {
   Link2, Unlink, RefreshCw, CheckCircle2, XCircle, Loader2,
