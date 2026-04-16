@@ -373,80 +373,89 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                 <p className="text-[10px] text-muted-foreground text-center">{ar ? `رصيد افتتاحي الكشف: ${formatCurrency(statementOpening)}` : `Statement Opening: ${formatCurrency(statementOpening)}`}</p>
                 
                 <div className="border-t pt-2 mt-2">
-                  <p className="text-xs font-bold mb-2">{ar ? '📋 تفصيل الفرق:' : '📋 Difference Breakdown:'}</p>
+                  <p className="text-xs font-bold mb-2">{ar ? '📋 تفصيل الفرق (' + formatCurrency(Math.abs(netDifference)) + '):' : '📋 Difference Breakdown (' + formatCurrency(Math.abs(netDifference)) + '):'}</p>
                 </div>
 
-                {/* Bank Only items - deposits not recorded */}
-                {bankOnlyCreditSum > 0 && (
-                  <div className="mr-4 pr-2 border-r-2 border-orange-300">
-                    <div className="flex justify-between text-orange-700">
-                      <span>{ar ? '(+) إيداعات في الكشف لم تُسجل قيود لها:' : '(+) Deposits in statement, no journal entry:'}</span>
-                      <span className="font-bold">+{formatCurrency(bankOnlyCreditSum)}</span>
-                    </div>
-                    <div className="text-[10px] text-orange-500 mt-0.5 space-y-0.5">
-                      {reconciled.filter(r => r.type === 'bank_only' && r.bankCredit).map((item, i) => (
-                        <div key={i} className="flex justify-between">
-                          <span className="truncate max-w-[300px]">{item.date} - {item.description || '-'}</span>
-                          <span>{formatCurrency(item.bankCredit!)}</span>
-                        </div>
+                {/* Section 1: Items in statement NOT in books (bank_only) */}
+                <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800">
+                  <p className="text-xs font-bold text-orange-800 mb-2">{ar ? '🟠 عمليات في الكشف المستورد ولم تُسجل في النظام:' : '🟠 In imported statement but NOT recorded in system:'}</p>
+                  <Table>
+                    <TableHeader><TableRow>
+                      <TableHead className="text-right text-[10px] py-1">{ar ? 'التاريخ' : 'Date'}</TableHead>
+                      <TableHead className="text-right text-[10px] py-1">{ar ? 'البيان' : 'Description'}</TableHead>
+                      <TableHead className="text-right text-[10px] py-1">{ar ? 'مسحوبات' : 'Debit'}</TableHead>
+                      <TableHead className="text-right text-[10px] py-1">{ar ? 'إيداعات' : 'Credit'}</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {reconciled.filter(r => r.type === 'bank_only').map((item, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="text-[11px] py-1">{item.date}</TableCell>
+                          <TableCell className="text-[11px] py-1 max-w-[250px] truncate" title={item.description}>{item.description || '-'}</TableCell>
+                          <TableCell className="text-[11px] py-1 text-red-600">{item.bankDebit ? formatCurrency(item.bankDebit) : '-'}</TableCell>
+                          <TableCell className="text-[11px] py-1 text-green-600">{item.bankCredit ? formatCurrency(item.bankCredit) : '-'}</TableCell>
+                        </TableRow>
                       ))}
-                    </div>
-                  </div>
-                )}
+                      {reconciled.filter(r => r.type === 'bank_only').length === 0 && (
+                        <TableRow><TableCell colSpan={4} className="text-center text-[11px] py-2 text-muted-foreground">{ar ? 'لا توجد' : 'None'}</TableCell></TableRow>
+                      )}
+                      <TableRow className="bg-orange-100 dark:bg-orange-900/30 font-bold">
+                        <TableCell colSpan={2} className="text-[11px] py-1">{ar ? 'المجموع' : 'Total'}</TableCell>
+                        <TableCell className="text-[11px] py-1 text-red-600">{bankOnlyDebitSum > 0 ? formatCurrency(bankOnlyDebitSum) : '-'}</TableCell>
+                        <TableCell className="text-[11px] py-1 text-green-600">{bankOnlyCreditSum > 0 ? formatCurrency(bankOnlyCreditSum) : '-'}</TableCell>
+                      </TableRow>
+                      <TableRow className="bg-orange-100 dark:bg-orange-900/30 font-bold">
+                        <TableCell colSpan={2} className="text-[11px] py-1">{ar ? 'الصافي (إيداعات - مسحوبات)' : 'Net (Credits - Debits)'}</TableCell>
+                        <TableCell colSpan={2} className="text-[11px] py-1 text-orange-700 font-bold">{formatCurrency(bankOnlyCreditSum - bankOnlyDebitSum)}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
 
-                {/* Bank Only items - withdrawals not recorded */}
-                {bankOnlyDebitSum > 0 && (
-                  <div className="mr-4 pr-2 border-r-2 border-orange-300">
-                    <div className="flex justify-between text-orange-700">
-                      <span>{ar ? '(-) مسحوبات في الكشف لم تُسجل قيود لها:' : '(-) Withdrawals in statement, no journal entry:'}</span>
-                      <span className="font-bold">-{formatCurrency(bankOnlyDebitSum)}</span>
-                    </div>
-                    <div className="text-[10px] text-orange-500 mt-0.5 space-y-0.5">
-                      {reconciled.filter(r => r.type === 'bank_only' && r.bankDebit).map((item, i) => (
-                        <div key={i} className="flex justify-between">
-                          <span className="truncate max-w-[300px]">{item.date} - {item.description || '-'}</span>
-                          <span>{formatCurrency(item.bankDebit!)}</span>
-                        </div>
+                {/* Section 2: Items in books NOT in statement (book_only) */}
+                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                  <p className="text-xs font-bold text-blue-800 mb-2">{ar ? '🔵 قيود مسجلة في النظام ولم تظهر في الكشف المستورد:' : '🔵 Recorded in system but NOT in imported statement:'}</p>
+                  <Table>
+                    <TableHeader><TableRow>
+                      <TableHead className="text-right text-[10px] py-1">{ar ? 'التاريخ' : 'Date'}</TableHead>
+                      <TableHead className="text-right text-[10px] py-1">{ar ? 'البيان' : 'Description'}</TableHead>
+                      <TableHead className="text-right text-[10px] py-1">{ar ? 'مدين' : 'Debit'}</TableHead>
+                      <TableHead className="text-right text-[10px] py-1">{ar ? 'دائن' : 'Credit'}</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {reconciled.filter(r => r.type === 'book_only').map((item, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="text-[11px] py-1">{item.date}</TableCell>
+                          <TableCell className="text-[11px] py-1 max-w-[250px] truncate" title={item.description}>{item.description || '-'}</TableCell>
+                          <TableCell className="text-[11px] py-1 text-red-600">{item.bookDebit ? formatCurrency(item.bookDebit) : '-'}</TableCell>
+                          <TableCell className="text-[11px] py-1 text-green-600">{item.bookCredit ? formatCurrency(item.bookCredit) : '-'}</TableCell>
+                        </TableRow>
                       ))}
-                    </div>
-                  </div>
-                )}
+                      {reconciled.filter(r => r.type === 'book_only').length === 0 && (
+                        <TableRow><TableCell colSpan={4} className="text-center text-[11px] py-2 text-muted-foreground">{ar ? 'لا توجد' : 'None'}</TableCell></TableRow>
+                      )}
+                      <TableRow className="bg-blue-100 dark:bg-blue-900/30 font-bold">
+                        <TableCell colSpan={2} className="text-[11px] py-1">{ar ? 'المجموع' : 'Total'}</TableCell>
+                        <TableCell className="text-[11px] py-1 text-red-600">{bookOnlyDebitSum > 0 ? formatCurrency(bookOnlyDebitSum) : '-'}</TableCell>
+                        <TableCell className="text-[11px] py-1 text-green-600">{bookOnlyCreditSum > 0 ? formatCurrency(bookOnlyCreditSum) : '-'}</TableCell>
+                      </TableRow>
+                      <TableRow className="bg-blue-100 dark:bg-blue-900/30 font-bold">
+                        <TableCell colSpan={2} className="text-[11px] py-1">{ar ? 'الصافي (مدين - دائن)' : 'Net (Debit - Credit)'}</TableCell>
+                        <TableCell colSpan={2} className="text-[11px] py-1 text-blue-700 font-bold">{formatCurrency(bookOnlyDebitSum - bookOnlyCreditSum)}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
 
-                {/* Book Only items - debits not in statement */}
-                {bookOnlyDebitSum > 0 && (
-                  <div className="mr-4 pr-2 border-r-2 border-blue-300">
-                    <div className="flex justify-between text-blue-700">
-                      <span>{ar ? '(-) قيود مدينة مسجلة ولم تظهر بالكشف:' : '(-) Journal debits not in statement:'}</span>
-                      <span className="font-bold">-{formatCurrency(bookOnlyDebitSum)}</span>
-                    </div>
-                    <div className="text-[10px] text-blue-500 mt-0.5 space-y-0.5">
-                      {reconciled.filter(r => r.type === 'book_only' && r.bookDebit).map((item, i) => (
-                        <div key={i} className="flex justify-between">
-                          <span className="truncate max-w-[300px]">{item.date} - {item.description || '-'}</span>
-                          <span>{formatCurrency(item.bookDebit!)}</span>
-                        </div>
-                      ))}
-                    </div>
+                {/* Final equation */}
+                <div className="p-3 rounded-lg bg-primary/10 border-2 border-primary/30 text-sm space-y-1">
+                  <p className="font-bold text-primary text-center mb-2">{ar ? '📐 معادلة الفرق' : '📐 Difference Equation'}</p>
+                  <div className="flex justify-between"><span>{ar ? 'رصيد إغلاق الكشف المستورد:' : 'Statement Closing:'}</span><span className="font-bold">{formatCurrency(statementClosing)}</span></div>
+                  <div className="flex justify-between"><span>{ar ? 'رصيد إغلاق الدفاتر (النظام):' : 'Books Closing:'}</span><span className="font-bold">{formatCurrency(booksClosing)}</span></div>
+                  <div className="flex justify-between border-t border-primary/30 pt-1 mt-1">
+                    <span className="font-bold">{ar ? '= الفرق:' : '= Difference:'}</span>
+                    <span className={`font-bold text-lg ${netDifference === 0 ? 'text-green-600' : 'text-destructive'}`}>{formatCurrency(statementClosing)} - {formatCurrency(booksClosing)} = {formatCurrency(Math.abs(netDifference))}</span>
                   </div>
-                )}
-
-                {/* Book Only items - credits not in statement */}
-                {bookOnlyCreditSum > 0 && (
-                  <div className="mr-4 pr-2 border-r-2 border-blue-300">
-                    <div className="flex justify-between text-blue-700">
-                      <span>{ar ? '(+) قيود دائنة مسجلة ولم تظهر بالكشف:' : '(+) Journal credits not in statement:'}</span>
-                      <span className="font-bold">+{formatCurrency(bookOnlyCreditSum)}</span>
-                    </div>
-                    <div className="text-[10px] text-blue-500 mt-0.5 space-y-0.5">
-                      {reconciled.filter(r => r.type === 'book_only' && r.bookCredit).map((item, i) => (
-                        <div key={i} className="flex justify-between">
-                          <span className="truncate max-w-[300px]">{item.date} - {item.description || '-'}</span>
-                          <span>{formatCurrency(item.bookCredit!)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                </div>
 
                 {netDifference === 0 && (
                   <p className="text-center text-green-600 text-xs font-bold mt-2">✅ {ar ? 'الرصيد متطابق تماماً - لا يوجد فرق' : 'Perfectly Balanced - No difference'}</p>
