@@ -116,7 +116,7 @@ export function createSalesInvoiceActions(deps: ActionDeps) {
           vat_rate: taxRate, vat_amount: calculations.totalVAT, total: calculations.finalTotal,
           discount_amount: calculations.discountAmount, amount_paid: paidAmount,
           payment_status: paidAmount >= calculations.finalTotal ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid',
-          status: 'draft', fiscal_year_id: selectedFiscalYear?.id || null, notes: invoiceData.notes || null,
+          status: 'draft', zatca_status: 'pending', fiscal_year_id: selectedFiscalYear?.id || null, notes: invoiceData.notes || null,
         }).select().single();
         if (invoiceError) throw invoiceError;
 
