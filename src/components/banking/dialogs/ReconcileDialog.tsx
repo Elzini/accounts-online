@@ -25,7 +25,7 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
   const { language } = useLanguage();
   const { data: bankTransactions = [], isLoading: loadingTxns } = useBankTransactions(statement?.id || '');
   const { data: bankAccounts = [] } = useBankAccounts();
-  const [filter, setFilter] = useState<'all' | 'matched' | 'bank_only' | 'book_only'>('all');
+  const [filter, setFilter] = useState<'all' | 'matched' | 'bank_only' | 'book_only'>('book_only');
 
   const bankAccount = bankAccounts.find(ba => ba.id === statement?.bank_account_id);
   const accountCategoryId = bankAccount?.account_category_id;
