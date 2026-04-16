@@ -20,8 +20,8 @@ export function useBankingPage() {
   const { data: accounts = [] } = useAccounts();
   const { filterByFiscalYear } = useFiscalYearFilter();
 
-  const statements = useMemo(() => filterByFiscalYear(allStatements, 'statement_date'), [allStatements, filterByFiscalYear]);
-  const reconciliations = useMemo(() => filterByFiscalYear(allReconciliations, 'reconciliation_date'), [allReconciliations, filterByFiscalYear]);
+  const statements = allStatements;
+  const reconciliations = allReconciliations;
 
   const addBankAccount = useAddBankAccount();
   const updateBankAccount = useUpdateBankAccount();
