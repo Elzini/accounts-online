@@ -62,6 +62,8 @@ Deno.serve(async (req) => {
         return await handleGetAccounts(config)
       case 'import_accounts':
         return await handleImportAccounts(serviceClient, config, companyId)
+      case 'replace_with_daftra':
+        return await handleReplaceWithDaftra(serviceClient, config, companyId)
       case 'sync_accounts':
         return await handleSyncAccounts(serviceClient, config, companyId, data)
       case 'align_codes':
