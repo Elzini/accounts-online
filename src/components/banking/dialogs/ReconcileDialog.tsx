@@ -178,6 +178,20 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
   const bookOnlyDebitSum = reconciled.filter(r => r.type === 'book_only').reduce((s, r) => s + (r.bookDebit || 0), 0);
   const bookOnlyCreditSum = reconciled.filter(r => r.type === 'book_only').reduce((s, r) => s + (r.bookCredit || 0), 0);
 
+  // Compute totals for reconciliation statement
+  const bankTotalDebit = bankTransactions.reduce((s, t) => s + Number(t.debit || 0), 0);
+  const bankTotalCredit = bankTransactions.reduce((s, t) => s + Number(t.credit || 0), 0);
+  const journalTotalDebit = journalLines.reduce((s, l) => s + Number(l.debit || 0), 0);
+  const journalTotalCredit = journalLines.reduce((s, l) => s + Number(l.credit || 0), 0);
+
+  // Opening balance from bank account
+  const openingBalance = Number(bankAccount?.opening_balance || 0);
+  // Closing per statement: opening + credits - debits (from bank's perspective)
+  const statementClosing = openingBalance + bankTotalCredit - bankTotalDebit;
+  // Closing per books: opening + journal debits - journal credits (debit = money in for bank account in books)
+  const booksClosing = openingBalance + journalTotalDebit - journalTotalCredit;
+  const netDifference = statementClosing - booksClosing;
+
   const formatCurrency = (v: number) => new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA', { minimumFractionDigits: 2 }).format(v);
   const isLoading = loadingTxns || loadingJournal;
 
@@ -311,6 +325,102 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
                 )}
               </TableBody>
             </Table>
+
+            {/* Reconciliation Statement */}
+            <div className="border-2 border-primary/30 rounded-lg p-4 bg-primary/5">
+              <h3 className="text-sm font-bold text-primary mb-3 flex items-center gap-2">
+                <ArrowLeftRight className="w-4 h-4" />
+                {ar ? '📊 كشف التسوية البنكية - تفصيل الفرق' : '📊 Bank Reconciliation Statement'}
+              </h3>
+              <div className="space-y-2 text-sm">
+                {/* Books side */}
+                <div className="flex justify-between py-1">
+                  <span>{ar ? 'رصيد الدفاتر المحاسبية (القيود المرحّلة):' : 'Book Balance (Posted Journals):'}</span>
+                  <span className="font-bold">{formatCurrency(booksClosing)}</span>
+                </div>
+
+                {/* Bank Only items - deposits not recorded */}
+                {bankOnlyCreditSum > 0 && (
+                  <div className="mr-4 pr-2 border-r-2 border-orange-300">
+                    <div className="flex justify-between text-orange-700">
+                      <span>{ar ? '(+) إيداعات في الكشف لم تُسجل قيود لها:' : '(+) Deposits in statement, no journal entry:'}</span>
+                      <span className="font-bold">+{formatCurrency(bankOnlyCreditSum)}</span>
+                    </div>
+                    <div className="text-[10px] text-orange-500 mt-0.5 space-y-0.5">
+                      {reconciled.filter(r => r.type === 'bank_only' && r.bankCredit).map((item, i) => (
+                        <div key={i} className="flex justify-between">
+                          <span className="truncate max-w-[300px]">{item.date} - {item.description || '-'}</span>
+                          <span>{formatCurrency(item.bankCredit!)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Bank Only items - withdrawals not recorded */}
+                {bankOnlyDebitSum > 0 && (
+                  <div className="mr-4 pr-2 border-r-2 border-orange-300">
+                    <div className="flex justify-between text-orange-700">
+                      <span>{ar ? '(-) مسحوبات في الكشف لم تُسجل قيود لها:' : '(-) Withdrawals in statement, no journal entry:'}</span>
+                      <span className="font-bold">-{formatCurrency(bankOnlyDebitSum)}</span>
+                    </div>
+                    <div className="text-[10px] text-orange-500 mt-0.5 space-y-0.5">
+                      {reconciled.filter(r => r.type === 'bank_only' && r.bankDebit).map((item, i) => (
+                        <div key={i} className="flex justify-between">
+                          <span className="truncate max-w-[300px]">{item.date} - {item.description || '-'}</span>
+                          <span>{formatCurrency(item.bankDebit!)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Book Only items - debits not in statement */}
+                {bookOnlyDebitSum > 0 && (
+                  <div className="mr-4 pr-2 border-r-2 border-blue-300">
+                    <div className="flex justify-between text-blue-700">
+                      <span>{ar ? '(-) قيود مدينة مسجلة ولم تظهر بالكشف:' : '(-) Journal debits not in statement:'}</span>
+                      <span className="font-bold">-{formatCurrency(bookOnlyDebitSum)}</span>
+                    </div>
+                    <div className="text-[10px] text-blue-500 mt-0.5 space-y-0.5">
+                      {reconciled.filter(r => r.type === 'book_only' && r.bookDebit).map((item, i) => (
+                        <div key={i} className="flex justify-between">
+                          <span className="truncate max-w-[300px]">{item.date} - {item.description || '-'}</span>
+                          <span>{formatCurrency(item.bookDebit!)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Book Only items - credits not in statement */}
+                {bookOnlyCreditSum > 0 && (
+                  <div className="mr-4 pr-2 border-r-2 border-blue-300">
+                    <div className="flex justify-between text-blue-700">
+                      <span>{ar ? '(+) قيود دائنة مسجلة ولم تظهر بالكشف:' : '(+) Journal credits not in statement:'}</span>
+                      <span className="font-bold">+{formatCurrency(bookOnlyCreditSum)}</span>
+                    </div>
+                    <div className="text-[10px] text-blue-500 mt-0.5 space-y-0.5">
+                      {reconciled.filter(r => r.type === 'book_only' && r.bookCredit).map((item, i) => (
+                        <div key={i} className="flex justify-between">
+                          <span className="truncate max-w-[300px]">{item.date} - {item.description || '-'}</span>
+                          <span>{formatCurrency(item.bookCredit!)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Total difference */}
+                <div className="flex justify-between py-2 border-t-2 border-primary/30 mt-2 font-bold text-primary">
+                  <span>{ar ? 'إجمالي الفرق بين الكشف والدفاتر:' : 'Total Difference (Statement vs Books):'}</span>
+                  <span className={netDifference === 0 ? 'text-green-600' : 'text-destructive'}>{formatCurrency(Math.abs(netDifference))}</span>
+                </div>
+                {netDifference === 0 && (
+                  <p className="text-center text-green-600 text-xs font-bold">✅ {ar ? 'الرصيد متطابق - لا يوجد فرق' : 'Balanced - No difference'}</p>
+                )}
+              </div>
+            </div>
 
             <div className="text-xs text-muted-foreground text-center">
               {ar ? `إجمالي: ${reconciled.length} عملية | ${matchedCount} مطابقة | ${bankOnlyCount} في الكشف فقط | ${bookOnlyCount} في القيود فقط` :
