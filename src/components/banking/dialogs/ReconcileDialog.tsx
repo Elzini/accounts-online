@@ -179,8 +179,25 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
   const bookOnlyCreditSum = reconciled.filter(r => r.type === 'book_only').reduce((s, r) => s + (r.bookCredit || 0), 0);
 
   // Compute totals for reconciliation statement
-  const journalTotalDebit = journalLines.reduce((s, l) => s + Number(l.debit || 0), 0);
-  const journalTotalCredit = journalLines.reduce((s, l) => s + Number(l.credit || 0), 0);
+  // Fetch ALL journal entries for this account up to maxDate (not just the statement range)
+  const { data: allJournalLines = [] } = useQuery({
+    queryKey: ['reconcile-all-journal-lines', accountCategoryId, maxDate],
+    queryFn: async () => {
+      if (!accountCategoryId || !maxDate) return [];
+      const { data, error } = await supabase
+        .from('journal_entry_lines')
+        .select('id, debit, credit, journal_entry:journal_entries!inner(entry_date, is_posted)')
+        .eq('account_id', accountCategoryId)
+        .lte('journal_entry.entry_date', maxDate)
+        .eq('journal_entry.is_posted', true);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!accountCategoryId && !!maxDate && open,
+  });
+
+  // Book closing = net of ALL posted journal entries on this account (asset = debit balance)
+  const booksClosing = allJournalLines.reduce((s, l) => s + Number(l.debit || 0) - Number(l.credit || 0), 0);
 
   // Get closing balance from the LAST transaction in the statement (balance field)
   const sortedByDate = [...bankTransactions].sort((a, b) => {
@@ -192,12 +209,9 @@ export function ReconcileDialog({ open, onOpenChange, statement }: { open: boole
   
   // Statement closing = last transaction's balance
   const statementClosing = lastTxn ? Number(lastTxn.balance || 0) : 0;
-  // Statement opening = first transaction's balance + first debit - first credit (reverse to get before)
+  // Statement opening = first transaction's balance + first debit - first credit
   const statementOpening = firstTxn ? Number(firstTxn.balance || 0) + Number(firstTxn.debit || 0) - Number(firstTxn.credit || 0) : 0;
   
-  // Books closing = opening + journal debits - journal credits (debit on bank account = money in)
-  const openingBalance = Number(bankAccount?.opening_balance || 0);
-  const booksClosing = openingBalance + journalTotalDebit - journalTotalCredit;
   const netDifference = statementClosing - booksClosing;
 
   const formatCurrency = (v: number) => new Intl.NumberFormat(language === 'ar' ? 'ar-SA' : 'en-SA', { minimumFractionDigits: 2 }).format(v);
