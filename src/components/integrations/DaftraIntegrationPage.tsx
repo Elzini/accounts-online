@@ -551,6 +551,36 @@ export function DaftraIntegrationPage() {
                 </CardContent>
               </Card>
 
+              <Card className="border-destructive/30">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-destructive/10">
+                      <RefreshCw className="w-5 h-5 text-destructive" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">استبدال كامل بشجرة دفترة</CardTitle>
+                      <CardDescription>حذف الحسابات غير الموجودة في دفترة وتحديث الأسماء والأكواد لتطابق دفترة تماماً</CardDescription>
+                    </div>
+                  </div>
+                  <Button variant="destructive" onClick={handleReplaceWithDaftra} disabled={replaceWithDaftra.isPending}>
+                    {replaceWithDaftra.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 ml-2" />
+                    )}
+                    استبدال كامل
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                    <p className="text-sm text-destructive">
+                      ⚠️ سيتم تحديث أسماء وأنواع الحسابات المتطابقة بالكود، وحذف الحسابات غير الموجودة في دفترة (إلا المرتبطة بقيود محاسبية)، وإضافة الحسابات الجديدة من دفترة.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div className="flex items-center gap-3">
