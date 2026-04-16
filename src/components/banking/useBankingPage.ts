@@ -127,6 +127,7 @@ export function useBankingPage() {
     addBankAccount, updateBankAccount, deleteBankAccount, importStatement, updateStatement, deleteStatement, createReconciliation,
     showAccountDialog, setShowAccountDialog, showImportDialog, setShowImportDialog,
     showReconciliationDialog, setShowReconciliationDialog, showTransactionsDialog, setShowTransactionsDialog,
+    showReconcileDialog, setShowReconcileDialog,
     selectedStatement, setSelectedStatement,
     showEditStatementDialog, setShowEditStatementDialog, editingStatement, setEditingStatement, editStatementForm, setEditStatementForm,
     deleteStatementId, setDeleteStatementId,
