@@ -224,7 +224,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
             <Badge
               className={phase2State.isPhase2Approved
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-black text-white hover:bg-black/90 font-bold'
                 : phase2State.normalizedStatus === 'rejected' || phase2State.normalizedStatus === 'failed' || phase2State.normalizedStatus === 'error' || phase2State.normalizedStatus === 'invalid'
                   ? 'border border-destructive/20 bg-destructive/10 text-destructive'
                   : 'bg-secondary text-secondary-foreground'}

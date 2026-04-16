@@ -209,9 +209,13 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                     <p className="font-bold">{formattedTime}</p>
                   </div>
                 </div>
-                <p className="mt-2 max-w-[160px] text-center text-xs font-semibold leading-tight">
+                <div className={`mt-2 max-w-[180px] text-center text-[9px] font-bold leading-tight rounded px-2 py-1 ${
+                  phase2State.isPhase2Approved
+                    ? 'bg-black text-white'
+                    : 'bg-gray-200 text-gray-700'
+                }`}>
                   {phase2State.label}
-                </p>
+                </div>
               </div>
             )}
 
