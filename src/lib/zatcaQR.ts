@@ -190,7 +190,7 @@ async function getOrCreateKeyPair(): Promise<{ keyPair: CryptoKeyPair; publicKey
 export async function generateZatcaQRDataPhase2(
   data: Omit<ZatcaQRData, 'invoiceHash' | 'ecdsaSignature' | 'ecdsaPublicKey' | 'certificateSignature'> & { invoiceNumber?: string }
 ): Promise<string> {
-  const { rawSignatureToDER, getOrCreateCertificate } = await import('@/lib/zatcaCertificate');
+  const { rawSignatureToDER, getOrCreateStamp } = await import('@/lib/zatcaCertificate');
 
   const cleanVat = data.vatNumber.replace(/\D/g, '');
   const formattedDate = formatDateTimeForZatca(data.invoiceDateTime);
@@ -213,7 +213,7 @@ export async function generateZatcaQRDataPhase2(
   const hashBytes = new Uint8Array(hashBuffer);
 
   // Get or create ECDSA P-256 key pair
-  const { keyPair, publicKeyBytes } = await getOrCreateKeyPair();
+  const { keyPair } = await getOrCreateKeyPair();
 
   // Tag 7: ECDSA-P256 signature in DER/ASN.1 format (ZATCA compliant)
   const rawSignatureBuffer = await crypto.subtle.sign(
@@ -223,13 +223,9 @@ export async function generateZatcaQRDataPhase2(
   );
   const derSignature = rawSignatureToDER(new Uint8Array(rawSignatureBuffer));
 
-  // Tag 8 & 9: Self-signed X.509 certificate (DER) and its signature
-  const { certificateDER, certificateSignature } = await getOrCreateCertificate(
-    keyPair,
-    publicKeyBytes,
-    data.sellerName.trim(),
-    cleanVat,
-  );
+  // Tag 8: Public key in SPKI format (~91 bytes)
+  // Tag 9: Certificate stamp signature (self-signed)
+  const { spkiBytes, stampSignature } = await getOrCreateStamp(keyPair);
 
   // Build TLV with proper binary tags
   const fields = [
@@ -240,8 +236,8 @@ export async function generateZatcaQRDataPhase2(
     encodeTLV(5, formatAmount(data.vatAmount)),
     encodeTLVBinary(6, hashBytes),
     encodeTLVBinary(7, derSignature),
-    encodeTLVBinary(8, certificateDER),
-    encodeTLVBinary(9, certificateSignature),
+    encodeTLVBinary(8, spkiBytes),
+    encodeTLVBinary(9, stampSignature),
   ];
 
   const combined = combineTLV(fields);
