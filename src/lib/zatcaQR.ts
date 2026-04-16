@@ -260,8 +260,22 @@ export function decodeZatcaQRData(base64Data: string): ZatcaQRData | null {
     let offset = 0;
     while (offset < bytes.length) {
       const tag = bytes[offset];
-      const length = bytes[offset + 1];
-      const rawValue = bytes.slice(offset + 2, offset + 2 + length);
+      let length: number;
+      let headerSize: number;
+      
+      // Support multi-byte length encoding
+      if (bytes[offset + 1] === 0x82) {
+        length = (bytes[offset + 2] << 8) | bytes[offset + 3];
+        headerSize = 4;
+      } else if (bytes[offset + 1] === 0x81) {
+        length = bytes[offset + 2];
+        headerSize = 3;
+      } else {
+        length = bytes[offset + 1];
+        headerSize = 2;
+      }
+      
+      const rawValue = bytes.slice(offset + headerSize, offset + headerSize + length);
 
       if (tag >= 1 && tag <= 5) {
         const value = decoder.decode(rawValue);
@@ -284,7 +298,7 @@ export function decodeZatcaQRData(base64Data: string): ZatcaQRData | null {
         }
       }
 
-      offset += 2 + length;
+      offset += headerSize + length;
     }
 
     return result as ZatcaQRData;
