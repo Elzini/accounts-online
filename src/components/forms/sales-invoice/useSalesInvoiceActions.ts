@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/hooks/modules/useMiscServices';
 import { linkTransferToSale } from '@/hooks/useTransfers';
 import { getServiceContainer } from '@/core/engine/serviceContainer';
+import { autoSubmitToZatca } from '@/services/zatcaAutoSubmit';
 import { SelectedCarItem, SelectedInventoryItem, InvoiceFormData } from './types';
 
 interface ActionDeps {
@@ -240,7 +241,30 @@ export function createSalesInvoiceActions(deps: ActionDeps) {
             inventoryItems: selectedInventoryItems,
           });
         }
-      } else { await approveSale.mutateAsync(currentSaleId); }
+
+        // Auto-submit to ZATCA (non-blocking)
+        if (companyId) {
+          autoSubmitToZatca(currentSaleId, companyId).then(result => {
+            if (result.submitted) {
+              toast.success('✅ تم إرسال الفاتورة لهيئة الزكاة والضريبة تلقائياً');
+            } else if (result.error) {
+              toast.warning(`⚠️ فشل الإرسال التلقائي لـ ZATCA: ${result.error}`);
+            }
+          });
+        }
+      } else {
+        await approveSale.mutateAsync(currentSaleId);
+        // Auto-submit car sale to ZATCA (non-blocking)
+        if (companyId) {
+          autoSubmitToZatca(currentSaleId, companyId).then(result => {
+            if (result.submitted) {
+              toast.success('✅ تم إرسال الفاتورة لهيئة الزكاة والضريبة تلقائياً');
+            } else if (result.error) {
+              toast.warning(`⚠️ فشل الإرسال التلقائي لـ ZATCA: ${result.error}`);
+            }
+          });
+        }
+      }
       setCurrentSaleStatus('approved'); setIsEditing(false); toast.success(t.inv_approved_success); setApproveDialogOpen(false);
     } catch (error) { console.error('Approve sale error:', error); toast.error(t.inv_approved_error); }
   };
