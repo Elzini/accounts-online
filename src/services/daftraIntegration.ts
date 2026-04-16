@@ -106,7 +106,17 @@ export async function importAccountsFromDaftra(companyId: string) {
   return data;
 }
 
-// ==================== RESET & SYNC ACCOUNTS ====================
+// ==================== REPLACE WITH DAFTRA (Full Replacement) ====================
+
+export async function replaceWithDaftra(companyId: string) {
+  const { data, error } = await supabase.functions.invoke<DaftraResponse>('daftra-api', {
+    body: { action: 'replace_with_daftra', companyId },
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+
 
 export async function resetAndSyncAccountsToDaftra(companyId: string, accounts: Array<{
   code: string;

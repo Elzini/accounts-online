@@ -25,6 +25,7 @@ import {
   useDaftraAlignCodes,
   useDaftraResetAndSync,
   useDaftraImportAccounts,
+  useDaftraReplaceWithDaftra,
 } from '@/hooks/useDaftraIntegration';
 import {
   Link2, Unlink, RefreshCw, CheckCircle2, XCircle, Loader2,
@@ -44,6 +45,7 @@ export function DaftraIntegrationPage() {
   const alignCodes = useDaftraAlignCodes();
   const resetAndSync = useDaftraResetAndSync();
   const importAccounts = useDaftraImportAccounts();
+  const replaceWithDaftra = useDaftraReplaceWithDaftra();
 
   const [credentials, setCredentials] = useState({
     subdomain: '',
@@ -200,6 +202,18 @@ export function DaftraIntegrationPage() {
       toast.success(`تم استيراد ${d?.imported || 0} حساب • متجاوز ${d?.skipped || 0} • أخطاء ${d?.errors || 0} (إجمالي ${d?.total || 0})`);
     } catch (err: any) {
       toast.error(`خطأ في الاستيراد: ${err.message}`);
+    }
+  };
+
+  const handleReplaceWithDaftra = async () => {
+    if (!companyId) return;
+    if (!confirm('⚠️ تحذير: سيتم استبدال شجرة الحسابات بالكامل بشجرة دفترة.\n\n• الحسابات المتطابقة بالكود: سيتم تحديث اسمها ونوعها\n• الحسابات غير الموجودة في دفترة: سيتم حذفها (إلا المرتبطة بقيود)\n• الحسابات الجديدة من دفترة: سيتم إضافتها\n\nهل تريد المتابعة؟')) return;
+    try {
+      const result = await replaceWithDaftra.mutateAsync(companyId);
+      const d = result as any;
+      toast.success(`تم الاستبدال ✅ | تحديث: ${d?.updated || 0} • إضافة: ${d?.inserted || 0} • حذف: ${d?.deleted || 0} • محمي: ${d?.kept || 0} • أخطاء: ${d?.errors || 0}`);
+    } catch (err: any) {
+      toast.error(`خطأ في الاستبدال: ${err.message}`);
     }
   };
 
@@ -532,6 +546,36 @@ export function DaftraIntegrationPage() {
                     <AlertTriangle className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
                     <p className="text-sm text-blue-800 dark:text-blue-200">
                       سيتم جلب جميع الحسابات من دفترة وإضافتها لشجرة الحسابات في النظام. الحسابات الموجودة بنفس الكود لن تتأثر. بعد الاستيراد يمكنك التعديل ثم مزامنتها مرة أخرى.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-destructive/30">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-destructive/10">
+                      <RefreshCw className="w-5 h-5 text-destructive" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">استبدال كامل بشجرة دفترة</CardTitle>
+                      <CardDescription>حذف الحسابات غير الموجودة في دفترة وتحديث الأسماء والأكواد لتطابق دفترة تماماً</CardDescription>
+                    </div>
+                  </div>
+                  <Button variant="destructive" onClick={handleReplaceWithDaftra} disabled={replaceWithDaftra.isPending}>
+                    {replaceWithDaftra.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 ml-2" />
+                    )}
+                    استبدال كامل
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                    <p className="text-sm text-destructive">
+                      ⚠️ سيتم تحديث أسماء وأنواع الحسابات المتطابقة بالكود، وحذف الحسابات غير الموجودة في دفترة (إلا المرتبطة بقيود محاسبية)، وإضافة الحسابات الجديدة من دفترة.
                     </p>
                   </div>
                 </CardContent>

@@ -6,7 +6,7 @@ const corsHeaders = {
 }
 
 interface DaftraAction {
-  action: 'authenticate' | 'sync_accounts' | 'sync_journals' | 'sync_clients' | 'sync_suppliers' | 'test_connection' | 'get_accounts' | 'align_codes' | 'reset_and_sync_accounts' | 'import_accounts';
+  action: 'authenticate' | 'sync_accounts' | 'sync_journals' | 'sync_clients' | 'sync_suppliers' | 'test_connection' | 'get_accounts' | 'align_codes' | 'reset_and_sync_accounts' | 'import_accounts' | 'replace_with_daftra';
   companyId: string;
   data?: any;
 }
@@ -62,6 +62,8 @@ Deno.serve(async (req) => {
         return await handleGetAccounts(config)
       case 'import_accounts':
         return await handleImportAccounts(serviceClient, config, companyId)
+      case 'replace_with_daftra':
+        return await handleReplaceWithDaftra(serviceClient, config, companyId)
       case 'sync_accounts':
         return await handleSyncAccounts(serviceClient, config, companyId, data)
       case 'align_codes':
@@ -473,6 +475,163 @@ async function handleImportAccounts(supabase: any, config: any, companyId: strin
     errors,
     total: parsed.length,
     details,
+  })
+}
+
+// ===================== REPLACE WITH DAFTRA (Full Replacement) =====================
+
+async function handleReplaceWithDaftra(supabase: any, config: any, companyId: string) {
+  // 1. Fetch all Daftra accounts
+  let daftraAccounts: any[] = []
+  try {
+    daftraAccounts = await fetchAllDaftraAccounts(config)
+  } catch (err) {
+    return jsonResponse({ error: 'فشل في جلب حسابات دفترة', details: getErrorMessage(err) }, 500)
+  }
+
+  if (!daftraAccounts.length) {
+    return jsonResponse({ error: 'لا توجد حسابات في دفترة' }, 400)
+  }
+
+  // 2. Parse Daftra accounts
+  const parsed: Array<{
+    daftra_id: string; code: string; name: string; type: string;
+    description: string; parent_daftra_id: string;
+  }> = []
+  const daftraIdToCode = new Map<string, string>()
+
+  for (const raw of daftraAccounts) {
+    const account = raw?.JournalAccount || raw || {}
+    const id = String(account?.id || '')
+    const code = normalizeAccountCode(account?.code)
+    const name = String(account?.name || '').trim()
+    const type = reverseDaftraType(account?.type)
+    const parentId = String(account?.journal_cat_id || '0')
+
+    if (!id || !code || !name) continue
+    daftraIdToCode.set(id, code)
+    parsed.push({ daftra_id: id, code, name, type, description: String(account?.description || ''), parent_daftra_id: parentId === '0' ? '' : parentId })
+  }
+
+  parsed.sort((a, b) => a.code.length - b.code.length || a.code.localeCompare(b.code))
+
+  // 3. Get existing accounts
+  const { data: existingAccounts } = await supabase
+    .from('account_categories')
+    .select('id, code, name, type')
+    .eq('company_id', companyId)
+
+  const existingByCode = new Map<string, any>()
+  for (const a of (existingAccounts || [])) {
+    existingByCode.set(normalizeAccountCode(a.code), a)
+  }
+
+  // 4. Find accounts with journal references (cannot delete)
+  const accountIds = (existingAccounts || []).map((a: any) => a.id)
+  let referencedIds = new Set<string>()
+  if (accountIds.length > 0) {
+    // Batch check in chunks of 500
+    for (let i = 0; i < accountIds.length; i += 500) {
+      const chunk = accountIds.slice(i, i + 500)
+      const { data: refs } = await supabase
+        .from('journal_entry_lines')
+        .select('account_id')
+        .in('account_id', chunk)
+      for (const r of (refs || [])) referencedIds.add(r.account_id)
+    }
+  }
+
+  let updated = 0, inserted = 0, deleted = 0, kept = 0, errors = 0
+  const daftraCodes = new Set(parsed.map(p => p.code))
+  const codeToOurId = new Map<string, string>()
+
+  // 5. Update existing accounts that match Daftra codes
+  for (const dAccount of parsed) {
+    const existing = existingByCode.get(dAccount.code)
+    if (existing) {
+      codeToOurId.set(dAccount.code, existing.id)
+      if (existing.name !== dAccount.name || existing.type !== dAccount.type) {
+        try {
+          await supabase
+            .from('account_categories')
+            .update({ name: dAccount.name, type: dAccount.type })
+            .eq('id', existing.id)
+          updated++
+        } catch { errors++ }
+      }
+    }
+  }
+
+  // 6. Delete accounts NOT in Daftra (only unreferenced)
+  // Delete children first (longer codes), then parents
+  const toDelete = (existingAccounts || [])
+    .filter((a: any) => !daftraCodes.has(normalizeAccountCode(a.code)))
+    .sort((a: any, b: any) => b.code.length - a.code.length)
+
+  for (const existing of toDelete) {
+    const code = normalizeAccountCode(existing.code)
+    if (referencedIds.has(existing.id)) {
+      kept++
+      codeToOurId.set(code, existing.id)
+      continue
+    }
+    try {
+      const { error } = await supabase
+        .from('account_categories')
+        .delete()
+        .eq('id', existing.id)
+      if (error) { kept++; codeToOurId.set(code, existing.id) }
+      else { deleted++ }
+    } catch { kept++; codeToOurId.set(code, existing.id) }
+  }
+
+  // 7. Insert new accounts from Daftra
+  for (const dAccount of parsed) {
+    if (codeToOurId.has(dAccount.code) || existingByCode.has(dAccount.code)) continue
+
+    let parentId: string | null = null
+    if (dAccount.parent_daftra_id) {
+      const parentCode = daftraIdToCode.get(dAccount.parent_daftra_id)
+      if (parentCode) parentId = codeToOurId.get(parentCode) || null
+    }
+
+    try {
+      const { data: ins, error } = await supabase
+        .from('account_categories')
+        .insert({
+          company_id: companyId, code: dAccount.code, name: dAccount.name,
+          type: dAccount.type, description: dAccount.description || null,
+          parent_id: parentId, is_system: false,
+        })
+        .select('id')
+        .single()
+
+      if (error) throw error
+      if (ins?.id) codeToOurId.set(dAccount.code, ins.id)
+      inserted++
+    } catch { errors++ }
+  }
+
+  // 8. Fix parent references
+  for (const dAccount of parsed) {
+    if (!dAccount.parent_daftra_id) continue
+    const ourId = codeToOurId.get(dAccount.code)
+    const parentCode = daftraIdToCode.get(dAccount.parent_daftra_id)
+    const parentOurId = parentCode ? codeToOurId.get(parentCode) : null
+    if (ourId && parentOurId) {
+      await supabase
+        .from('account_categories')
+        .update({ parent_id: parentOurId })
+        .eq('id', ourId)
+    }
+  }
+
+  console.log(`[Daftra] Replace: ${updated} updated, ${inserted} inserted, ${deleted} deleted, ${kept} kept, ${errors} errors`)
+
+  return jsonResponse({
+    success: true, updated, inserted, deleted, kept, errors,
+    total_daftra: parsed.length,
+    total_existing: (existingAccounts || []).length,
   })
 }
 
