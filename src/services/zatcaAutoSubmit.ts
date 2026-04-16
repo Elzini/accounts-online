@@ -51,12 +51,12 @@ export async function autoSubmitToZatca(
     if (invoice.customer_id) {
       const { data: customer } = await supabase
         .from('customers')
-        .select('name, tax_number, id_number, address, phone')
+        .select('name, vat_number, id_number, address, phone')
         .eq('id', invoice.customer_id)
         .maybeSingle();
       if (customer) {
         buyerName = customer.name || buyerName;
-        buyerTaxNumber = customer.tax_number || '';
+        buyerTaxNumber = customer.vat_number || '';
       }
     }
 
@@ -83,7 +83,7 @@ export async function autoSubmitToZatca(
       invoiceDate: invoice.invoice_date || new Date().toISOString(),
       invoiceType: 'sale',
       invoiceTypeCode: '388',
-      sellerName: taxSettings?.company_name_ar || taxSettings?.company_name || '',
+      sellerName: taxSettings?.company_name_ar || '',
       sellerTaxNumber: taxSettings?.tax_number || '',
       sellerAddress: taxSettings?.national_address || '',
       sellerCommercialRegister: taxSettings?.commercial_register || '',
