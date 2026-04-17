@@ -28,6 +28,13 @@ const Install = lazy(() => import("./pages/Install"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const RamadanGreeting = lazy(() => import("./pages/RamadanGreeting"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const RealEstateLayout = lazy(() => import("./pages/realestate/RealEstateLayout"));
+const RealEstateHome = lazy(() => import("./pages/realestate/RealEstateHome"));
+const RealEstateAbout = lazy(() => import("./pages/realestate/RealEstateAbout"));
+const RealEstateProjects = lazy(() => import("./pages/realestate/RealEstateProjects"));
+const RealEstateUnits = lazy(() => import("./pages/realestate/RealEstateUnits"));
+const RealEstateNews = lazy(() => import("./pages/realestate/RealEstateNews"));
+const RealEstateContact = lazy(() => import("./pages/realestate/RealEstateContact"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -188,6 +195,14 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/install" element={<Install />} />
       <Route path="/ramadan" element={<RamadanGreeting />} />
+      <Route path="/realestate" element={<RealEstateLayout />}>
+        <Route index element={<RealEstateHome />} />
+        <Route path="about" element={<RealEstateAbout />} />
+        <Route path="projects" element={<RealEstateProjects />} />
+        <Route path="units" element={<RealEstateUnits />} />
+        <Route path="news" element={<RealEstateNews />} />
+        <Route path="contact" element={<RealEstateContact />} />
+      </Route>
       <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
