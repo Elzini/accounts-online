@@ -195,6 +195,14 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/install" element={<Install />} />
       <Route path="/ramadan" element={<RamadanGreeting />} />
+      <Route path="/realestate" element={<RealEstateLayout />}>
+        <Route index element={<RealEstateHome />} />
+        <Route path="about" element={<RealEstateAbout />} />
+        <Route path="projects" element={<RealEstateProjects />} />
+        <Route path="units" element={<RealEstateUnits />} />
+        <Route path="news" element={<RealEstateNews />} />
+        <Route path="contact" element={<RealEstateContact />} />
+      </Route>
       <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
