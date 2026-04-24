@@ -263,6 +263,120 @@ export function PurchasesReport() {
     });
   };
 
+  // ── ZATCA validation analysis (shared by export + validation page) ──
+  type ValidationIssue = 'missing_name' | 'missing_tax' | 'missing_inv' | 'math';
+  type ValidatedRow = {
+    idx: number;
+    row: ReportRow;
+    systemInvoiceNumber: string;
+    supplierInvoiceNumber: string;
+    supplierName: string;
+    supplierTax: string;
+    subtotal: number;
+    vat: number;
+    total: number;
+    issues: ValidationIssue[];
+  };
+
+  const validatedRows = useMemo<ValidatedRow[]>(() => {
+    const safeNum = (v: any): number => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+    return filteredRows.map((row, idx) => {
+      const inv: any = row.raw || {};
+      const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
+
+      const supplierName: string =
+        supplier?.name || inv.supplier?.name || inv.customer_name || '';
+      const supplierTax: string =
+        supplier?.id_number || (supplier as any)?.tax_number ||
+        inv.supplier_tax_number || inv.customer_vat_number || '';
+      const systemInvoiceNumber = inv.invoice_number || row.reference || '';
+      const supplierInvoiceNumber = inv.supplier_invoice_number || '';
+      const subtotal = safeNum(inv.subtotal ?? row.baseAmount);
+      const vat = safeNum(inv.vat_amount ?? row.taxOrExpenses);
+      const total = safeNum(inv.total ?? row.totalAmount);
+
+      const issues: ValidationIssue[] = [];
+      if (!supplierName.toString().trim()) issues.push('missing_name');
+      if (!supplierTax.toString().trim()) issues.push('missing_tax');
+      if (!supplierInvoiceNumber.toString().trim()) issues.push('missing_inv');
+      if (Math.abs(total - (subtotal + vat)) > 0.05) issues.push('math');
+
+      return {
+        idx, row, systemInvoiceNumber, supplierInvoiceNumber,
+        supplierName, supplierTax: String(supplierTax),
+        subtotal, vat, total, issues,
+      };
+    });
+  }, [filteredRows, suppliersMap]);
+
+  const issueRows = useMemo(() => validatedRows.filter(r => r.issues.length > 0), [validatedRows]);
+  const filteredIssueRows = useMemo(() => {
+    if (validationFilter === 'all') return issueRows;
+    return issueRows.filter(r => r.issues.includes(validationFilter));
+  }, [issueRows, validationFilter]);
+
+  const issueLabel = (k: ValidationIssue) => {
+    const ar = { missing_name: 'اسم المورد ناقص', missing_tax: 'الرقم الضريبي ناقص', missing_inv: 'رقم فاتورة المورد ناقص', math: 'عدم تطابق رياضي' };
+    const en = { missing_name: 'Missing supplier name', missing_tax: 'Missing tax #', missing_inv: 'Missing supplier inv #', math: 'Math mismatch' };
+    return language === 'ar' ? ar[k] : en[k];
+  };
+
+  const handleExportIssuesExcel = () => {
+    if (filteredIssueRows.length === 0) {
+      toast.info(language === 'ar' ? 'لا توجد فواتير بمشاكل للتصدير' : 'No problematic invoices to export');
+      return;
+    }
+
+    const headers = language === 'ar'
+      ? ['م', 'رقم النظام', 'رقم فاتورة المورد', 'اسم المورد', 'الرقم الضريبي', 'التاريخ', 'قبل الضريبة', 'الضريبة', 'الإجمالي', 'فرق الإجمالي', 'الملاحظات']
+      : ['#', 'System #', 'Supplier Inv #', 'Supplier Name', 'Tax #', 'Date', 'Subtotal', 'VAT', 'Total', 'Total Diff', 'Issues'];
+
+    const MISSING = language === 'ar' ? 'غير متوفر' : 'N/A';
+    const data = filteredIssueRows.map((v, i) => {
+      const diff = +(v.total - (v.subtotal + v.vat)).toFixed(2);
+      return [
+        i + 1,
+        v.systemInvoiceNumber || MISSING,
+        v.supplierInvoiceNumber || MISSING,
+        v.supplierName || MISSING,
+        v.supplierTax || MISSING,
+        v.row.date ? formatDate(v.row.date) : MISSING,
+        Number(v.subtotal.toFixed(2)),
+        Number(v.vat.toFixed(2)),
+        Number(v.total.toFixed(2)),
+        diff,
+        '⚠️ ' + v.issues.map(issueLabel).join(' | '),
+      ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    ws['!cols'] = [{ wch: 5 }, { wch: 18 }, { wch: 20 }, { wch: 32 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 40 }];
+    const last = data.length + 1;
+    for (let r = 2; r <= last; r++) {
+      ['G', 'H', 'I', 'J'].forEach(c => {
+        const a = `${c}${r}`;
+        if (ws[a]) { ws[a].t = 'n'; ws[a].z = '#,##0.00'; }
+      });
+    }
+    if (language === 'ar') (ws as any)['!sheetView'] = [{ RTL: true }];
+    (ws as any)['!freeze'] = { xSplit: 0, ySplit: 1 };
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, language === 'ar' ? 'فواتير بها مشكلات' : 'Invoices with Issues');
+    const today = new Date().toISOString().split('T')[0];
+    const companyName = (company?.name || 'company').replace(/[^\w\u0600-\u06FF]+/g, '_');
+    XLSX.writeFile(wb, `ZATCA_Issues_${companyName}_${today}.xlsx`);
+
+    toast.success(
+      language === 'ar'
+        ? `✅ تم تصدير ${data.length} فاتورة بها مشكلات`
+        : `✅ Exported ${data.length} problematic invoices`
+    );
+  };
+
   const handleExportZatcaExcel = () => {
     if (filteredRows.length === 0) {
       toast.error(language === 'ar' ? 'لا توجد بيانات للتصدير' : 'No data to export');
