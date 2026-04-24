@@ -123,6 +123,10 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                 </Button>
               </div>
 
+              {hook.batchTimeline.length > 0 && (
+                <BatchTimelinePanel entries={hook.batchTimeline} defaultCollapsed />
+              )}
+
               {hook.costCenters.filter(cc => cc.is_active).length > 0 && (
                 <CostCenterSelector costCenters={hook.costCenters} value={hook.selectedCostCenterId} onChange={hook.setSelectedCostCenterId} />
               )}
