@@ -102,9 +102,20 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
     setProgress(0);
 
     try {
-      const chunkSize = 8; // ملفات لكل دفعة - تُعالَج بالتوازي على السيرفر
-      const MAX_RETRIES = 3; // عدد محاولات إعادة المعالجة عند الفشل/Timeout
-      const RETRY_BASE_DELAY_MS = 1500; // backoff أولي
+      // ===== إعدادات الحجم التكيّفي (Adaptive Chunk Size) =====
+      const INITIAL_CHUNK_SIZE = 8;     // الحجم الافتراضي
+      const MIN_CHUNK_SIZE = 1;          // أدنى حد عند الفشل المتكرر
+      const MAX_CHUNK_SIZE = 8;          // أقصى حد عند التعافي
+      const SHRINK_FACTOR = 2;           // عند timeout: نقسم الحجم على 2 (8→4→2→1)
+      const RECOVERY_THRESHOLD = 2;      // عدد الدفعات الناجحة المتتالية قبل التوسيع
+      const GROW_STEP = 2;               // زيادة الحجم عند التعافي
+
+      const MAX_RETRIES = 3;             // عدد محاولات إعادة المعالجة لنفس الدفعة
+      const RETRY_BASE_DELAY_MS = 1500;  // backoff أولي
+
+      let currentChunkSize = INITIAL_CHUNK_SIZE;
+      let consecutiveSuccesses = 0;
+
       const allResults: BatchParsedResult[] = [];
       const allErrors: Array<{ index: number; fileName: string; error: string }> = [];
 
@@ -125,16 +136,26 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
         );
       };
 
+      const isTimeoutError = (err: any): boolean => {
+        const msg = String(err?.message || err || '').toLowerCase();
+        return msg.includes('timeout') || msg.includes('timed out') || msg.includes('504') || msg.includes('aborted');
+      };
+
       const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-      for (let i = 0; i < validFiles.length; i += chunkSize) {
-        const chunk = validFiles.slice(i, i + chunkSize);
-        const chunkStartIndex = i;
-        const chunkNumber = Math.floor(i / chunkSize) + 1;
+      let cursor = 0;
+      let chunkNumber = 0;
+
+      while (cursor < validFiles.length) {
+        chunkNumber++;
+        const chunk = validFiles.slice(cursor, cursor + currentChunkSize);
+        const chunkStartIndex = cursor;
+        const sizeUsedForThisChunk = chunk.length;
 
         let attempt = 0;
         let success = false;
         let lastError: any = null;
+        let lastWasTimeout = false;
 
         while (attempt < MAX_RETRIES && !success) {
           attempt++;
@@ -176,35 +197,68 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
             }
           } catch (chunkError: any) {
             lastError = chunkError;
+            lastWasTimeout = isTimeoutError(chunkError);
             const retriable = isRetriableError(chunkError);
             console.warn(
-              `Chunk ${chunkNumber} attempt ${attempt}/${MAX_RETRIES} failed${retriable ? ' (retriable)' : ''}:`,
+              `Chunk ${chunkNumber} (size=${sizeUsedForThisChunk}) attempt ${attempt}/${MAX_RETRIES} failed${retriable ? ' (retriable)' : ''}:`,
               chunkError?.message || chunkError
             );
 
             if (retriable && attempt < MAX_RETRIES) {
-              const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1); // 1.5s, 3s, 6s...
-              toast.info(`الدفعة ${chunkNumber} فشلت (timeout). إعادة المحاولة ${attempt + 1}/${MAX_RETRIES} بعد ${Math.round(delay / 1000)}ث...`);
+              const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+              toast.info(`الدفعة ${chunkNumber} فشلت. إعادة المحاولة ${attempt + 1}/${MAX_RETRIES} بعد ${Math.round(delay / 1000)}ث...`);
               await sleep(delay);
               continue;
             }
-            // غير قابلة لإعادة المحاولة، أو استنفدنا المحاولات
             break;
           }
         }
 
-        if (!success) {
+        if (success) {
+          // تقدّم المؤشر وحدّث منطق التعافي
+          cursor += sizeUsedForThisChunk;
+          consecutiveSuccesses++;
+
+          // تعافي تدريجي: زِد الحجم بعد عدد كافٍ من النجاحات المتتالية
+          if (
+            consecutiveSuccesses >= RECOVERY_THRESHOLD &&
+            currentChunkSize < MAX_CHUNK_SIZE
+          ) {
+            const newSize = Math.min(MAX_CHUNK_SIZE, currentChunkSize + GROW_STEP);
+            if (newSize !== currentChunkSize) {
+              console.info(`Adaptive: تعافي — رفع حجم الدفعة من ${currentChunkSize} إلى ${newSize}`);
+              toast.info(`📈 تحسّن الأداء — رفع حجم الدفعة إلى ${newSize}`);
+              currentChunkSize = newSize;
+              consecutiveSuccesses = 0;
+            }
+          }
+        } else {
+          // فشل بعد كل المحاولات — إذا كان timeout وحجم الدفعة > MIN، قلّص وأعد المحاولة على نفس النطاق
+          consecutiveSuccesses = 0;
+
+          if (lastWasTimeout && currentChunkSize > MIN_CHUNK_SIZE) {
+            const newSize = Math.max(MIN_CHUNK_SIZE, Math.floor(currentChunkSize / SHRINK_FACTOR));
+            console.warn(`Adaptive: timeout — تقليص حجم الدفعة من ${currentChunkSize} إلى ${newSize} وإعادة المحاولة`);
+            toast.warning(`📉 timeout — تقليص حجم الدفعة من ${currentChunkSize} إلى ${newSize} وإعادة المحاولة...`);
+            currentChunkSize = newSize;
+            // لا نحرّك cursor — سنعيد محاولة نفس الملفات بحجم أصغر
+            await sleep(1000);
+            continue;
+          }
+
+          // غير timeout أو وصلنا للحد الأدنى — سجّل الأخطاء واستمر
           console.error(`Chunk ${chunkNumber} failed after ${attempt} attempts:`, lastError);
           chunk.forEach((file, idx) => {
             allErrors.push({
               index: chunkStartIndex + idx,
               fileName: file.name,
-              error: `${lastError?.message || 'فشل معالجة الدفعة'} (بعد ${attempt} محاولات)`,
+              error: `${lastError?.message || 'فشل معالجة الدفعة'} (بعد ${attempt} محاولات، حجم=${sizeUsedForThisChunk})`,
             });
           });
+          cursor += sizeUsedForThisChunk;
         }
 
-        setProgress(Math.min(i + chunkSize, validFiles.length));
+        setProgress(Math.min(cursor, validFiles.length));
         setBatchResults([...allResults]);
         setBatchErrors([...allErrors]);
       }
