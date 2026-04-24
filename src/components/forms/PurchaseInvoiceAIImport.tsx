@@ -208,6 +208,9 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                 onReset={() => hook.setSelectedBatchIndex(null)}
                 onConfirm={() => hook.handleImportSingleFromBatch(hook.selectedBatchResult!)}
                 onEdit={() => setEditingIndex(hook.selectedBatchResult!.index)}
+                attachmentFile={hook.selectedBatchResult.fileObject}
+                attachmentThumbnail={hook.selectedBatchResult.thumbnailUrl}
+                attachmentName={hook.selectedBatchResult.fileName}
                 confirmLabel="استيراد هذه الفاتورة"
                 resetLabel="العودة للقائمة"
               />
