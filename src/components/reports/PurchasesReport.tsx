@@ -410,7 +410,7 @@ export function PurchasesReport() {
     await queryClient.invalidateQueries({ queryKey: ['suppliers', companyId] });
     const freshSuppliers = await queryClient.fetchQuery({
       queryKey: ['suppliers', companyId],
-      queryFn: db.fetchSuppliers,
+      queryFn: fetchSuppliers,
     }) as typeof suppliers;
     const freshSuppliersMap = (freshSuppliers || []).reduce((acc, s) => {
       acc[s.id] = s;
