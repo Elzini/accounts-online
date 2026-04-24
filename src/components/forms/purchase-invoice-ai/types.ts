@@ -4,6 +4,7 @@
 
 export interface ParsedInvoiceData {
   supplier_name: string;
+  supplier_branch_name?: string;
   supplier_tax_number?: string;
   supplier_phone?: string;
   supplier_address?: string;
