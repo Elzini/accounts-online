@@ -65,10 +65,58 @@ export async function handleBatchImport({
 
   toast.info(`بدء استيراد ${expectedCount} فاتورة...`);
 
+  // Pre-fetch existing supplier invoice numbers for this company to detect duplicates
+  let existingSupplierInvNumbers = new Set<string>();
+  try {
+    const { data: existingRows } = await supabase
+      .from('invoices')
+      .select('supplier_invoice_number')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'purchase')
+      .not('supplier_invoice_number', 'is', null);
+    if (existingRows) {
+      existingSupplierInvNumbers = new Set(
+        existingRows
+          .map((r: any) => (r.supplier_invoice_number || '').toString().trim())
+          .filter(Boolean)
+      );
+    }
+  } catch (e) {
+    console.warn('Could not pre-fetch existing supplier invoice numbers:', e);
+  }
+
+  // Track invoice numbers seen within this batch to catch in-batch duplicates
+  const seenInBatch = new Set<string>();
+  let duplicateCount = 0;
+  let missingNumberCount = 0;
+  const duplicateMessages: string[] = [];
+
   for (const result of results) {
     try {
       const data = result.data;
-      
+
+      // ====== Duplicate / missing invoice number guard ======
+      const supplierInvNumberRaw = (data.invoice_number || '').toString().trim();
+      if (!supplierInvNumberRaw) {
+        missingNumberCount++;
+        duplicateMessages.push(`⚠️ تم تخطي فاتورة بدون رقم (المورد: ${data.supplier_name || 'غير محدد'})`);
+        failCount++;
+        continue;
+      }
+      if (seenInBatch.has(supplierInvNumberRaw)) {
+        duplicateCount++;
+        duplicateMessages.push(`⛔ رقم الفاتورة ${supplierInvNumberRaw} مكرر داخل ملفات الاستيراد نفسها`);
+        failCount++;
+        continue;
+      }
+      if (existingSupplierInvNumbers.has(supplierInvNumberRaw)) {
+        duplicateCount++;
+        duplicateMessages.push(`⛔ رقم الفاتورة ${supplierInvNumberRaw} موجود مسبقاً في النظام`);
+        failCount++;
+        continue;
+      }
+      seenInBatch.add(supplierInvNumberRaw);
+
       // Find or create supplier
       let supplierId = '';
       const existingSupplier = suppliers.find(s => 
@@ -121,7 +169,7 @@ export async function handleBatchImport({
       }
 
       // Create invoice
-      const supplierInvNumber = data.invoice_number || '';
+      const supplierInvNumber = supplierInvNumberRaw;
       const invoiceNumber = await getNextInvoiceNumber(companyId, 'purchase');
       const { data: invoice, error: invoiceError } = await supabase
         .from('invoices')
@@ -294,5 +342,19 @@ export async function handleBatchImport({
 
   if (failCount > 0 && successCount === 0) {
     toast.error(`فشل استيراد جميع الفواتير (${failCount})`);
+  }
+
+  // Surface duplicate / missing-number warnings
+  if (duplicateCount > 0 || missingNumberCount > 0) {
+    const summary = [
+      duplicateCount > 0 ? `🔁 ${duplicateCount} فاتورة مكررة (تم تخطيها)` : null,
+      missingNumberCount > 0 ? `❓ ${missingNumberCount} فاتورة بدون رقم (تم تخطيها)` : null,
+    ].filter(Boolean).join(' • ');
+
+    toast.warning(
+      `${summary}\n\n${duplicateMessages.slice(0, 6).join('\n')}${duplicateMessages.length > 6 ? `\n…و ${duplicateMessages.length - 6} أخرى` : ''}`,
+      { duration: 12000 }
+    );
+    console.warn('Duplicate/missing invoice numbers during batch import:', duplicateMessages);
   }
 }
