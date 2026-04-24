@@ -73,7 +73,7 @@ export function PurchasesReport() {
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState<CarStatusFilter | InvoiceStatusFilter>('all');
   const [validationOpen, setValidationOpen] = useState(false);
-  const [validationFilter, setValidationFilter] = useState<'all' | 'missing_name' | 'missing_tax' | 'missing_inv' | 'math'>('all');
+  const [validationFilter, setValidationFilter] = useState<'all' | 'missing_name' | 'missing_tax' | 'missing_inv' | 'math' | 'duplicate'>('all');
   const { printReport } = usePrintReport();
   const queryClient = useQueryClient();
   const { t, language } = useLanguage();
@@ -825,13 +825,20 @@ export function PurchasesReport() {
           </DialogHeader>
 
           {/* Summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <button
               onClick={() => setValidationFilter('all')}
               className={`text-start rounded-lg border p-3 transition-colors ${validationFilter === 'all' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
             >
               <div className="text-xs text-muted-foreground">{language === 'ar' ? 'كل المشاكل' : 'All issues'}</div>
               <div className="text-xl font-bold text-destructive">{issueRows.length}</div>
+            </button>
+            <button
+              onClick={() => setValidationFilter('duplicate')}
+              className={`text-start rounded-lg border p-3 transition-colors ${validationFilter === 'duplicate' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+            >
+              <div className="text-xs text-muted-foreground">{language === 'ar' ? '🔁 فواتير مكررة' : '🔁 Duplicates'}</div>
+              <div className="text-xl font-bold text-destructive">{validatedRows.filter(r => r.issues.includes('duplicate')).length}</div>
             </button>
             <button
               onClick={() => setValidationFilter('missing_name')}
