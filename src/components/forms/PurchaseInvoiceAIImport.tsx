@@ -246,8 +246,8 @@ function CostCenterSelector({ costCenters, value, onChange }: { costCenters: any
   );
 }
 
-function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, confirmLabel = 'اعتماد وتعبئة النموذج', resetLabel = 'رفع فاتورة أخرى' }: {
-  data: any; formatCurrency: (val: number) => string; onReset: () => void; onConfirm: () => void; confirmLabel?: string; resetLabel?: string;
+function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, onEdit, confirmLabel = 'اعتماد وتعبئة النموذج', resetLabel = 'رفع فاتورة أخرى' }: {
+  data: any; formatCurrency: (val: number) => string; onReset: () => void; onConfirm: () => void; onEdit?: () => void; confirmLabel?: string; resetLabel?: string;
 }) {
   return (
     <div className="space-y-4">
