@@ -207,6 +207,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                 formatCurrency={hook.formatCurrency}
                 onReset={() => hook.setSelectedBatchIndex(null)}
                 onConfirm={() => hook.handleImportSingleFromBatch(hook.selectedBatchResult!)}
+                onEdit={() => setEditingIndex(hook.selectedBatchResult!.index)}
                 confirmLabel="استيراد هذه الفاتورة"
                 resetLabel="العودة للقائمة"
               />
@@ -245,8 +246,8 @@ function CostCenterSelector({ costCenters, value, onChange }: { costCenters: any
   );
 }
 
-function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, confirmLabel = 'اعتماد وتعبئة النموذج', resetLabel = 'رفع فاتورة أخرى' }: {
-  data: any; formatCurrency: (val: number) => string; onReset: () => void; onConfirm: () => void; confirmLabel?: string; resetLabel?: string;
+function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, onEdit, confirmLabel = 'اعتماد وتعبئة النموذج', resetLabel = 'رفع فاتورة أخرى' }: {
+  data: any; formatCurrency: (val: number) => string; onReset: () => void; onConfirm: () => void; onEdit?: () => void; confirmLabel?: string; resetLabel?: string;
 }) {
   return (
     <div className="space-y-4">
@@ -300,6 +301,12 @@ function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, confir
       )}
       <div className="flex gap-2 justify-end pt-2">
         <Button variant="outline" onClick={onReset}>{resetLabel}</Button>
+        {onEdit && (
+          <Button variant="secondary" onClick={onEdit} className="gap-2">
+            <Pencil className="w-4 h-4" />
+            تعديل البيانات
+          </Button>
+        )}
         <Button onClick={onConfirm} className="gap-2"><CheckCircle className="w-4 h-4" />{confirmLabel}</Button>
       </div>
     </div>
