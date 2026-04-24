@@ -166,20 +166,57 @@ ${isPDF ? 'الملف مرفق كصورة/PDF.' : `المحتوى:\n${fileConten
         },
       ],
       tool_choice: { type: "function", function: { name: "extract_purchase_invoice" } },
-    }),
-  });
+    });
 
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new Error("تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً");
+  // Retry logic for transient 402/429 errors (rate limiting / temporary throttling)
+  const MAX_RETRIES = 3;
+  let response: Response | null = null;
+  let lastErrorBody = "";
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: requestBody,
+    });
+
+    if (response.ok) break;
+
+    // Read error body once for diagnostics
+    lastErrorBody = await response.text();
+    console.error(`AI gateway error (attempt ${attempt + 1}/${MAX_RETRIES + 1}):`, response.status, lastErrorBody.slice(0, 500));
+
+    // Retry on rate limits / transient billing throttles
+    if ((response.status === 429 || response.status === 402) && attempt < MAX_RETRIES) {
+      const backoffMs = Math.min(1000 * Math.pow(2, attempt) + Math.random() * 500, 8000);
+      console.log(`Retrying after ${Math.round(backoffMs)}ms...`);
+      await new Promise((r) => setTimeout(r, backoffMs));
+      continue;
     }
-    if (response.status === 402) {
-      throw new Error("يرجى شحن رصيد الاستخدام");
-    }
-    const text = await response.text();
-    console.error("AI gateway error:", response.status, text);
-    throw new Error(`AI gateway error: ${response.status}`);
+
+    break; // Non-retryable or out of retries
   }
+
+  if (!response || !response.ok) {
+    const status = response?.status ?? 0;
+    if (status === 429) {
+      throw new Error("تم تجاوز حد الطلبات (Rate Limit). جرّب بعد دقيقة.");
+    }
+    if (status === 402) {
+      // Distinguish between true credit exhaustion and per-minute throttling
+      const isThrottle = /rate|throttl|per minute|too many/i.test(lastErrorBody);
+      throw new Error(
+        isThrottle
+          ? "تم تجاوز حد الاستخدام المؤقت لـ AI. خفّض حجم الدفعة أو جرّب بعد دقيقة."
+          : `رصيد AI غير كافٍ. التفاصيل: ${lastErrorBody.slice(0, 200)}`
+      );
+    }
+    throw new Error(`AI gateway error ${status}: ${lastErrorBody.slice(0, 200)}`);
+  }
+
 
   const aiData = await response.json();
 
