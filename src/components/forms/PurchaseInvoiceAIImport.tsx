@@ -138,11 +138,11 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-muted-foreground">إجمالي الضريبة</p>
-                      <p className="text-lg font-bold text-orange-600">{hook.formatCurrency(totalVAT)}</p>
+                      <p className="text-lg font-bold text-warning">{hook.formatCurrency(totalVAT)}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-muted-foreground">الإجمالي شامل الضريبة</p>
-                      <p className="text-lg font-bold text-green-600">{hook.formatCurrency(totalAmount)}</p>
+                      <p className="text-lg font-bold text-success">{hook.formatCurrency(totalAmount)}</p>
                     </div>
                   </div>
                 );
