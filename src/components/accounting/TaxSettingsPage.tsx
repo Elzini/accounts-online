@@ -68,7 +68,6 @@ export function TaxSettingsPage() {
     try {
       const saved = await upsertTaxSettings.mutateAsync(formData);
       setFormData(mapToFormData(saved));
-      const isAr = direction === 'rtl';
       const statusText = saved.is_active
         ? (isAr ? '✅ الضريبة مفعّلة (is_active = true)' : '✅ Tax is active (is_active = true)')
         : (isAr ? '⚠️ الضريبة غير مفعّلة (is_active = false)' : '⚠️ Tax is inactive (is_active = false)');
@@ -79,6 +78,17 @@ export function TaxSettingsPage() {
     } catch (error) {
       toast.error(t.tax_save_error);
     }
+  };
+
+  const confirmToggleActive = async () => {
+    setConfirmToggleOpen(false);
+    const nextActive = !formData.is_active;
+    await handleQuickToggleSave(
+      { ...formData, is_active: nextActive },
+      nextActive
+        ? (isAr ? '✅ تم تفعيل الضريبة (is_active = true)' : '✅ Tax activated (is_active = true)')
+        : (isAr ? '⚠️ تم تعطيل الضريبة (is_active = false)' : '⚠️ Tax deactivated (is_active = false)')
+    );
   };
 
   const handleQuickToggleSave = async (nextData: typeof formData, successMessage?: string) => {
