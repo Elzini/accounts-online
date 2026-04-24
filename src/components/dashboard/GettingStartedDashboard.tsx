@@ -16,12 +16,14 @@ interface Step {
   icon: typeof Calendar;
   page: ActivePage;
   done: boolean;
+  statusBadge?: { ar: string; en: string; tone: 'success' | 'warning' | 'muted' };
 }
 
 interface GettingStartedDashboardProps {
   setActivePage: (page: ActivePage) => void;
   hasFiscalYear: boolean;
   hasTaxSettings: boolean;
+  taxIsActive?: boolean;
   hasAccounts: boolean;
 }
 
@@ -29,6 +31,7 @@ export function GettingStartedDashboard({
   setActivePage,
   hasFiscalYear,
   hasTaxSettings,
+  taxIsActive = false,
   hasAccounts,
 }: GettingStartedDashboardProps) {
   const { language } = useLanguage();
@@ -44,6 +47,9 @@ export function GettingStartedDashboard({
       icon: Calendar,
       page: 'fiscal-years' as ActivePage,
       done: hasFiscalYear,
+      statusBadge: hasFiscalYear
+        ? { ar: 'تم الإنشاء', en: 'Created', tone: 'success' }
+        : { ar: 'لم تُنشأ بعد', en: 'Not created', tone: 'muted' },
     },
     {
       id: 'tax',
@@ -54,6 +60,11 @@ export function GettingStartedDashboard({
       icon: Receipt,
       page: 'tax-settings' as ActivePage,
       done: hasTaxSettings,
+      statusBadge: !hasTaxSettings
+        ? { ar: 'لم تُحفظ بعد', en: 'Not saved', tone: 'muted' }
+        : taxIsActive
+          ? { ar: 'محفوظة ومفعّلة', en: 'Saved & active', tone: 'success' }
+          : { ar: 'محفوظة - غير مفعّلة', en: 'Saved - inactive', tone: 'warning' },
     },
     {
       id: 'accounts',
@@ -64,6 +75,9 @@ export function GettingStartedDashboard({
       icon: BookOpen,
       page: 'chart-of-accounts' as ActivePage,
       done: hasAccounts,
+      statusBadge: hasAccounts
+        ? { ar: 'تم الإنشاء', en: 'Created', tone: 'success' }
+        : { ar: 'لم تُنشأ بعد', en: 'Not created', tone: 'muted' },
     },
   ];
 
