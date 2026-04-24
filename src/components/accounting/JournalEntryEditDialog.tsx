@@ -158,9 +158,10 @@ export function JournalEntryEditDialog({
       });
       toast.success('تم تحديث القيد بنجاح');
       setIsEditMode(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating journal entry:', error);
-      toast.error('حدث خطأ أثناء تحديث القيد');
+      const msg = error?.message || error?.error_description || 'حدث خطأ أثناء تحديث القيد';
+      toast.error(msg);
     }
   };
 

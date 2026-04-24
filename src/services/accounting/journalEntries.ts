@@ -103,37 +103,48 @@ export async function updateJournalEntry(
   entry: Partial<Omit<JournalEntry, 'id' | 'entry_number' | 'created_at' | 'updated_at' | 'lines'>>,
   lines: Array<{ id?: string; account_id: string; description?: string; debit: number; credit: number; cost_center_id?: string | null }>
 ): Promise<JournalEntry> {
-  // Fetch company_id to get the right container
+  // Fetch entry to know if it's posted
   const { data: existing } = await supabase
     .from('journal_entries')
-    .select('company_id')
+    .select('company_id, is_posted')
     .eq('id', entryId)
     .single();
 
   if (!existing) throw new Error('Journal entry not found');
 
-  const { journal } = getServiceContainer(existing.company_id);
-
-  // Update header fields via engine's repo
-  const totalDebit = lines.reduce((sum, l) => sum + (l.debit || 0), 0);
-  const totalCredit = lines.reduce((sum, l) => sum + (l.credit || 0), 0);
-
-  // Use replaceLines which handles totals + line replacement atomically
-  await journal.replaceLines(entryId, lines.map(l => ({
-    account_id: l.account_id,
-    description: l.description || null,
-    debit: l.debit || 0,
-    credit: l.credit || 0,
-    cost_center_id: l.cost_center_id || null,
-  })));
-
-  // Update header metadata (date, description) if provided
-  if (entry.entry_date || entry.description) {
+  // Posted entries must go through the secure RPC that bypasses immutable-ledger triggers
+  if (existing.is_posted) {
     const { supabase: sb } = await import('@/integrations/supabase/client');
-    const updateData: Record<string, any> = {};
-    if (entry.entry_date) updateData.entry_date = entry.entry_date;
-    if (entry.description) updateData.description = entry.description;
-    await sb.from('journal_entries').update(updateData).eq('id', entryId);
+    const { error } = await sb.rpc('update_posted_journal_entry', {
+      p_entry_id: entryId,
+      p_entry_date: entry.entry_date || null,
+      p_description: entry.description || null,
+      p_lines: lines.map(l => ({
+        account_id: l.account_id,
+        description: l.description || null,
+        debit: Number(l.debit) || 0,
+        credit: Number(l.credit) || 0,
+      })) as any,
+    });
+    if (error) throw error;
+  } else {
+    // Draft entries: use the engine's normal flow
+    const { journal } = getServiceContainer(existing.company_id);
+    await journal.replaceLines(entryId, lines.map(l => ({
+      account_id: l.account_id,
+      description: l.description || null,
+      debit: l.debit || 0,
+      credit: l.credit || 0,
+      cost_center_id: l.cost_center_id || null,
+    })));
+
+    if (entry.entry_date || entry.description) {
+      const { supabase: sb } = await import('@/integrations/supabase/client');
+      const updateData: Record<string, any> = {};
+      if (entry.entry_date) updateData.entry_date = entry.entry_date;
+      if (entry.description) updateData.description = entry.description;
+      await sb.from('journal_entries').update(updateData).eq('id', entryId);
+    }
   }
 
   // Fetch updated entry
