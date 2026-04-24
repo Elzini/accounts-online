@@ -33,6 +33,11 @@ interface PurchaseInvoiceFormProps {
 
 export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps) {
   const hook = usePurchaseInvoice();
+  const companyId = useCompanyId();
+  const queryClient = useQueryClient();
+  const [deleteAllDraftsOpen, setDeleteAllDraftsOpen] = useState(false);
+  const [deletingDrafts, setDeletingDrafts] = useState(false);
+  const [draftCount, setDraftCount] = useState(0);
   const {
     invoiceData, setInvoiceData, suppliers,
     invoiceOpen, setInvoiceOpen, isViewingExisting,
@@ -49,6 +54,72 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const handleCloseInvoice = (open: boolean) => {
     setInvoiceOpen(open);
     if (!open) setActivePage('purchases');
+  };
+
+  const openDeleteAllDraftsDialog = async () => {
+    if (!companyId) {
+      toast.error('لم يتم تحديد الشركة');
+      return;
+    }
+    const { count, error } = await supabase
+      .from('invoices')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'purchase')
+      .eq('status', 'draft');
+    if (error) {
+      toast.error('تعذّر جلب عدد المسودات');
+      return;
+    }
+    if (!count || count === 0) {
+      toast.info('لا توجد فواتير مشتريات في حالة المسودة');
+      return;
+    }
+    setDraftCount(count);
+    setDeleteAllDraftsOpen(true);
+  };
+
+  const confirmDeleteAllDrafts = async () => {
+    if (!companyId) return;
+    setDeletingDrafts(true);
+    try {
+      // Fetch IDs first to cascade-delete invoice_items
+      const { data: drafts, error: fetchErr } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('invoice_type', 'purchase')
+        .eq('status', 'draft');
+      if (fetchErr) throw fetchErr;
+
+      const ids = (drafts || []).map((d: any) => d.id);
+      if (ids.length === 0) {
+        toast.info('لا توجد فواتير مسودة للحذف');
+        return;
+      }
+
+      // Delete line items first, then the invoices themselves
+      const { error: itemsErr } = await supabase
+        .from('invoice_items')
+        .delete()
+        .in('invoice_id', ids);
+      if (itemsErr) throw itemsErr;
+
+      const { error: delErr } = await supabase
+        .from('invoices')
+        .delete()
+        .in('id', ids);
+      if (delErr) throw delErr;
+
+      toast.success(`✅ تم حذف ${ids.length} فاتورة مسودة بنجاح`);
+      await queryClient.invalidateQueries();
+    } catch (err: any) {
+      console.error('Delete all drafts error:', err);
+      toast.error(`تعذّر حذف المسودات: ${err.message || ''}`);
+    } finally {
+      setDeletingDrafts(false);
+      setDeleteAllDraftsOpen(false);
+    }
   };
 
   return (
