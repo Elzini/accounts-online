@@ -343,4 +343,18 @@ export async function handleBatchImport({
   if (failCount > 0 && successCount === 0) {
     toast.error(`فشل استيراد جميع الفواتير (${failCount})`);
   }
+
+  // Surface duplicate / missing-number warnings
+  if (duplicateCount > 0 || missingNumberCount > 0) {
+    const summary = [
+      duplicateCount > 0 ? `🔁 ${duplicateCount} فاتورة مكررة (تم تخطيها)` : null,
+      missingNumberCount > 0 ? `❓ ${missingNumberCount} فاتورة بدون رقم (تم تخطيها)` : null,
+    ].filter(Boolean).join(' • ');
+
+    toast.warning(
+      `${summary}\n\n${duplicateMessages.slice(0, 6).join('\n')}${duplicateMessages.length > 6 ? `\n…و ${duplicateMessages.length - 6} أخرى` : ''}`,
+      { duration: 12000 }
+    );
+    console.warn('Duplicate/missing invoice numbers during batch import:', duplicateMessages);
+  }
 }
