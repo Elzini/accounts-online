@@ -11455,6 +11455,15 @@ export type Database = {
         Args: { p_company_id: string; p_value: string }
         Returns: string
       }
+      update_posted_journal_entry: {
+        Args: {
+          p_description?: string
+          p_entry_date?: string
+          p_entry_id: string
+          p_lines?: Json
+        }
+        Returns: Json
+      }
       user_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
