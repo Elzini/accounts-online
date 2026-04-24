@@ -3,10 +3,18 @@
  * Delegates to modular sub-components and hooks.
  * Mirrors SalesInvoiceForm architecture for consistency.
  */
-import { Sparkles, FileText, FileSpreadsheet, RotateCcw, MessageSquare, Printer } from 'lucide-react';
+import { useState } from 'react';
+import { Sparkles, FileText, FileSpreadsheet, RotateCcw, MessageSquare, Printer, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ActivePage } from '@/types';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useCompanyId } from '@/hooks/useCompanyId';
 import { PurchaseInvoiceDialog } from '@/components/invoices/PurchaseInvoiceDialog';
 import { PurchaseInvoiceAIImport } from './PurchaseInvoiceAIImport';
 import {
@@ -25,6 +33,11 @@ interface PurchaseInvoiceFormProps {
 
 export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps) {
   const hook = usePurchaseInvoice();
+  const companyId = useCompanyId();
+  const queryClient = useQueryClient();
+  const [deleteAllDraftsOpen, setDeleteAllDraftsOpen] = useState(false);
+  const [deletingDrafts, setDeletingDrafts] = useState(false);
+  const [draftCount, setDraftCount] = useState(0);
   const {
     invoiceData, setInvoiceData, suppliers,
     invoiceOpen, setInvoiceOpen, isViewingExisting,
@@ -41,6 +54,72 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
   const handleCloseInvoice = (open: boolean) => {
     setInvoiceOpen(open);
     if (!open) setActivePage('purchases');
+  };
+
+  const openDeleteAllDraftsDialog = async () => {
+    if (!companyId) {
+      toast.error('لم يتم تحديد الشركة');
+      return;
+    }
+    const { count, error } = await supabase
+      .from('invoices')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'purchase')
+      .eq('status', 'draft');
+    if (error) {
+      toast.error('تعذّر جلب عدد المسودات');
+      return;
+    }
+    if (!count || count === 0) {
+      toast.info('لا توجد فواتير مشتريات في حالة المسودة');
+      return;
+    }
+    setDraftCount(count);
+    setDeleteAllDraftsOpen(true);
+  };
+
+  const confirmDeleteAllDrafts = async () => {
+    if (!companyId) return;
+    setDeletingDrafts(true);
+    try {
+      // Fetch IDs first to cascade-delete invoice_items
+      const { data: drafts, error: fetchErr } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('invoice_type', 'purchase')
+        .eq('status', 'draft');
+      if (fetchErr) throw fetchErr;
+
+      const ids = (drafts || []).map((d: any) => d.id);
+      if (ids.length === 0) {
+        toast.info('لا توجد فواتير مسودة للحذف');
+        return;
+      }
+
+      // Delete line items first, then the invoices themselves
+      const { error: itemsErr } = await supabase
+        .from('invoice_items')
+        .delete()
+        .in('invoice_id', ids);
+      if (itemsErr) throw itemsErr;
+
+      const { error: delErr } = await supabase
+        .from('invoices')
+        .delete()
+        .in('id', ids);
+      if (delErr) throw delErr;
+
+      toast.success(`✅ تم حذف ${ids.length} فاتورة مسودة بنجاح`);
+      await queryClient.invalidateQueries();
+    } catch (err: any) {
+      console.error('Delete all drafts error:', err);
+      toast.error(`تعذّر حذف المسودات: ${err.message || ''}`);
+    } finally {
+      setDeletingDrafts(false);
+      setDeleteAllDraftsOpen(false);
+    }
   };
 
   return (
@@ -117,6 +196,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               { label: t.inv_operations || 'عمليات', items: [
                 { label: t.inv_import_data || 'استيراد بيانات', icon: <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('medad-import') },
                 { label: t.inv_return, icon: <RotateCcw className="w-3.5 h-3.5 ml-2" />, onClick: () => setReverseDialogOpen(true), disabled: !isViewingExisting, className: 'text-amber-600' },
+                { label: 'حذف جميع المسودات المستوردة', icon: <Trash2 className="w-3.5 h-3.5 ml-2" />, onClick: openDeleteAllDraftsDialog, className: 'text-destructive' },
                 { label: 'إرسال SMS', icon: <MessageSquare className="w-3.5 h-3.5 ml-2" />, onClick: () => toast.info('سيتم إضافة خاصية إرسال SMS قريباً') },
               ]},
               { label: 'عرض', items: [
@@ -127,6 +207,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
             moreItems={[
               { label: t.inv_import_data || 'استيراد بيانات', icon: <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('medad-import') },
               { label: t.inv_return, icon: <RotateCcw className="w-3.5 h-3.5 ml-2" />, onClick: () => setReverseDialogOpen(true), disabled: !isViewingExisting, className: 'text-amber-600' },
+              { label: 'حذف جميع المسودات المستوردة', icon: <Trash2 className="w-3.5 h-3.5 ml-2" />, onClick: openDeleteAllDraftsDialog, className: 'text-destructive' },
             ]}
             labels={{
               add: 'إضافة', saving: t.inv_saving, new: 'جديد', edit: 'تعديل',
@@ -152,6 +233,36 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         isPending={false} dir="rtl"
         labels={{ title: 'عكس الفاتورة', description: 'سيتم عكس جميع القيود المحاسبية المرتبطة بهذه الفاتورة.', bulletPoints: ['عكس قيد الشراء', 'عكس قيد الضريبة', 'تحديث أرصدة الحسابات'], warning: 'هذا الإجراء لا يمكن التراجع عنه.', cancel: 'إلغاء', confirm: 'عكس', confirming: 'جاري العكس...' }}
       />
+
+      {/* Delete All Drafts Confirmation */}
+      <AlertDialog open={deleteAllDraftsOpen} onOpenChange={setDeleteAllDraftsOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">حذف جميع فواتير المشتريات المسودة</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                سيتم حذف <strong className="text-destructive">{draftCount}</strong> فاتورة مشتريات في حالة <strong>مسودة</strong> (غير معتمدة).
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                • يشمل ذلك جميع الفواتير المستوردة التي لم يتم اعتمادها محاسبياً بعد.<br />
+                • لن يتم حذف الفواتير المعتمدة أو القيود المحاسبية المرحّلة.<br />
+                • سيتم حذف بنود الفواتير (invoice_items) المرتبطة أيضاً.
+              </span>
+              <span className="block font-bold text-destructive">⚠️ هذا الإجراء لا يمكن التراجع عنه.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingDrafts}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDeleteAllDrafts(); }}
+              disabled={deletingDrafts}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingDrafts ? 'جاري الحذف...' : `حذف ${draftCount} فاتورة`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* AI Import */}
       {aiImportOpen && (
