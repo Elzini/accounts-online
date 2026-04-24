@@ -554,15 +554,16 @@ export function PurchasesReport() {
     XLSX.writeFile(wb, fileName);
 
     // Detailed validation feedback
-    const totalIssues = missingSupplierName + missingSupplierTax + missingSupplierInvNo + mathMismatch;
+    const totalIssues = missingSupplierName + missingSupplierTax + missingSupplierInvNo + mathMismatch + duplicateCount;
     if (totalIssues === 0) {
       toast.success(
         language === 'ar'
-          ? `✅ تم تصدير ${rows.length} فاتورة بدون أي ملاحظات`
-          : `✅ Exported ${rows.length} invoices with no issues`
+          ? `✅ تم تصدير ${rows.length} فاتورة بدون أي ملاحظات أو تكرار`
+          : `✅ Exported ${rows.length} invoices — no issues, no duplicates`
       );
     } else {
       const parts: string[] = [];
+      if (duplicateCount) parts.push(language === 'ar' ? `🔁 ${duplicateCount} فاتورة مكررة` : `🔁 ${duplicateCount} duplicates`);
       if (missingSupplierName) parts.push(language === 'ar' ? `${missingSupplierName} اسم مورد` : `${missingSupplierName} supplier name`);
       if (missingSupplierTax) parts.push(language === 'ar' ? `${missingSupplierTax} رقم ضريبي` : `${missingSupplierTax} tax #`);
       if (missingSupplierInvNo) parts.push(language === 'ar' ? `${missingSupplierInvNo} رقم فاتورة مورد` : `${missingSupplierInvNo} supplier inv #`);
@@ -572,7 +573,7 @@ export function PurchasesReport() {
         language === 'ar'
           ? `⚠️ تم تصدير ${rows.length} فاتورة — راجع عمود "ملاحظات / تحقق": ${parts.join('، ')}`
           : `⚠️ Exported ${rows.length} invoices — review "Notes" column: ${parts.join(', ')}`,
-        { duration: 8000 }
+        { duration: 9000 }
       );
     }
   };
