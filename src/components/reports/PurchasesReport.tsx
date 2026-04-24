@@ -18,6 +18,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useNumberFormat } from '@/hooks/useNumberFormat';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { fetchSuppliers } from '@/services/suppliers';
 import { supabase } from '@/hooks/modules/useReportsServices';
 import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
@@ -397,11 +398,24 @@ export function PurchasesReport() {
     );
   };
 
-  const handleExportZatcaExcel = () => {
+  const handleExportZatcaExcel = async () => {
     if (filteredRows.length === 0) {
       toast.error(language === 'ar' ? 'لا توجد بيانات للتصدير' : 'No data to export');
       return;
     }
+
+    // Force a fresh fetch of suppliers to ensure tax numbers are NOT served from a stale
+    // (previously masked) React Query cache. Without this, recently fixed full tax numbers
+    // can still appear truncated in the exported Excel for up to 5 minutes.
+    await queryClient.invalidateQueries({ queryKey: ['suppliers', companyId] });
+    const freshSuppliers = await queryClient.fetchQuery({
+      queryKey: ['suppliers', companyId],
+      queryFn: fetchSuppliers,
+    }) as typeof suppliers;
+    const freshSuppliersMap = (freshSuppliers || []).reduce((acc, s) => {
+      acc[s.id] = s;
+      return acc;
+    }, {} as Record<string, (typeof suppliers)[number]>);
 
     // ZATCA-required columns — fixed order regardless of UI filters
     const headers = language === 'ar'
@@ -428,7 +442,7 @@ export function PurchasesReport() {
     const dupKeyCount = new Map<string, number>();
     filteredRows.forEach((row) => {
       const inv: any = row.raw || {};
-      const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
+      const supplier: any = inv.supplier_id ? freshSuppliersMap[inv.supplier_id] : null;
       const sName = (supplier?.name || inv.supplier?.name || inv.customer_name || '').toString().trim().toLowerCase();
       const sTax = (supplier?.id_number || (supplier as any)?.tax_number || inv.supplier_tax_number || inv.customer_vat_number || '').toString().trim();
       const sInv = (inv.supplier_invoice_number || '').toString().trim();
@@ -440,7 +454,7 @@ export function PurchasesReport() {
 
     const rows = filteredRows.map((row, idx) => {
       const inv: any = row.raw || {};
-      const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
+      const supplier: any = inv.supplier_id ? freshSuppliersMap[inv.supplier_id] : null;
 
       // ── Supplier identity ──
       const supplierName: string =
