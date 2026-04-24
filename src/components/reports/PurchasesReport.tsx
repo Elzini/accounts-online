@@ -397,11 +397,24 @@ export function PurchasesReport() {
     );
   };
 
-  const handleExportZatcaExcel = () => {
+  const handleExportZatcaExcel = async () => {
     if (filteredRows.length === 0) {
       toast.error(language === 'ar' ? 'لا توجد بيانات للتصدير' : 'No data to export');
       return;
     }
+
+    // Force a fresh fetch of suppliers to ensure tax numbers are NOT served from a stale
+    // (previously masked) React Query cache. Without this, recently fixed full tax numbers
+    // can still appear truncated in the exported Excel for up to 5 minutes.
+    await queryClient.invalidateQueries({ queryKey: ['suppliers', companyId] });
+    const freshSuppliers = await queryClient.fetchQuery({
+      queryKey: ['suppliers', companyId],
+      queryFn: db.fetchSuppliers,
+    }) as typeof suppliers;
+    const freshSuppliersMap = (freshSuppliers || []).reduce((acc, s) => {
+      acc[s.id] = s;
+      return acc;
+    }, {} as Record<string, (typeof suppliers)[number]>);
 
     // ZATCA-required columns — fixed order regardless of UI filters
     const headers = language === 'ar'
