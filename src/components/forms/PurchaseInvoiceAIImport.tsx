@@ -120,6 +120,34 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
           {/* Batch results */}
           {!hook.isLoading && hook.isBatchMode && hook.batchResults.length > 0 && !hook.selectedBatchResult && !hook.reconciliationResults && (
             <div className="space-y-4">
+              {/* Summary Card */}
+              {(() => {
+                const successResults = hook.batchResults.filter(r => r.success);
+                const totalSubtotal = successResults.reduce((sum, r) => sum + (r.data.subtotal || (r.data.total_amount - (r.data.vat_amount || 0))), 0);
+                const totalVAT = successResults.reduce((sum, r) => sum + (r.data.vat_amount || 0), 0);
+                const totalAmount = successResults.reduce((sum, r) => sum + r.data.total_amount, 0);
+                return (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">عدد الفواتير</p>
+                      <p className="text-lg font-bold text-primary">{successResults.length}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">الإجمالي قبل الضريبة</p>
+                      <p className="text-lg font-bold">{hook.formatCurrency(totalSubtotal)}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">إجمالي الضريبة</p>
+                      <p className="text-lg font-bold text-warning">{hook.formatCurrency(totalVAT)}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">الإجمالي شامل الضريبة</p>
+                      <p className="text-lg font-bold text-success">{hook.formatCurrency(totalAmount)}</p>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-800">
                 <CheckCircle className="w-5 h-5" />
                 <span className="text-sm font-medium">
