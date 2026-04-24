@@ -115,11 +115,6 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
             chunk.map(async (file) => ({ fileContent: await fileToBase64(file), fileName: file.name }))
           );
 
-          const { data, error } = await supabase.functions.invoke('parse-purchase-invoke', {
-            body: { batchFiles },
-          }).catch(() => ({ data: null, error: new Error('network') }));
-
-          // Use the correct function name (kept original on next line)
           const resp = await supabase.functions.invoke('parse-purchase-invoice', {
             body: { batchFiles },
           });
