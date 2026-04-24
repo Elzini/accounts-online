@@ -73,7 +73,7 @@ export function PurchasesReport() {
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState<CarStatusFilter | InvoiceStatusFilter>('all');
   const [validationOpen, setValidationOpen] = useState(false);
-  const [validationFilter, setValidationFilter] = useState<'all' | 'missing_name' | 'missing_tax' | 'missing_inv' | 'math'>('all');
+  const [validationFilter, setValidationFilter] = useState<'all' | 'missing_name' | 'missing_tax' | 'missing_inv' | 'math' | 'duplicate'>('all');
   const { printReport } = usePrintReport();
   const queryClient = useQueryClient();
   const { t, language } = useLanguage();
@@ -264,7 +264,7 @@ export function PurchasesReport() {
   };
 
   // ── ZATCA validation analysis (shared by export + validation page) ──
-  type ValidationIssue = 'missing_name' | 'missing_tax' | 'missing_inv' | 'math';
+  type ValidationIssue = 'missing_name' | 'missing_tax' | 'missing_inv' | 'math' | 'duplicate';
   type ValidatedRow = {
     idx: number;
     row: ReportRow;
@@ -283,6 +283,20 @@ export function PurchasesReport() {
       const n = Number(v);
       return Number.isFinite(n) ? n : 0;
     };
+
+    // Pre-compute duplicate keys
+    const dupCount = new Map<string, number>();
+    filteredRows.forEach((row) => {
+      const inv: any = row.raw || {};
+      const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
+      const sName = (supplier?.name || inv.supplier?.name || inv.customer_name || '').toString().trim().toLowerCase();
+      const sTax = (supplier?.id_number || (supplier as any)?.tax_number || inv.supplier_tax_number || inv.customer_vat_number || '').toString().trim();
+      const sInv = (inv.supplier_invoice_number || '').toString().trim();
+      if (!sInv) return;
+      const key = `${sTax || sName}::${sInv}`;
+      dupCount.set(key, (dupCount.get(key) || 0) + 1);
+    });
+
     return filteredRows.map((row, idx) => {
       const inv: any = row.raw || {};
       const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
@@ -304,6 +318,12 @@ export function PurchasesReport() {
       if (!supplierInvoiceNumber.toString().trim()) issues.push('missing_inv');
       if (Math.abs(total - (subtotal + vat)) > 0.05) issues.push('math');
 
+      const sInvTrim = supplierInvoiceNumber.toString().trim();
+      const sNameLower = supplierName.toString().trim().toLowerCase();
+      const sTaxTrim = supplierTax.toString().trim();
+      const dupKey = sInvTrim ? `${sTaxTrim || sNameLower}::${sInvTrim}` : '';
+      if (dupKey && (dupCount.get(dupKey) || 0) > 1) issues.push('duplicate');
+
       return {
         idx, row, systemInvoiceNumber, supplierInvoiceNumber,
         supplierName, supplierTax: String(supplierTax),
@@ -319,8 +339,8 @@ export function PurchasesReport() {
   }, [issueRows, validationFilter]);
 
   const issueLabel = (k: ValidationIssue) => {
-    const ar = { missing_name: 'اسم المورد ناقص', missing_tax: 'الرقم الضريبي ناقص', missing_inv: 'رقم فاتورة المورد ناقص', math: 'عدم تطابق رياضي' };
-    const en = { missing_name: 'Missing supplier name', missing_tax: 'Missing tax #', missing_inv: 'Missing supplier inv #', math: 'Math mismatch' };
+    const ar = { missing_name: 'اسم المورد ناقص', missing_tax: 'الرقم الضريبي ناقص', missing_inv: 'رقم فاتورة المورد ناقص', math: 'عدم تطابق رياضي', duplicate: '🔁 فاتورة مكررة' };
+    const en = { missing_name: 'Missing supplier name', missing_tax: 'Missing tax #', missing_inv: 'Missing supplier inv #', math: 'Math mismatch', duplicate: '🔁 Duplicate' };
     return language === 'ar' ? ar[k] : en[k];
   };
 
@@ -404,6 +424,20 @@ export function PurchasesReport() {
     let runningVat = 0;
     let runningTotal = 0;
 
+    // Duplicate detection: same supplier invoice # under same supplier/tax
+    const dupKeyCount = new Map<string, number>();
+    filteredRows.forEach((row) => {
+      const inv: any = row.raw || {};
+      const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
+      const sName = (supplier?.name || inv.supplier?.name || inv.customer_name || '').toString().trim().toLowerCase();
+      const sTax = (supplier?.id_number || (supplier as any)?.tax_number || inv.supplier_tax_number || inv.customer_vat_number || '').toString().trim();
+      const sInv = (inv.supplier_invoice_number || '').toString().trim();
+      if (!sInv) return;
+      const key = `${sTax || sName}::${sInv}`;
+      dupKeyCount.set(key, (dupKeyCount.get(key) || 0) + 1);
+    });
+    let duplicateCount = 0;
+
     const rows = filteredRows.map((row, idx) => {
       const inv: any = row.raw || {};
       const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
@@ -455,6 +489,17 @@ export function PurchasesReport() {
         issues.push(language === 'ar' ? 'عدم تطابق رياضي' : 'Math mismatch');
       }
 
+      // Duplicate detection
+      const sNameLower = supplierName.toString().trim().toLowerCase();
+      const sTaxTrim = supplierTaxRaw.toString().trim();
+      const sInvTrim = supplierInvoiceNumber.toString().trim();
+      const dupKey = sInvTrim ? `${sTaxTrim || sNameLower}::${sInvTrim}` : '';
+      const isDuplicate = dupKey && (dupKeyCount.get(dupKey) || 0) > 1;
+      if (isDuplicate) {
+        duplicateCount++;
+        issues.push(language === 'ar' ? '🔁 فاتورة مكررة' : '🔁 Duplicate invoice');
+      }
+
       const notes = issues.length > 0
         ? (language === 'ar' ? '⚠️ ' : '⚠️ ') + issues.join(' | ')
         : (language === 'ar' ? '✓ مكتملة' : '✓ Complete');
@@ -464,7 +509,8 @@ export function PurchasesReport() {
         systemInvoiceNumber || MISSING,
         supplierInvoiceNumber || MISSING,
         supplierName || MISSING,
-        supplierTaxRaw || MISSING,
+        // Force tax number as string to preserve leading zeros & full digits in Excel
+        supplierTaxRaw ? `\u200E${String(supplierTaxRaw).trim()}` : MISSING,
         row.date ? formatDate(row.date) : MISSING,
         Number(subtotal.toFixed(2)),
         Number(vat.toFixed(2)),
@@ -486,10 +532,10 @@ export function PurchasesReport() {
     const sheetData = [headers, ...rows, totalsRow];
     const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
-    // Column widths
+    // Column widths — wider tax # column to fit full Saudi VAT (15 digits)
     ws['!cols'] = [
-      { wch: 5 }, { wch: 20 }, { wch: 22 }, { wch: 34 }, { wch: 20 },
-      { wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 20 }, { wch: 36 },
+      { wch: 5 }, { wch: 20 }, { wch: 22 }, { wch: 34 }, { wch: 22 },
+      { wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 20 }, { wch: 40 },
     ];
 
     // Number format for currency columns (G, H, I)
@@ -502,6 +548,13 @@ export function PurchasesReport() {
           ws[cellAddr].z = '#,##0.00';
         }
       });
+      // Force tax-number column (E) to TEXT so Excel keeps leading zeros & full digits
+      const taxAddr = `E${r}`;
+      if (ws[taxAddr] && ws[taxAddr].v != null) {
+        ws[taxAddr].t = 's';
+        ws[taxAddr].z = '@';
+        ws[taxAddr].v = String(ws[taxAddr].v).replace(/^\u200E/, '');
+      }
     }
 
     if (language === 'ar') {
@@ -521,15 +574,16 @@ export function PurchasesReport() {
     XLSX.writeFile(wb, fileName);
 
     // Detailed validation feedback
-    const totalIssues = missingSupplierName + missingSupplierTax + missingSupplierInvNo + mathMismatch;
+    const totalIssues = missingSupplierName + missingSupplierTax + missingSupplierInvNo + mathMismatch + duplicateCount;
     if (totalIssues === 0) {
       toast.success(
         language === 'ar'
-          ? `✅ تم تصدير ${rows.length} فاتورة بدون أي ملاحظات`
-          : `✅ Exported ${rows.length} invoices with no issues`
+          ? `✅ تم تصدير ${rows.length} فاتورة بدون أي ملاحظات أو تكرار`
+          : `✅ Exported ${rows.length} invoices — no issues, no duplicates`
       );
     } else {
       const parts: string[] = [];
+      if (duplicateCount) parts.push(language === 'ar' ? `🔁 ${duplicateCount} فاتورة مكررة` : `🔁 ${duplicateCount} duplicates`);
       if (missingSupplierName) parts.push(language === 'ar' ? `${missingSupplierName} اسم مورد` : `${missingSupplierName} supplier name`);
       if (missingSupplierTax) parts.push(language === 'ar' ? `${missingSupplierTax} رقم ضريبي` : `${missingSupplierTax} tax #`);
       if (missingSupplierInvNo) parts.push(language === 'ar' ? `${missingSupplierInvNo} رقم فاتورة مورد` : `${missingSupplierInvNo} supplier inv #`);
@@ -539,7 +593,7 @@ export function PurchasesReport() {
         language === 'ar'
           ? `⚠️ تم تصدير ${rows.length} فاتورة — راجع عمود "ملاحظات / تحقق": ${parts.join('، ')}`
           : `⚠️ Exported ${rows.length} invoices — review "Notes" column: ${parts.join(', ')}`,
-        { duration: 8000 }
+        { duration: 9000 }
       );
     }
   };
@@ -771,13 +825,20 @@ export function PurchasesReport() {
           </DialogHeader>
 
           {/* Summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <button
               onClick={() => setValidationFilter('all')}
               className={`text-start rounded-lg border p-3 transition-colors ${validationFilter === 'all' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
             >
               <div className="text-xs text-muted-foreground">{language === 'ar' ? 'كل المشاكل' : 'All issues'}</div>
               <div className="text-xl font-bold text-destructive">{issueRows.length}</div>
+            </button>
+            <button
+              onClick={() => setValidationFilter('duplicate')}
+              className={`text-start rounded-lg border p-3 transition-colors ${validationFilter === 'duplicate' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+            >
+              <div className="text-xs text-muted-foreground">{language === 'ar' ? '🔁 فواتير مكررة' : '🔁 Duplicates'}</div>
+              <div className="text-xl font-bold text-destructive">{validatedRows.filter(r => r.issues.includes('duplicate')).length}</div>
             </button>
             <button
               onClick={() => setValidationFilter('missing_name')}
