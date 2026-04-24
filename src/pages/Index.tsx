@@ -93,6 +93,16 @@ const Index = () => {
 
   const handleSetActivePage = (page: ActivePage) => setActivePage(page);
 
+  // Allow deep navigation from anywhere via window event (e.g., from reports → edit invoice)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { page?: ActivePage } | undefined;
+      if (detail?.page) setActivePage(detail.page);
+    };
+    window.addEventListener('app:navigate', handler as EventListener);
+    return () => window.removeEventListener('app:navigate', handler as EventListener);
+  }, []);
+
   const handleModuleSelect = (moduleId: string) => {
     if (moduleId === 'super_admin') { navigate('/companies'); return; }
     setActiveModule(moduleId);
