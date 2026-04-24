@@ -69,6 +69,8 @@ export function InvoicesAuditPage() {
   const [activeTab, setActiveTab] = useState<IssueKind | 'all'>('all');
   const [confirmFixAllOpen, setConfirmFixAllOpen] = useState(false);
   const [fixingAll, setFixingAll] = useState(false);
+  const [detailIssue, setDetailIssue] = useState<Issue | null>(null);
+  const [categoryReport, setCategoryReport] = useState<IssueKind | 'all' | null>(null);
 
   const { data: invoices = [], refetch, isFetching } = useQuery<InvoiceRow[]>({
     queryKey: ['invoices-audit', companyId],
