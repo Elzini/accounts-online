@@ -301,6 +301,12 @@ function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, onEdit
       )}
       <div className="flex gap-2 justify-end pt-2">
         <Button variant="outline" onClick={onReset}>{resetLabel}</Button>
+        {onEdit && (
+          <Button variant="secondary" onClick={onEdit} className="gap-2">
+            <Pencil className="w-4 h-4" />
+            تعديل البيانات
+          </Button>
+        )}
         <Button onClick={onConfirm} className="gap-2"><CheckCircle className="w-4 h-4" />{confirmLabel}</Button>
       </div>
     </div>
