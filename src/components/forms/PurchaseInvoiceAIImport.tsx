@@ -28,7 +28,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
 
   return (
     <Dialog open={open} onOpenChange={hook.handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={hook.selectedBatchResult ? "max-w-6xl max-h-[90vh] overflow-y-auto" : "max-w-4xl max-h-[90vh] overflow-y-auto"}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
@@ -208,6 +208,9 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                 onReset={() => hook.setSelectedBatchIndex(null)}
                 onConfirm={() => hook.handleImportSingleFromBatch(hook.selectedBatchResult!)}
                 onEdit={() => setEditingIndex(hook.selectedBatchResult!.index)}
+                attachmentFile={hook.selectedBatchResult.fileObject}
+                attachmentThumbnail={hook.selectedBatchResult.thumbnailUrl}
+                attachmentName={hook.selectedBatchResult.fileName}
                 confirmLabel="استيراد هذه الفاتورة"
                 resetLabel="العودة للقائمة"
               />
@@ -246,60 +249,95 @@ function CostCenterSelector({ costCenters, value, onChange }: { costCenters: any
   );
 }
 
-function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, onEdit, confirmLabel = 'اعتماد وتعبئة النموذج', resetLabel = 'رفع فاتورة أخرى' }: {
-  data: any; formatCurrency: (val: number) => string; onReset: () => void; onConfirm: () => void; onEdit?: () => void; confirmLabel?: string; resetLabel?: string;
+function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, onEdit, attachmentFile, attachmentThumbnail, attachmentName, confirmLabel = 'اعتماد وتعبئة النموذج', resetLabel = 'رفع فاتورة أخرى' }: {
+  data: any; formatCurrency: (val: number) => string; onReset: () => void; onConfirm: () => void; onEdit?: () => void;
+  attachmentFile?: File; attachmentThumbnail?: string; attachmentName?: string;
+  confirmLabel?: string; resetLabel?: string;
 }) {
+  // Build attachment URL (image thumbnail or PDF object URL)
+  const isPdf = attachmentFile?.type === 'application/pdf' || attachmentName?.toLowerCase().endsWith('.pdf');
+  const isImage = attachmentFile?.type?.startsWith('image/') || !!attachmentThumbnail;
+  const pdfUrl = isPdf && attachmentFile ? URL.createObjectURL(attachmentFile) : undefined;
+  const hasAttachment = !!(attachmentThumbnail || pdfUrl);
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-800">
+      <div className="flex items-center gap-2 p-3 bg-success/10 text-success rounded-lg border border-success/30">
         <CheckCircle className="w-5 h-5" />
         <span className="text-sm font-medium">تم استخراج البيانات بنجاح - يرجى المراجعة قبل الاعتماد</span>
       </div>
-      <div className="grid grid-cols-2 gap-3 p-4 bg-muted/30 rounded-lg border">
-        <div><p className="text-xs text-muted-foreground">المورد</p><p className="font-bold text-sm">{data.supplier_name}</p></div>
-        <div><p className="text-xs text-muted-foreground">رقم الفاتورة</p><p className="font-bold text-sm">{data.invoice_number}</p></div>
-        <div><p className="text-xs text-muted-foreground">التاريخ</p><p className="text-sm">{data.invoice_date}</p></div>
-        {data.supplier_tax_number && <div><p className="text-xs text-muted-foreground">الرقم الضريبي</p><p className="text-sm font-mono">{data.supplier_tax_number}</p></div>}
-        {data.supplier_phone && <div><p className="text-xs text-muted-foreground">الهاتف</p><p className="text-sm">{data.supplier_phone}</p></div>}
-        {data.supplier_address && <div><p className="text-xs text-muted-foreground">العنوان</p><p className="text-sm">{data.supplier_address}</p></div>}
-      </div>
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/30">
-              <TableHead className="text-right">#</TableHead>
-              <TableHead className="text-right">الوصف</TableHead>
-              <TableHead className="text-center">الكمية</TableHead>
-              <TableHead className="text-left">سعر الوحدة</TableHead>
-              <TableHead className="text-left">الإجمالي</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.items?.map((item: any, idx: number) => (
-              <TableRow key={idx}>
-                <TableCell className="text-right text-muted-foreground">{idx + 1}</TableCell>
-                <TableCell className="text-right">{item.description}</TableCell>
-                <TableCell className="text-center">{item.quantity}</TableCell>
-                <TableCell className="text-left font-mono">{formatCurrency(item.unit_price)}</TableCell>
-                <TableCell className="text-left font-mono font-medium">{formatCurrency(item.total)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex flex-col items-start gap-1 p-4 bg-muted/30 rounded-lg border">
-        {data.subtotal != null && <div className="flex justify-between w-full text-sm"><span>المجموع قبل الضريبة:</span><span className="font-mono">{formatCurrency(data.subtotal)}</span></div>}
-        {data.discount != null && data.discount > 0 && <div className="flex justify-between w-full text-sm text-red-600"><span>خصم:</span><span className="font-mono">-{formatCurrency(data.discount)}</span></div>}
-        {data.vat_amount != null && <div className="flex justify-between w-full text-sm"><span>ضريبة القيمة المضافة ({data.vat_rate || 15}%):</span><span className="font-mono">{formatCurrency(data.vat_amount)}</span></div>}
-        <div className="flex justify-between w-full text-base font-bold border-t pt-2 mt-1"><span>الإجمالي:</span><span className="font-mono">{formatCurrency(data.total_amount)}</span></div>
-      </div>
-      {data.notes && (
-        <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-800">
-          <div className="flex items-center gap-2 mb-1"><AlertCircle className="w-4 h-4 text-yellow-600" /><span className="text-xs font-medium text-yellow-700 dark:text-yellow-400">ملاحظات</span></div>
-          <p className="text-sm">{data.notes}</p>
+
+      <div className={hasAttachment ? "grid grid-cols-1 lg:grid-cols-2 gap-4" : ""}>
+        {/* Attachment preview side */}
+        {hasAttachment && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-muted-foreground">📎 صورة الفاتورة الأصلية</p>
+              {attachmentName && <p className="text-[10px] text-muted-foreground truncate max-w-[180px]" title={attachmentName}>{attachmentName}</p>}
+            </div>
+            <div className="border rounded-lg overflow-hidden bg-muted/20 sticky top-0" style={{ maxHeight: '600px' }}>
+              {isImage && attachmentThumbnail && (
+                <a href={attachmentThumbnail} target="_blank" rel="noopener noreferrer">
+                  <img src={attachmentThumbnail} alt="فاتورة" className="w-full h-auto object-contain max-h-[600px] cursor-zoom-in" />
+                </a>
+              )}
+              {isPdf && pdfUrl && (
+                <iframe src={pdfUrl} className="w-full h-[600px]" title="فاتورة PDF" />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Data side */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 p-4 bg-muted/30 rounded-lg border">
+            <div><p className="text-xs text-muted-foreground">المورد</p><p className="font-bold text-sm">{data.supplier_name}</p></div>
+            <div><p className="text-xs text-muted-foreground">رقم الفاتورة</p><p className="font-bold text-sm">{data.invoice_number}</p></div>
+            <div><p className="text-xs text-muted-foreground">التاريخ</p><p className="text-sm">{data.invoice_date}</p></div>
+            {data.supplier_tax_number && <div><p className="text-xs text-muted-foreground">الرقم الضريبي</p><p className="text-sm font-mono">{data.supplier_tax_number}</p></div>}
+            {data.supplier_phone && <div><p className="text-xs text-muted-foreground">الهاتف</p><p className="text-sm">{data.supplier_phone}</p></div>}
+            {data.supplier_address && <div><p className="text-xs text-muted-foreground">العنوان</p><p className="text-sm">{data.supplier_address}</p></div>}
+          </div>
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30">
+                  <TableHead className="text-right">#</TableHead>
+                  <TableHead className="text-right">الوصف</TableHead>
+                  <TableHead className="text-center">الكمية</TableHead>
+                  <TableHead className="text-left">سعر الوحدة</TableHead>
+                  <TableHead className="text-left">الإجمالي</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.items?.map((item: any, idx: number) => (
+                  <TableRow key={idx}>
+                    <TableCell className="text-right text-muted-foreground">{idx + 1}</TableCell>
+                    <TableCell className="text-right">{item.description}</TableCell>
+                    <TableCell className="text-center">{item.quantity}</TableCell>
+                    <TableCell className="text-left font-mono">{formatCurrency(item.unit_price)}</TableCell>
+                    <TableCell className="text-left font-mono font-medium">{formatCurrency(item.total)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="flex flex-col items-start gap-1 p-4 bg-muted/30 rounded-lg border">
+            {data.subtotal != null && <div className="flex justify-between w-full text-sm"><span>المجموع قبل الضريبة:</span><span className="font-mono">{formatCurrency(data.subtotal)}</span></div>}
+            {data.discount != null && data.discount > 0 && <div className="flex justify-between w-full text-sm text-destructive"><span>خصم:</span><span className="font-mono">-{formatCurrency(data.discount)}</span></div>}
+            {data.vat_amount != null && <div className="flex justify-between w-full text-sm"><span>ضريبة القيمة المضافة ({data.vat_rate || 15}%):</span><span className="font-mono">{formatCurrency(data.vat_amount)}</span></div>}
+            <div className="flex justify-between w-full text-base font-bold border-t pt-2 mt-1"><span>الإجمالي:</span><span className="font-mono">{formatCurrency(data.total_amount)}</span></div>
+          </div>
+          {data.notes && (
+            <div className="p-3 bg-warning/10 rounded-lg border border-warning/30">
+              <div className="flex items-center gap-2 mb-1"><AlertCircle className="w-4 h-4 text-warning" /><span className="text-xs font-medium text-warning">ملاحظات</span></div>
+              <p className="text-sm">{data.notes}</p>
+            </div>
+          )}
         </div>
-      )}
-      <div className="flex gap-2 justify-end pt-2">
+      </div>
+
+      <div className="flex gap-2 justify-end pt-2 border-t">
         <Button variant="outline" onClick={onReset}>{resetLabel}</Button>
         {onEdit && (
           <Button variant="secondary" onClick={onEdit} className="gap-2">
