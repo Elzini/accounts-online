@@ -234,6 +234,36 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
         labels={{ title: 'عكس الفاتورة', description: 'سيتم عكس جميع القيود المحاسبية المرتبطة بهذه الفاتورة.', bulletPoints: ['عكس قيد الشراء', 'عكس قيد الضريبة', 'تحديث أرصدة الحسابات'], warning: 'هذا الإجراء لا يمكن التراجع عنه.', cancel: 'إلغاء', confirm: 'عكس', confirming: 'جاري العكس...' }}
       />
 
+      {/* Delete All Drafts Confirmation */}
+      <AlertDialog open={deleteAllDraftsOpen} onOpenChange={setDeleteAllDraftsOpen}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">حذف جميع فواتير المشتريات المسودة</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                سيتم حذف <strong className="text-destructive">{draftCount}</strong> فاتورة مشتريات في حالة <strong>مسودة</strong> (غير معتمدة).
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                • يشمل ذلك جميع الفواتير المستوردة التي لم يتم اعتمادها محاسبياً بعد.<br />
+                • لن يتم حذف الفواتير المعتمدة أو القيود المحاسبية المرحّلة.<br />
+                • سيتم حذف بنود الفواتير (invoice_items) المرتبطة أيضاً.
+              </span>
+              <span className="block font-bold text-destructive">⚠️ هذا الإجراء لا يمكن التراجع عنه.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingDrafts}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDeleteAllDrafts(); }}
+              disabled={deletingDrafts}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletingDrafts ? 'جاري الحذف...' : `حذف ${draftCount} فاتورة`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* AI Import */}
       {aiImportOpen && (
         <PurchaseInvoiceAIImport open={aiImportOpen} onOpenChange={setAiImportOpen} onImport={handleAIImport} onBatchImport={onBatchImport} />
