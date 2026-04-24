@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
-import { FileText, ShoppingCart, Truck, Printer, RefreshCw, Filter } from 'lucide-react';
+import { FileText, ShoppingCart, Truck, Printer, RefreshCw, Filter, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
 import { useCars, useSuppliers } from '@/hooks/useDatabase';
 import { useExpenses } from '@/hooks/useExpenses';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
