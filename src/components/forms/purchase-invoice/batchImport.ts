@@ -291,7 +291,11 @@ export async function handleBatchImport({
         for (const result of results) {
           if (!result.success) continue;
           const parsed = result.data;
-          const matched = verifyInvoices.find(inv => inv.supplier_invoice_number === parsed.invoice_number);
+          const parsedNumber = (parsed.invoice_number || '').toString().trim();
+          // Skip verification for invoices we intentionally did not import
+          // (duplicates already in system, duplicates within batch, or missing number)
+          if (!parsedNumber || skippedInvoiceNumbers.has(parsedNumber)) continue;
+          const matched = verifyInvoices.find(inv => inv.supplier_invoice_number === parsedNumber);
 
           if (!matched) {
             mismatches.push(`❌ فاتورة ${parsed.invoice_number} - لم يتم العثور عليها في النظام`);
