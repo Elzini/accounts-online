@@ -29,6 +29,7 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
   const [selectedCostCenterId, setSelectedCostCenterId] = useState<string | null>(null);
   const [reconciliationResults, setReconciliationResults] = useState<ReconciliationResult[] | null>(null);
   const [isReconciling, setIsReconciling] = useState(false);
+  const [batchTimeline, setBatchTimeline] = useState<BatchTimelineEntry[]>([]);
   const { data: costCenters = [] } = useCostCenters();
   const companyId = useCompanyId();
   const fileInputRef = useRef<HTMLInputElement>(null);
