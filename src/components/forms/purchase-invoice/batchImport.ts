@@ -109,12 +109,14 @@ export async function handleBatchImport({
       if (seenInBatch.has(supplierInvNumberRaw)) {
         duplicateCount++;
         duplicateMessages.push(`⛔ رقم الفاتورة ${supplierInvNumberRaw} مكرر داخل ملفات الاستيراد نفسها`);
+        skippedInvoiceNumbers.add(supplierInvNumberRaw);
         failCount++;
         continue;
       }
       if (existingSupplierInvNumbers.has(supplierInvNumberRaw)) {
         duplicateCount++;
         duplicateMessages.push(`⛔ رقم الفاتورة ${supplierInvNumberRaw} موجود مسبقاً في النظام`);
+        skippedInvoiceNumbers.add(supplierInvNumberRaw);
         failCount++;
         continue;
       }
