@@ -10,6 +10,7 @@ import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files
 import { InvoiceReconciliation } from './InvoiceReconciliation';
 import { useAIInvoiceImport } from './purchase-invoice-ai/useAIInvoiceImport';
 import { EditBatchInvoiceDialog } from './purchase-invoice-ai/EditBatchInvoiceDialog';
+import { BatchTimelinePanel } from './purchase-invoice-ai/BatchTimelinePanel';
 
 // Re-export types for backward compatibility
 export type { ParsedInvoiceData, BatchParsedResult } from './purchase-invoice-ai/types';
