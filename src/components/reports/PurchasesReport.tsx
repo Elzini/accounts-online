@@ -469,6 +469,17 @@ export function PurchasesReport() {
         issues.push(language === 'ar' ? 'عدم تطابق رياضي' : 'Math mismatch');
       }
 
+      // Duplicate detection
+      const sNameLower = supplierName.toString().trim().toLowerCase();
+      const sTaxTrim = supplierTaxRaw.toString().trim();
+      const sInvTrim = supplierInvoiceNumber.toString().trim();
+      const dupKey = sInvTrim ? `${sTaxTrim || sNameLower}::${sInvTrim}` : '';
+      const isDuplicate = dupKey && (dupKeyCount.get(dupKey) || 0) > 1;
+      if (isDuplicate) {
+        duplicateCount++;
+        issues.push(language === 'ar' ? '🔁 فاتورة مكررة' : '🔁 Duplicate invoice');
+      }
+
       const notes = issues.length > 0
         ? (language === 'ar' ? '⚠️ ' : '⚠️ ') + issues.join(' | ')
         : (language === 'ar' ? '✓ مكتملة' : '✓ Complete');
@@ -478,7 +489,8 @@ export function PurchasesReport() {
         systemInvoiceNumber || MISSING,
         supplierInvoiceNumber || MISSING,
         supplierName || MISSING,
-        supplierTaxRaw || MISSING,
+        // Force tax number as string to preserve leading zeros & full digits in Excel
+        supplierTaxRaw ? `\u200E${String(supplierTaxRaw).trim()}` : MISSING,
         row.date ? formatDate(row.date) : MISSING,
         Number(subtotal.toFixed(2)),
         Number(vat.toFixed(2)),
