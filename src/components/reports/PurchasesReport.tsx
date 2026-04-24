@@ -264,7 +264,7 @@ export function PurchasesReport() {
   };
 
   // ── ZATCA validation analysis (shared by export + validation page) ──
-  type ValidationIssue = 'missing_name' | 'missing_tax' | 'missing_inv' | 'math';
+  type ValidationIssue = 'missing_name' | 'missing_tax' | 'missing_inv' | 'math' | 'duplicate';
   type ValidatedRow = {
     idx: number;
     row: ReportRow;
@@ -283,6 +283,20 @@ export function PurchasesReport() {
       const n = Number(v);
       return Number.isFinite(n) ? n : 0;
     };
+
+    // Pre-compute duplicate keys
+    const dupCount = new Map<string, number>();
+    filteredRows.forEach((row) => {
+      const inv: any = row.raw || {};
+      const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
+      const sName = (supplier?.name || inv.supplier?.name || inv.customer_name || '').toString().trim().toLowerCase();
+      const sTax = (supplier?.id_number || (supplier as any)?.tax_number || inv.supplier_tax_number || inv.customer_vat_number || '').toString().trim();
+      const sInv = (inv.supplier_invoice_number || '').toString().trim();
+      if (!sInv) return;
+      const key = `${sTax || sName}::${sInv}`;
+      dupCount.set(key, (dupCount.get(key) || 0) + 1);
+    });
+
     return filteredRows.map((row, idx) => {
       const inv: any = row.raw || {};
       const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
@@ -304,6 +318,12 @@ export function PurchasesReport() {
       if (!supplierInvoiceNumber.toString().trim()) issues.push('missing_inv');
       if (Math.abs(total - (subtotal + vat)) > 0.05) issues.push('math');
 
+      const sInvTrim = supplierInvoiceNumber.toString().trim();
+      const sNameLower = supplierName.toString().trim().toLowerCase();
+      const sTaxTrim = supplierTax.toString().trim();
+      const dupKey = sInvTrim ? `${sTaxTrim || sNameLower}::${sInvTrim}` : '';
+      if (dupKey && (dupCount.get(dupKey) || 0) > 1) issues.push('duplicate');
+
       return {
         idx, row, systemInvoiceNumber, supplierInvoiceNumber,
         supplierName, supplierTax: String(supplierTax),
@@ -319,8 +339,8 @@ export function PurchasesReport() {
   }, [issueRows, validationFilter]);
 
   const issueLabel = (k: ValidationIssue) => {
-    const ar = { missing_name: 'اسم المورد ناقص', missing_tax: 'الرقم الضريبي ناقص', missing_inv: 'رقم فاتورة المورد ناقص', math: 'عدم تطابق رياضي' };
-    const en = { missing_name: 'Missing supplier name', missing_tax: 'Missing tax #', missing_inv: 'Missing supplier inv #', math: 'Math mismatch' };
+    const ar = { missing_name: 'اسم المورد ناقص', missing_tax: 'الرقم الضريبي ناقص', missing_inv: 'رقم فاتورة المورد ناقص', math: 'عدم تطابق رياضي', duplicate: '🔁 فاتورة مكررة' };
+    const en = { missing_name: 'Missing supplier name', missing_tax: 'Missing tax #', missing_inv: 'Missing supplier inv #', math: 'Math mismatch', duplicate: '🔁 Duplicate' };
     return language === 'ar' ? ar[k] : en[k];
   };
 
