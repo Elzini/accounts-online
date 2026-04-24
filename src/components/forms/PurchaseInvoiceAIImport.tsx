@@ -207,6 +207,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                 formatCurrency={hook.formatCurrency}
                 onReset={() => hook.setSelectedBatchIndex(null)}
                 onConfirm={() => hook.handleImportSingleFromBatch(hook.selectedBatchResult!)}
+                onEdit={() => setEditingIndex(hook.selectedBatchResult!.index)}
                 confirmLabel="استيراد هذه الفاتورة"
                 resetLabel="العودة للقائمة"
               />
