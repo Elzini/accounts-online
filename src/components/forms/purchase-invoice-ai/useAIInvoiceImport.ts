@@ -8,7 +8,7 @@ import { supabase } from '@/hooks/modules/useMiscServices';
 import { useCostCenters } from '@/hooks/useCostCenters';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { matchInvoices, ReconciliationResult } from '../InvoiceReconciliation';
-import type { ParsedInvoiceData, BatchParsedResult } from './types';
+import type { ParsedInvoiceData, BatchParsedResult, BatchTimelineEntry } from './types';
 
 interface UseAIInvoiceImportProps {
   onImport: (data: ParsedInvoiceData) => void;
