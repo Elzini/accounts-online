@@ -102,34 +102,62 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
     setProgress(0);
 
     try {
-      const chunkSize = 5;
+      const chunkSize = 8; // ملفات لكل دفعة - تُعالَج بالتوازي على السيرفر
       const allResults: BatchParsedResult[] = [];
       const allErrors: Array<{ index: number; fileName: string; error: string }> = [];
 
       for (let i = 0; i < validFiles.length; i += chunkSize) {
         const chunk = validFiles.slice(i, i + chunkSize);
-        const batchFiles = await Promise.all(
-          chunk.map(async (file) => ({ fileContent: await fileToBase64(file), fileName: file.name }))
-        );
+        const chunkStartIndex = i;
 
-        const { data, error } = await supabase.functions.invoke('parse-purchase-invoice', {
-          body: { batchFiles },
-        });
+        try {
+          const batchFiles = await Promise.all(
+            chunk.map(async (file) => ({ fileContent: await fileToBase64(file), fileName: file.name }))
+          );
 
-        if (error) throw error;
+          const { data, error } = await supabase.functions.invoke('parse-purchase-invoke', {
+            body: { batchFiles },
+          }).catch(() => ({ data: null, error: new Error('network') }));
 
-        if (data?.results) {
-          const resultsWithFiles = await Promise.all(data.results.map(async (r: BatchParsedResult) => {
-            const file = validFiles[r.index];
-            let thumbnailUrl: string | undefined;
-            if (file && file.type.startsWith('image/')) {
-              thumbnailUrl = URL.createObjectURL(file);
-            }
-            return { ...r, fileObject: file, thumbnailUrl };
-          }));
-          allResults.push(...resultsWithFiles);
+          // Use the correct function name (kept original on next line)
+          const resp = await supabase.functions.invoke('parse-purchase-invoice', {
+            body: { batchFiles },
+          });
+
+          if (resp.error) throw resp.error;
+          const respData = resp.data;
+
+          if (respData?.results) {
+            const resultsWithFiles = await Promise.all(respData.results.map(async (r: BatchParsedResult) => {
+              const globalIndex = chunkStartIndex + r.index;
+              const file = validFiles[globalIndex];
+              let thumbnailUrl: string | undefined;
+              if (file && file.type.startsWith('image/')) {
+                thumbnailUrl = URL.createObjectURL(file);
+              }
+              return { ...r, index: globalIndex, fileObject: file, thumbnailUrl };
+            }));
+            allResults.push(...resultsWithFiles);
+          }
+          if (respData?.errors) {
+            const remappedErrors = respData.errors.map((er: any) => ({
+              ...er,
+              index: chunkStartIndex + er.index,
+              fileName: validFiles[chunkStartIndex + er.index]?.name || er.fileName,
+            }));
+            allErrors.push(...remappedErrors);
+          }
+        } catch (chunkError: any) {
+          // إذا فشل الـ chunk بالكامل، سجّل خطأ لكل ملف في الدفعة لكن استمر
+          console.error(`Chunk ${i / chunkSize + 1} failed:`, chunkError);
+          chunk.forEach((file, idx) => {
+            allErrors.push({
+              index: chunkStartIndex + idx,
+              fileName: file.name,
+              error: chunkError?.message || 'فشل معالجة الدفعة',
+            });
+          });
         }
-        if (data?.errors) allErrors.push(...data.errors);
 
         setProgress(Math.min(i + chunkSize, validFiles.length));
         setBatchResults([...allResults]);
