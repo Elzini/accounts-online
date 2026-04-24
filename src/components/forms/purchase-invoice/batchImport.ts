@@ -169,7 +169,7 @@ export async function handleBatchImport({
       }
 
       // Create invoice
-      const supplierInvNumber = data.invoice_number || '';
+      const supplierInvNumber = supplierInvNumberRaw;
       const invoiceNumber = await getNextInvoiceNumber(companyId, 'purchase');
       const { data: invoice, error: invoiceError } = await supabase
         .from('invoices')
