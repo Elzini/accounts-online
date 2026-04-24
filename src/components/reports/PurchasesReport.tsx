@@ -442,7 +442,7 @@ export function PurchasesReport() {
     const dupKeyCount = new Map<string, number>();
     filteredRows.forEach((row) => {
       const inv: any = row.raw || {};
-      const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
+      const supplier: any = inv.supplier_id ? freshSuppliersMap[inv.supplier_id] : null;
       const sName = (supplier?.name || inv.supplier?.name || inv.customer_name || '').toString().trim().toLowerCase();
       const sTax = (supplier?.id_number || (supplier as any)?.tax_number || inv.supplier_tax_number || inv.customer_vat_number || '').toString().trim();
       const sInv = (inv.supplier_invoice_number || '').toString().trim();
