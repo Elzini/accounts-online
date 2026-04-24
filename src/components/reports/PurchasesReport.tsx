@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { FileText, ShoppingCart, Truck, Printer, RefreshCw, Filter, FileSpreadsheet } from 'lucide-react';
+import { FileText, ShoppingCart, Truck, Printer, RefreshCw, Filter, FileSpreadsheet, ShieldAlert, AlertTriangle, CheckCircle2, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useCars, useSuppliers } from '@/hooks/useDatabase';
 import { useExpenses } from '@/hooks/useExpenses';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
@@ -71,6 +72,8 @@ export function PurchasesReport() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState<CarStatusFilter | InvoiceStatusFilter>('all');
+  const [validationOpen, setValidationOpen] = useState(false);
+  const [validationFilter, setValidationFilter] = useState<'all' | 'missing_name' | 'missing_tax' | 'missing_inv' | 'math'>('all');
   const { printReport } = usePrintReport();
   const queryClient = useQueryClient();
   const { t, language } = useLanguage();
@@ -258,6 +261,120 @@ export function PurchasesReport() {
         { label: language === 'ar' ? 'الإجمالي الكلي' : 'Grand total', value: `${formatCurrency(grandTotal)} ${t.rpt_currency}` },
       ],
     });
+  };
+
+  // ── ZATCA validation analysis (shared by export + validation page) ──
+  type ValidationIssue = 'missing_name' | 'missing_tax' | 'missing_inv' | 'math';
+  type ValidatedRow = {
+    idx: number;
+    row: ReportRow;
+    systemInvoiceNumber: string;
+    supplierInvoiceNumber: string;
+    supplierName: string;
+    supplierTax: string;
+    subtotal: number;
+    vat: number;
+    total: number;
+    issues: ValidationIssue[];
+  };
+
+  const validatedRows = useMemo<ValidatedRow[]>(() => {
+    const safeNum = (v: any): number => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+    return filteredRows.map((row, idx) => {
+      const inv: any = row.raw || {};
+      const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
+
+      const supplierName: string =
+        supplier?.name || inv.supplier?.name || inv.customer_name || '';
+      const supplierTax: string =
+        supplier?.id_number || (supplier as any)?.tax_number ||
+        inv.supplier_tax_number || inv.customer_vat_number || '';
+      const systemInvoiceNumber = inv.invoice_number || row.reference || '';
+      const supplierInvoiceNumber = inv.supplier_invoice_number || '';
+      const subtotal = safeNum(inv.subtotal ?? row.baseAmount);
+      const vat = safeNum(inv.vat_amount ?? row.taxOrExpenses);
+      const total = safeNum(inv.total ?? row.totalAmount);
+
+      const issues: ValidationIssue[] = [];
+      if (!supplierName.toString().trim()) issues.push('missing_name');
+      if (!supplierTax.toString().trim()) issues.push('missing_tax');
+      if (!supplierInvoiceNumber.toString().trim()) issues.push('missing_inv');
+      if (Math.abs(total - (subtotal + vat)) > 0.05) issues.push('math');
+
+      return {
+        idx, row, systemInvoiceNumber, supplierInvoiceNumber,
+        supplierName, supplierTax: String(supplierTax),
+        subtotal, vat, total, issues,
+      };
+    });
+  }, [filteredRows, suppliersMap]);
+
+  const issueRows = useMemo(() => validatedRows.filter(r => r.issues.length > 0), [validatedRows]);
+  const filteredIssueRows = useMemo(() => {
+    if (validationFilter === 'all') return issueRows;
+    return issueRows.filter(r => r.issues.includes(validationFilter));
+  }, [issueRows, validationFilter]);
+
+  const issueLabel = (k: ValidationIssue) => {
+    const ar = { missing_name: 'اسم المورد ناقص', missing_tax: 'الرقم الضريبي ناقص', missing_inv: 'رقم فاتورة المورد ناقص', math: 'عدم تطابق رياضي' };
+    const en = { missing_name: 'Missing supplier name', missing_tax: 'Missing tax #', missing_inv: 'Missing supplier inv #', math: 'Math mismatch' };
+    return language === 'ar' ? ar[k] : en[k];
+  };
+
+  const handleExportIssuesExcel = () => {
+    if (filteredIssueRows.length === 0) {
+      toast.info(language === 'ar' ? 'لا توجد فواتير بمشاكل للتصدير' : 'No problematic invoices to export');
+      return;
+    }
+
+    const headers = language === 'ar'
+      ? ['م', 'رقم النظام', 'رقم فاتورة المورد', 'اسم المورد', 'الرقم الضريبي', 'التاريخ', 'قبل الضريبة', 'الضريبة', 'الإجمالي', 'فرق الإجمالي', 'الملاحظات']
+      : ['#', 'System #', 'Supplier Inv #', 'Supplier Name', 'Tax #', 'Date', 'Subtotal', 'VAT', 'Total', 'Total Diff', 'Issues'];
+
+    const MISSING = language === 'ar' ? 'غير متوفر' : 'N/A';
+    const data = filteredIssueRows.map((v, i) => {
+      const diff = +(v.total - (v.subtotal + v.vat)).toFixed(2);
+      return [
+        i + 1,
+        v.systemInvoiceNumber || MISSING,
+        v.supplierInvoiceNumber || MISSING,
+        v.supplierName || MISSING,
+        v.supplierTax || MISSING,
+        v.row.date ? formatDate(v.row.date) : MISSING,
+        Number(v.subtotal.toFixed(2)),
+        Number(v.vat.toFixed(2)),
+        Number(v.total.toFixed(2)),
+        diff,
+        '⚠️ ' + v.issues.map(issueLabel).join(' | '),
+      ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    ws['!cols'] = [{ wch: 5 }, { wch: 18 }, { wch: 20 }, { wch: 32 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 40 }];
+    const last = data.length + 1;
+    for (let r = 2; r <= last; r++) {
+      ['G', 'H', 'I', 'J'].forEach(c => {
+        const a = `${c}${r}`;
+        if (ws[a]) { ws[a].t = 'n'; ws[a].z = '#,##0.00'; }
+      });
+    }
+    if (language === 'ar') (ws as any)['!sheetView'] = [{ RTL: true }];
+    (ws as any)['!freeze'] = { xSplit: 0, ySplit: 1 };
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, language === 'ar' ? 'فواتير بها مشكلات' : 'Invoices with Issues');
+    const today = new Date().toISOString().split('T')[0];
+    const companyName = (company?.name || 'company').replace(/[^\w\u0600-\u06FF]+/g, '_');
+    XLSX.writeFile(wb, `ZATCA_Issues_${companyName}_${today}.xlsx`);
+
+    toast.success(
+      language === 'ar'
+        ? `✅ تم تصدير ${data.length} فاتورة بها مشكلات`
+        : `✅ Exported ${data.length} problematic invoices`
+    );
   };
 
   const handleExportZatcaExcel = () => {
@@ -476,6 +593,20 @@ export function PurchasesReport() {
             <RefreshCw className="w-4 h-4" />
             {t.rpt_refresh}
           </Button>
+          {!isCarDealership && (
+            <Button
+              variant="outline"
+              onClick={() => { setValidationFilter('all'); setValidationOpen(true); }}
+              className={`gap-2 ${issueRows.length > 0 ? 'border-destructive/50 text-destructive hover:bg-destructive/10' : 'border-success/40 text-success hover:bg-success/10'}`}
+              title={language === 'ar' ? 'فحص جودة بيانات فواتير المشتريات قبل التصدير' : 'Validate purchase invoices before export'}
+            >
+              <ShieldAlert className="w-4 h-4" />
+              {language === 'ar' ? 'تحقق من التصدير' : 'Validate Export'}
+              {issueRows.length > 0 && (
+                <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5">{issueRows.length}</Badge>
+              )}
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={handleExportZatcaExcel}
@@ -623,6 +754,131 @@ export function PurchasesReport() {
           </Table>
         )}
       </div>
+
+      {/* ── ZATCA Validation Dialog ── */}
+      <Dialog open={validationOpen} onOpenChange={setValidationOpen}>
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-destructive" />
+              {language === 'ar' ? 'تحقق من تصدير هيئة الزكاة' : 'ZATCA Export Validation'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ar'
+                ? `تم فحص ${validatedRows.length} فاتورة ضمن الفلاتر الحالية. يجب معالجة المشاكل قبل تقديم الملف للهيئة.`
+                : `Scanned ${validatedRows.length} invoices under current filters. Issues should be fixed before submitting to the authority.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <button
+              onClick={() => setValidationFilter('all')}
+              className={`text-start rounded-lg border p-3 transition-colors ${validationFilter === 'all' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+            >
+              <div className="text-xs text-muted-foreground">{language === 'ar' ? 'كل المشاكل' : 'All issues'}</div>
+              <div className="text-xl font-bold text-destructive">{issueRows.length}</div>
+            </button>
+            <button
+              onClick={() => setValidationFilter('missing_name')}
+              className={`text-start rounded-lg border p-3 transition-colors ${validationFilter === 'missing_name' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+            >
+              <div className="text-xs text-muted-foreground">{language === 'ar' ? 'اسم مورد ناقص' : 'Missing name'}</div>
+              <div className="text-xl font-bold">{validatedRows.filter(r => r.issues.includes('missing_name')).length}</div>
+            </button>
+            <button
+              onClick={() => setValidationFilter('missing_tax')}
+              className={`text-start rounded-lg border p-3 transition-colors ${validationFilter === 'missing_tax' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+            >
+              <div className="text-xs text-muted-foreground">{language === 'ar' ? 'رقم ضريبي ناقص' : 'Missing tax #'}</div>
+              <div className="text-xl font-bold">{validatedRows.filter(r => r.issues.includes('missing_tax')).length}</div>
+            </button>
+            <button
+              onClick={() => setValidationFilter('missing_inv')}
+              className={`text-start rounded-lg border p-3 transition-colors ${validationFilter === 'missing_inv' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+            >
+              <div className="text-xs text-muted-foreground">{language === 'ar' ? 'رقم فاتورة مورد ناقص' : 'Missing supplier inv #'}</div>
+              <div className="text-xl font-bold">{validatedRows.filter(r => r.issues.includes('missing_inv')).length}</div>
+            </button>
+            <button
+              onClick={() => setValidationFilter('math')}
+              className={`text-start rounded-lg border p-3 transition-colors ${validationFilter === 'math' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+            >
+              <div className="text-xs text-muted-foreground">{language === 'ar' ? 'عدم تطابق رياضي' : 'Math mismatch'}</div>
+              <div className="text-xl font-bold">{validatedRows.filter(r => r.issues.includes('math')).length}</div>
+            </button>
+          </div>
+
+          {/* Issues table */}
+          <div className="flex-1 overflow-auto border rounded-lg">
+            {filteredIssueRows.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-success" />
+                {issueRows.length === 0
+                  ? (language === 'ar' ? 'كل الفواتير مكتملة وجاهزة للتصدير ✓' : 'All invoices are complete and ready to export ✓')
+                  : (language === 'ar' ? 'لا توجد فواتير ضمن هذا الفلتر' : 'No invoices match this filter')}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="text-right font-bold">#</TableHead>
+                    <TableHead className="text-right font-bold">{language === 'ar' ? 'رقم النظام' : 'System #'}</TableHead>
+                    <TableHead className="text-right font-bold">{language === 'ar' ? 'رقم فاتورة المورد' : 'Supplier Inv #'}</TableHead>
+                    <TableHead className="text-right font-bold">{language === 'ar' ? 'المورد' : 'Supplier'}</TableHead>
+                    <TableHead className="text-right font-bold">{language === 'ar' ? 'الرقم الضريبي' : 'Tax #'}</TableHead>
+                    <TableHead className="text-right font-bold">{language === 'ar' ? 'الإجمالي' : 'Total'}</TableHead>
+                    <TableHead className="text-right font-bold">{language === 'ar' ? 'الملاحظات' : 'Issues'}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredIssueRows.map((v, i) => (
+                    <TableRow key={v.row.id}>
+                      <TableCell>{i + 1}</TableCell>
+                      <TableCell className="font-mono text-xs">{v.systemInvoiceNumber || '—'}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {v.supplierInvoiceNumber || <span className="text-destructive">—</span>}
+                      </TableCell>
+                      <TableCell>{v.supplierName || <span className="text-destructive">—</span>}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {v.supplierTax || <span className="text-destructive">—</span>}
+                      </TableCell>
+                      <TableCell>{formatCurrency(v.total)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {v.issues.map(k => (
+                            <Badge key={k} variant="destructive" className="text-xs">
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              {issueLabel(k)}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setValidationOpen(false)}>
+              {language === 'ar' ? 'إغلاق' : 'Close'}
+            </Button>
+            <Button
+              onClick={handleExportIssuesExcel}
+              disabled={filteredIssueRows.length === 0}
+              className="gap-2"
+              variant="destructive"
+            >
+              <Download className="w-4 h-4" />
+              {language === 'ar'
+                ? `تنزيل تقرير المشكلات (${filteredIssueRows.length})`
+                : `Download Issues Report (${filteredIssueRows.length})`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
