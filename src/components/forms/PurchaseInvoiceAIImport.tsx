@@ -136,6 +136,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                     formatCurrency={hook.formatCurrency}
                     onPreview={() => hook.setSelectedBatchIndex(result.index)}
                     onImportSingle={() => hook.handleImportSingleFromBatch(result)}
+                    onEdit={() => setEditingIndex(result.index)}
                   />
                 ))}
                 {hook.batchErrors.map((err) => (
