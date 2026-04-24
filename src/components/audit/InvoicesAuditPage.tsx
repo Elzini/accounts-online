@@ -115,7 +115,12 @@ export function InvoicesAuditPage() {
         out.push({
           id: `${inv.id}-math`,
           invoice: inv,
-          
+          kind: 'math',
+          detail: `الصافي ${subtotal.toFixed(2)} + الضريبة ${vat.toFixed(2)} = ${expectedFromSubtotal.toFixed(2)} ≠ الإجمالي ${total.toFixed(2)}`,
+          expected: { total: Number(expectedFromSubtotal.toFixed(2)) },
+          fixable: true,
+        });
+      }
 
       // Date consistency from file_url (ZATCA-pattern PDFs only)
       const urlDate = extractDateFromFileUrl(inv.file_url);
