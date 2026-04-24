@@ -180,17 +180,26 @@ export class InvoicePostingEngine {
     // Fallback to shared VAT account (vat_output) when dedicated vat_input is missing
     const vatInputAccount = this.resolver.resolve('vat_input') || this.resolver.resolve('vat_output');
 
-    let creditAccount = inv.payment_account_id
-      ? this.resolver.resolveFlexible(inv.payment_account_id, null)
-      : null;
-
-    if (!creditAccount && inv.supplier_id) {
+    // Priority 1: supplier-specific sub-account under 2101 (الموردون)
+    let creditAccount: ReturnType<typeof this.resolver.resolveFlexible> = null;
+    if (inv.supplier_id) {
       const supplierRepo = await this.getSupplierRepo();
       const supplierName = await supplierRepo.findNameById(inv.supplier_id);
       if (supplierName) {
         creditAccount = this.resolver.findByNameUnderCode(supplierName, '2101');
       }
     }
+
+    // Priority 2: explicit payment account ONLY if it's a valid liability/asset payment account
+    // (skip equity accounts like جاري الشريك 3102 which would mis-classify the entry)
+    if (!creditAccount && inv.payment_account_id) {
+      const paymentAcc = this.resolver.resolveFlexible(inv.payment_account_id, null);
+      if (paymentAcc && !/^3/.test(paymentAcc.code || '')) {
+        creditAccount = paymentAcc;
+      }
+    }
+
+    // Priority 3: default suppliers control account (2101)
     if (!creditAccount) {
       creditAccount = this.resolver.resolve('suppliers');
     }
