@@ -196,6 +196,7 @@ export function PurchaseInvoiceForm({ setActivePage }: PurchaseInvoiceFormProps)
               { label: t.inv_operations || 'عمليات', items: [
                 { label: t.inv_import_data || 'استيراد بيانات', icon: <FileSpreadsheet className="w-3.5 h-3.5 ml-2" />, onClick: () => setActivePage('medad-import') },
                 { label: t.inv_return, icon: <RotateCcw className="w-3.5 h-3.5 ml-2" />, onClick: () => setReverseDialogOpen(true), disabled: !isViewingExisting, className: 'text-amber-600' },
+                { label: 'حذف جميع المسودات المستوردة', icon: <Trash2 className="w-3.5 h-3.5 ml-2" />, onClick: openDeleteAllDraftsDialog, className: 'text-destructive' },
                 { label: 'إرسال SMS', icon: <MessageSquare className="w-3.5 h-3.5 ml-2" />, onClick: () => toast.info('سيتم إضافة خاصية إرسال SMS قريباً') },
               ]},
               { label: 'عرض', items: [
