@@ -486,6 +486,7 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
     isReconciling, costCenters, companyId,
     fileInputRef, batchFileInputRef,
     selectedBatchResult, formatCurrency,
+    batchTimeline,
     handleSingleFileSelect, handleBatchFileSelect,
     handleConfirmImport, handleConfirmBatchImport,
     handleImportSingleFromBatch, handleClose,
