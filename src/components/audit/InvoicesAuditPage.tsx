@@ -346,8 +346,8 @@ export function InvoicesAuditPage() {
                         const meta = KIND_META[issue.kind];
                         const Icon = meta.icon;
                         return (
-                          <TableRow key={issue.id}>
-                            <TableCell className="font-mono text-xs font-bold">{issue.invoice.invoice_number || '-'}</TableCell>
+                          <TableRow key={issue.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setDetailIssue(issue)}>
+                            <TableCell className="font-mono text-xs font-bold" onClick={(e) => e.stopPropagation()}>{issue.invoice.invoice_number || '-'}</TableCell>
                             <TableCell>
                               <Badge variant={issue.invoice.invoice_type === 'purchase' ? 'secondary' : 'outline'} className="text-[10px]">
                                 {issue.invoice.invoice_type === 'purchase' ? 'شراء' : 'بيع'}
