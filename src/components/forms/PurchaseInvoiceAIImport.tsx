@@ -186,6 +186,12 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
           )}
         </div>
       </DialogContent>
+      <EditBatchInvoiceDialog
+        open={editingIndex !== null}
+        onOpenChange={(o) => { if (!o) setEditingIndex(null); }}
+        result={editingResult}
+        onSave={(updated) => { hook.handleUpdateBatchResult(updated); setEditingIndex(null); }}
+      />
     </Dialog>
   );
 }
