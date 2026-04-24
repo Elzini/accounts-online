@@ -279,6 +279,40 @@ export function TaxSettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <AlertDialog open={confirmToggleOpen} onOpenChange={setConfirmToggleOpen}>
+        <AlertDialogContent dir={direction}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {formData.is_active ? (
+                <PowerOff className="w-5 h-5 text-amber-500" />
+              ) : (
+                <Power className="w-5 h-5 text-emerald-500" />
+              )}
+              {formData.is_active
+                ? (isAr ? 'تأكيد تعطيل الضريبة' : 'Confirm Tax Deactivation')
+                : (isAr ? 'تأكيد تفعيل الضريبة' : 'Confirm Tax Activation')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {formData.is_active
+                ? (isAr
+                    ? 'سيتم تعطيل ضريبة القيمة المضافة (is_active = false) ولن تُطبَّق على فواتير المبيعات والمشتريات الجديدة. هل تريد المتابعة؟'
+                    : 'VAT will be deactivated (is_active = false) and will no longer apply to new sales/purchase invoices. Continue?')
+                : (isAr
+                    ? 'سيتم تفعيل ضريبة القيمة المضافة (is_active = true) وستُطبَّق على فواتير المبيعات والمشتريات الجديدة بنسبة ' + formData.tax_rate + '%. هل تريد المتابعة؟'
+                    : 'VAT will be activated (is_active = true) at ' + formData.tax_rate + '% and will apply to new sales/purchase invoices. Continue?')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{isAr ? 'إلغاء' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmToggleActive}>
+              {formData.is_active
+                ? (isAr ? 'نعم، تعطيل' : 'Yes, deactivate')
+                : (isAr ? 'نعم، تفعيل' : 'Yes, activate')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
