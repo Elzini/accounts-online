@@ -141,6 +141,11 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
           {/* Batch results */}
           {!hook.isLoading && hook.isBatchMode && hook.batchResults.length > 0 && !hook.selectedBatchResult && !hook.reconciliationResults && (
             <div className="space-y-4">
+              {/* Batch execution timeline */}
+              {hook.batchTimeline.length > 0 && (
+                <BatchTimelinePanel entries={hook.batchTimeline} defaultCollapsed />
+              )}
+
               {/* Summary Card */}
               {(() => {
                 const successResults = hook.batchResults.filter(r => r.success);
