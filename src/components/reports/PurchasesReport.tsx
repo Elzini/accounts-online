@@ -404,6 +404,20 @@ export function PurchasesReport() {
     let runningVat = 0;
     let runningTotal = 0;
 
+    // Duplicate detection: same supplier invoice # under same supplier/tax
+    const dupKeyCount = new Map<string, number>();
+    filteredRows.forEach((row) => {
+      const inv: any = row.raw || {};
+      const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
+      const sName = (supplier?.name || inv.supplier?.name || inv.customer_name || '').toString().trim().toLowerCase();
+      const sTax = (supplier?.id_number || (supplier as any)?.tax_number || inv.supplier_tax_number || inv.customer_vat_number || '').toString().trim();
+      const sInv = (inv.supplier_invoice_number || '').toString().trim();
+      if (!sInv) return;
+      const key = `${sTax || sName}::${sInv}`;
+      dupKeyCount.set(key, (dupKeyCount.get(key) || 0) + 1);
+    });
+    let duplicateCount = 0;
+
     const rows = filteredRows.map((row, idx) => {
       const inv: any = row.raw || {};
       const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
