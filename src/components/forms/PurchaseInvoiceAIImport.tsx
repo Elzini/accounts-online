@@ -272,8 +272,8 @@ function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, confir
   );
 }
 
-function BatchInvoiceCard({ result, formatCurrency, onPreview, onImportSingle }: {
-  result: any; formatCurrency: (val: number) => string; onPreview: () => void; onImportSingle: () => void;
+function BatchInvoiceCard({ result, formatCurrency, onPreview, onImportSingle, onEdit }: {
+  result: any; formatCurrency: (val: number) => string; onPreview: () => void; onImportSingle: () => void; onEdit: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const data = result.data;
