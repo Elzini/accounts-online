@@ -260,6 +260,87 @@ export function PurchasesReport() {
     });
   };
 
+  const handleExportZatcaExcel = () => {
+    if (filteredRows.length === 0) {
+      toast.error(language === 'ar' ? 'لا توجد بيانات للتصدير' : 'No data to export');
+      return;
+    }
+
+    const headers = language === 'ar'
+      ? ['م', 'رقم الفاتورة في النظام', 'رقم فاتورة المورد', 'اسم المورد', 'الرقم الضريبي للمورد', 'تاريخ الفاتورة', 'السعر قبل الضريبة', 'الضريبة (15%)', 'الإجمالي شامل الضريبة']
+      : ['#', 'System Invoice #', 'Supplier Invoice #', 'Supplier Name', 'Supplier Tax #', 'Invoice Date', 'Subtotal (Excl. VAT)', 'VAT', 'Total (Incl. VAT)'];
+
+    const rows = filteredRows.map((row, idx) => {
+      const inv = row.raw || {};
+      const supplier = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
+      const supplierTax = (supplier as any)?.id_number
+        || (supplier as any)?.tax_number
+        || inv.supplier_tax_number
+        || inv.customer_vat_number
+        || '-';
+      const supplierName = isCarDealership
+        ? ((row.raw?.supplier as any)?.name || '-')
+        : (inv.supplier?.name || inv.customer_name || row.itemName || '-');
+      const systemInvoiceNumber = inv.invoice_number || row.reference || '-';
+      const supplierInvoiceNumber = inv.supplier_invoice_number || '-';
+      const subtotal = Number(inv.subtotal ?? row.baseAmount ?? 0);
+      const vat = Number(inv.vat_amount ?? row.taxOrExpenses ?? 0);
+      const total = Number(inv.total ?? row.totalAmount ?? 0);
+
+      return [
+        idx + 1,
+        systemInvoiceNumber,
+        supplierInvoiceNumber,
+        supplierName,
+        supplierTax,
+        formatDate(row.date),
+        Number(subtotal.toFixed(2)),
+        Number(vat.toFixed(2)),
+        Number(total.toFixed(2)),
+      ];
+    });
+
+    const totalsRow = language === 'ar'
+      ? ['', '', '', '', '', 'الإجمالي', Number(totalPurchases.toFixed(2)), Number(totalTaxOrExpenses.toFixed(2)), Number(grandTotal.toFixed(2))]
+      : ['', '', '', '', '', 'Total', Number(totalPurchases.toFixed(2)), Number(totalTaxOrExpenses.toFixed(2)), Number(grandTotal.toFixed(2))];
+
+    const sheetData = [headers, ...rows, totalsRow];
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+    // Column widths
+    ws['!cols'] = [
+      { wch: 5 }, { wch: 18 }, { wch: 20 }, { wch: 32 }, { wch: 18 },
+      { wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 18 },
+    ];
+
+    // Number format for currency columns (G, H, I = indices 6, 7, 8)
+    const lastRow = sheetData.length;
+    for (let r = 2; r <= lastRow; r++) {
+      ['G', 'H', 'I'].forEach((col) => {
+        const cellAddr = `${col}${r}`;
+        if (ws[cellAddr]) {
+          ws[cellAddr].t = 'n';
+          ws[cellAddr].z = '#,##0.00';
+        }
+      });
+    }
+
+    // RTL for Arabic
+    if (language === 'ar') {
+      (ws as any)['!sheetView'] = [{ RTL: true }];
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, language === 'ar' ? 'فواتير المشتريات' : 'Purchase Invoices');
+
+    const today = new Date().toISOString().split('T')[0];
+    const companyName = (company?.name || 'company').replace(/[^\w\u0600-\u06FF]+/g, '_');
+    const fileName = `ZATCA_Purchases_${companyName}_${today}.xlsx`;
+
+    XLSX.writeFile(wb, fileName);
+    toast.success(language === 'ar' ? `✅ تم تصدير ${rows.length} فاتورة بنجاح` : `✅ Exported ${rows.length} invoices`);
+  };
+
   if (carsLoading || invoicesLoading) {
     return (
       <div className="flex justify-center p-12">
