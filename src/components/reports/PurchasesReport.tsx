@@ -266,54 +266,116 @@ export function PurchasesReport() {
       return;
     }
 
+    // ZATCA-required columns — fixed order regardless of UI filters
     const headers = language === 'ar'
-      ? ['م', 'رقم الفاتورة في النظام', 'رقم فاتورة المورد', 'اسم المورد', 'الرقم الضريبي للمورد', 'تاريخ الفاتورة', 'السعر قبل الضريبة', 'الضريبة (15%)', 'الإجمالي شامل الضريبة']
-      : ['#', 'System Invoice #', 'Supplier Invoice #', 'Supplier Name', 'Supplier Tax #', 'Invoice Date', 'Subtotal (Excl. VAT)', 'VAT', 'Total (Incl. VAT)'];
+      ? ['م', 'رقم الفاتورة في النظام', 'رقم فاتورة المورد', 'اسم المورد', 'الرقم الضريبي للمورد', 'تاريخ الفاتورة', 'السعر قبل الضريبة', 'الضريبة', 'الإجمالي شامل الضريبة', 'ملاحظات / تحقق']
+      : ['#', 'System Invoice #', 'Supplier Invoice #', 'Supplier Name', 'Supplier Tax #', 'Invoice Date', 'Subtotal (Excl. VAT)', 'VAT', 'Total (Incl. VAT)', 'Notes / Validation'];
+
+    // Validation counters for the post-export toast
+    let missingSupplierName = 0;
+    let missingSupplierTax = 0;
+    let missingSupplierInvNo = 0;
+    let mathMismatch = 0;
+
+    const MISSING = language === 'ar' ? 'غير متوفر' : 'N/A';
+    const safeNum = (v: any): number => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    let runningSubtotal = 0;
+    let runningVat = 0;
+    let runningTotal = 0;
 
     const rows = filteredRows.map((row, idx) => {
-      const inv = row.raw || {};
-      const supplier = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
-      const supplierTax = (supplier as any)?.id_number
+      const inv: any = row.raw || {};
+      const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
+
+      // ── Supplier identity ──
+      const supplierName: string =
+        supplier?.name
+        || inv.supplier?.name
+        || inv.customer_name
+        || (isCarDealership ? (inv.supplier as any)?.name : '')
+        || '';
+      const supplierTaxRaw =
+        supplier?.id_number
         || (supplier as any)?.tax_number
         || inv.supplier_tax_number
         || inv.customer_vat_number
-        || '-';
-      const supplierName = isCarDealership
-        ? ((row.raw?.supplier as any)?.name || '-')
-        : (inv.supplier?.name || inv.customer_name || row.itemName || '-');
-      const systemInvoiceNumber = inv.invoice_number || row.reference || '-';
-      const supplierInvoiceNumber = inv.supplier_invoice_number || '-';
-      const subtotal = Number(inv.subtotal ?? row.baseAmount ?? 0);
-      const vat = Number(inv.vat_amount ?? row.taxOrExpenses ?? 0);
-      const total = Number(inv.total ?? row.totalAmount ?? 0);
+        || '';
+
+      // ── Invoice identity ──
+      const systemInvoiceNumber = inv.invoice_number || row.reference || '';
+      const supplierInvoiceNumber = inv.supplier_invoice_number || '';
+
+      // ── Amounts (always derived consistently) ──
+      const subtotal = safeNum(inv.subtotal ?? row.baseAmount);
+      const vat = safeNum(inv.vat_amount ?? row.taxOrExpenses);
+      const total = safeNum(inv.total ?? row.totalAmount);
+
+      runningSubtotal += subtotal;
+      runningVat += vat;
+      runningTotal += total;
+
+      // ── Validation flags ──
+      const issues: string[] = [];
+      if (!supplierName.trim()) {
+        missingSupplierName++;
+        issues.push(language === 'ar' ? 'اسم المورد ناقص' : 'Missing supplier name');
+      }
+      if (!supplierTaxRaw.toString().trim()) {
+        missingSupplierTax++;
+        issues.push(language === 'ar' ? 'الرقم الضريبي ناقص' : 'Missing tax #');
+      }
+      if (!supplierInvoiceNumber.toString().trim()) {
+        missingSupplierInvNo++;
+        issues.push(language === 'ar' ? 'رقم فاتورة المورد ناقص' : 'Missing supplier invoice #');
+      }
+      // Math validation: subtotal + vat ≈ total (1 halala tolerance)
+      if (Math.abs(total - (subtotal + vat)) > 0.05) {
+        mathMismatch++;
+        issues.push(language === 'ar' ? 'عدم تطابق رياضي' : 'Math mismatch');
+      }
+
+      const notes = issues.length > 0
+        ? (language === 'ar' ? '⚠️ ' : '⚠️ ') + issues.join(' | ')
+        : (language === 'ar' ? '✓ مكتملة' : '✓ Complete');
 
       return [
         idx + 1,
-        systemInvoiceNumber,
-        supplierInvoiceNumber,
-        supplierName,
-        supplierTax,
-        formatDate(row.date),
+        systemInvoiceNumber || MISSING,
+        supplierInvoiceNumber || MISSING,
+        supplierName || MISSING,
+        supplierTaxRaw || MISSING,
+        row.date ? formatDate(row.date) : MISSING,
         Number(subtotal.toFixed(2)),
         Number(vat.toFixed(2)),
         Number(total.toFixed(2)),
+        notes,
       ];
     });
 
-    const totalsRow = language === 'ar'
-      ? ['', '', '', '', '', 'الإجمالي', Number(totalPurchases.toFixed(2)), Number(totalTaxOrExpenses.toFixed(2)), Number(grandTotal.toFixed(2))]
-      : ['', '', '', '', '', 'Total', Number(totalPurchases.toFixed(2)), Number(totalTaxOrExpenses.toFixed(2)), Number(grandTotal.toFixed(2))];
+    // Totals row uses re-summed values (consistent with displayed numbers)
+    const totalsLabel = language === 'ar' ? 'الإجمالي' : 'Total';
+    const totalsRow = [
+      '', '', '', '', '', totalsLabel,
+      Number(runningSubtotal.toFixed(2)),
+      Number(runningVat.toFixed(2)),
+      Number(runningTotal.toFixed(2)),
+      '',
+    ];
 
     const sheetData = [headers, ...rows, totalsRow];
     const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
     // Column widths
     ws['!cols'] = [
-      { wch: 5 }, { wch: 18 }, { wch: 20 }, { wch: 32 }, { wch: 18 },
-      { wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 18 },
+      { wch: 5 }, { wch: 20 }, { wch: 22 }, { wch: 34 }, { wch: 20 },
+      { wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 20 }, { wch: 36 },
     ];
 
-    // Number format for currency columns (G, H, I = indices 6, 7, 8)
+    // Number format for currency columns (G, H, I)
     const lastRow = sheetData.length;
     for (let r = 2; r <= lastRow; r++) {
       ['G', 'H', 'I'].forEach((col) => {
@@ -325,10 +387,12 @@ export function PurchasesReport() {
       });
     }
 
-    // RTL for Arabic
     if (language === 'ar') {
       (ws as any)['!sheetView'] = [{ RTL: true }];
     }
+
+    // Freeze header row
+    (ws as any)['!freeze'] = { xSplit: 0, ySplit: 1 };
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, language === 'ar' ? 'فواتير المشتريات' : 'Purchase Invoices');
@@ -338,7 +402,29 @@ export function PurchasesReport() {
     const fileName = `ZATCA_Purchases_${companyName}_${today}.xlsx`;
 
     XLSX.writeFile(wb, fileName);
-    toast.success(language === 'ar' ? `✅ تم تصدير ${rows.length} فاتورة بنجاح` : `✅ Exported ${rows.length} invoices`);
+
+    // Detailed validation feedback
+    const totalIssues = missingSupplierName + missingSupplierTax + missingSupplierInvNo + mathMismatch;
+    if (totalIssues === 0) {
+      toast.success(
+        language === 'ar'
+          ? `✅ تم تصدير ${rows.length} فاتورة بدون أي ملاحظات`
+          : `✅ Exported ${rows.length} invoices with no issues`
+      );
+    } else {
+      const parts: string[] = [];
+      if (missingSupplierName) parts.push(language === 'ar' ? `${missingSupplierName} اسم مورد` : `${missingSupplierName} supplier name`);
+      if (missingSupplierTax) parts.push(language === 'ar' ? `${missingSupplierTax} رقم ضريبي` : `${missingSupplierTax} tax #`);
+      if (missingSupplierInvNo) parts.push(language === 'ar' ? `${missingSupplierInvNo} رقم فاتورة مورد` : `${missingSupplierInvNo} supplier inv #`);
+      if (mathMismatch) parts.push(language === 'ar' ? `${mathMismatch} عدم تطابق رياضي` : `${mathMismatch} math mismatch`);
+
+      toast.warning(
+        language === 'ar'
+          ? `⚠️ تم تصدير ${rows.length} فاتورة — راجع عمود "ملاحظات / تحقق": ${parts.join('، ')}`
+          : `⚠️ Exported ${rows.length} invoices — review "Notes" column: ${parts.join(', ')}`,
+        { duration: 8000 }
+      );
+    }
   };
 
   if (carsLoading || invoicesLoading) {
