@@ -311,7 +311,7 @@ function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, onEdit
                       disabled={zoomLevel >= maxZoom}
                       title="تكبير"
                     >
-                      <ZoomOut className="h-4 w-4" />
+                      <ZoomIn className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
