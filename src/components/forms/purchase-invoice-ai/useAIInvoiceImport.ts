@@ -103,53 +103,103 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
 
     try {
       const chunkSize = 8; // ملفات لكل دفعة - تُعالَج بالتوازي على السيرفر
+      const MAX_RETRIES = 3; // عدد محاولات إعادة المعالجة عند الفشل/Timeout
+      const RETRY_BASE_DELAY_MS = 1500; // backoff أولي
       const allResults: BatchParsedResult[] = [];
       const allErrors: Array<{ index: number; fileName: string; error: string }> = [];
+
+      const isRetriableError = (err: any): boolean => {
+        const msg = String(err?.message || err || '').toLowerCase();
+        return (
+          msg.includes('timeout') ||
+          msg.includes('timed out') ||
+          msg.includes('network') ||
+          msg.includes('fetch') ||
+          msg.includes('failed to fetch') ||
+          msg.includes('aborted') ||
+          msg.includes('econnreset') ||
+          msg.includes('503') ||
+          msg.includes('504') ||
+          msg.includes('429') ||
+          msg.includes('rate limit')
+        );
+      };
+
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
       for (let i = 0; i < validFiles.length; i += chunkSize) {
         const chunk = validFiles.slice(i, i + chunkSize);
         const chunkStartIndex = i;
+        const chunkNumber = Math.floor(i / chunkSize) + 1;
 
-        try {
-          const batchFiles = await Promise.all(
-            chunk.map(async (file) => ({ fileContent: await fileToBase64(file), fileName: file.name }))
-          );
+        let attempt = 0;
+        let success = false;
+        let lastError: any = null;
 
-          const resp = await supabase.functions.invoke('parse-purchase-invoice', {
-            body: { batchFiles },
-          });
+        while (attempt < MAX_RETRIES && !success) {
+          attempt++;
+          try {
+            const batchFiles = await Promise.all(
+              chunk.map(async (file) => ({ fileContent: await fileToBase64(file), fileName: file.name }))
+            );
 
-          if (resp.error) throw resp.error;
-          const respData = resp.data;
+            const resp = await supabase.functions.invoke('parse-purchase-invoice', {
+              body: { batchFiles },
+            });
 
-          if (respData?.results) {
-            const resultsWithFiles = await Promise.all(respData.results.map(async (r: BatchParsedResult) => {
-              const globalIndex = chunkStartIndex + r.index;
-              const file = validFiles[globalIndex];
-              let thumbnailUrl: string | undefined;
-              if (file && file.type.startsWith('image/')) {
-                thumbnailUrl = URL.createObjectURL(file);
-              }
-              return { ...r, index: globalIndex, fileObject: file, thumbnailUrl };
-            }));
-            allResults.push(...resultsWithFiles);
+            if (resp.error) throw resp.error;
+            const respData = resp.data;
+
+            if (respData?.results) {
+              const resultsWithFiles = await Promise.all(respData.results.map(async (r: BatchParsedResult) => {
+                const globalIndex = chunkStartIndex + r.index;
+                const file = validFiles[globalIndex];
+                let thumbnailUrl: string | undefined;
+                if (file && file.type.startsWith('image/')) {
+                  thumbnailUrl = URL.createObjectURL(file);
+                }
+                return { ...r, index: globalIndex, fileObject: file, thumbnailUrl };
+              }));
+              allResults.push(...resultsWithFiles);
+            }
+            if (respData?.errors) {
+              const remappedErrors = respData.errors.map((er: any) => ({
+                ...er,
+                index: chunkStartIndex + er.index,
+                fileName: validFiles[chunkStartIndex + er.index]?.name || er.fileName,
+              }));
+              allErrors.push(...remappedErrors);
+            }
+            success = true;
+            if (attempt > 1) {
+              toast.success(`نجحت الدفعة ${chunkNumber} في المحاولة ${attempt}`);
+            }
+          } catch (chunkError: any) {
+            lastError = chunkError;
+            const retriable = isRetriableError(chunkError);
+            console.warn(
+              `Chunk ${chunkNumber} attempt ${attempt}/${MAX_RETRIES} failed${retriable ? ' (retriable)' : ''}:`,
+              chunkError?.message || chunkError
+            );
+
+            if (retriable && attempt < MAX_RETRIES) {
+              const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1); // 1.5s, 3s, 6s...
+              toast.info(`الدفعة ${chunkNumber} فشلت (timeout). إعادة المحاولة ${attempt + 1}/${MAX_RETRIES} بعد ${Math.round(delay / 1000)}ث...`);
+              await sleep(delay);
+              continue;
+            }
+            // غير قابلة لإعادة المحاولة، أو استنفدنا المحاولات
+            break;
           }
-          if (respData?.errors) {
-            const remappedErrors = respData.errors.map((er: any) => ({
-              ...er,
-              index: chunkStartIndex + er.index,
-              fileName: validFiles[chunkStartIndex + er.index]?.name || er.fileName,
-            }));
-            allErrors.push(...remappedErrors);
-          }
-        } catch (chunkError: any) {
-          // إذا فشل الـ chunk بالكامل، سجّل خطأ لكل ملف في الدفعة لكن استمر
-          console.error(`Chunk ${i / chunkSize + 1} failed:`, chunkError);
+        }
+
+        if (!success) {
+          console.error(`Chunk ${chunkNumber} failed after ${attempt} attempts:`, lastError);
           chunk.forEach((file, idx) => {
             allErrors.push({
               index: chunkStartIndex + idx,
               fileName: file.name,
-              error: chunkError?.message || 'فشل معالجة الدفعة',
+              error: `${lastError?.message || 'فشل معالجة الدفعة'} (بعد ${attempt} محاولات)`,
             });
           });
         }
