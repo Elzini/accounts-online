@@ -131,6 +131,7 @@ export type ActivePage =
   | 'customs-clearance'
   // Accounting Audit
   | 'accounting-audit'
+  | 'invoices-audit'
   // Tasks
   | 'tasks'
   // Inventory module

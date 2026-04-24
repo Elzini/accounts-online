@@ -57,6 +57,7 @@ import { AccountStatementReport } from '@/components/reports/AccountStatementRep
 import { AccountMovementReport } from '@/components/reports/AccountMovementReport';
 import { ControlCenterPage } from '@/components/control-center/ControlCenterPage';
 import { AccountingAuditPage } from '@/components/audit/AccountingAuditPage';
+import { InvoicesAuditPage } from '@/components/audit/InvoicesAuditPage';
 import { FixedAssetsPage } from '@/components/assets/FixedAssetsPage';
 import { MedadImportPage } from '@/components/import/MedadImportPage';
 import { ProjectsPage, ContractsPage, ProgressBillingsPage } from '@/components/construction';
@@ -227,6 +228,7 @@ export function renderPageContent({
     case 'letters-of-credit': return <LettersOfCreditPage />;
     case 'customs-clearance': return <CustomsClearancePage />;
     case 'accounting-audit': return <AccountingAuditPage />;
+    case 'invoices-audit': return <InvoicesAuditPage />;
     case 'cost-centers': return <CostCentersPage />;
     case 'tasks': return <TasksPage />;
     case 'warehouses': return <WarehousesPage />;

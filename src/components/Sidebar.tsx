@@ -262,6 +262,7 @@ export function Sidebar({
     { id: 'control-center' as ActivePage, label: t.nav_control_center, icon: Settings2 },
     { id: 'backups' as ActivePage, label: s(settings?.backups_title, t.nav_backups), icon: Database },
     { id: 'audit-logs' as ActivePage, label: s(settings?.audit_logs_title, t.nav_audit_logs), icon: ClipboardList },
+    { id: 'invoices-audit' as ActivePage, label: language === 'ar' ? 'تدقيق الفواتير' : 'Invoices Audit', icon: ShieldCheck },
   ];
 
   const toolsMenuItems: MenuItem[] = [
