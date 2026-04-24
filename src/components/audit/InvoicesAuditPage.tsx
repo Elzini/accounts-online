@@ -289,11 +289,11 @@ export function InvoicesAuditPage() {
       {/* Stats */}
       {hasRun && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard icon={ShieldCheck} label="فواتير مفحوصة" value={invoices.length} color="text-blue-500" />
-          <StatCard icon={Calculator} label="أخطاء حسابية" value={counts.math} color="text-red-500" />
-          <StatCard icon={Calendar} label="أخطاء التاريخ" value={counts.date} color="text-amber-500" />
-          <StatCard icon={FileX} label="رقم مورد ناقص" value={counts['missing-ref']} color="text-orange-500" />
-          <StatCard icon={Copy} label="فواتير مكررة" value={counts.duplicate} color="text-purple-500" />
+          <StatCard icon={ShieldCheck} label="فواتير مفحوصة" value={invoices.length} color="text-blue-500" onClick={() => setCategoryReport('all')} />
+          <StatCard icon={Calculator} label="أخطاء حسابية" value={counts.math} color="text-red-500" onClick={() => setCategoryReport('math')} />
+          <StatCard icon={Calendar} label="أخطاء التاريخ" value={counts.date} color="text-amber-500" onClick={() => setCategoryReport('date')} />
+          <StatCard icon={FileX} label="رقم مورد ناقص" value={counts['missing-ref']} color="text-orange-500" onClick={() => setCategoryReport('missing-ref')} />
+          <StatCard icon={Copy} label="فواتير مكررة" value={counts.duplicate} color="text-purple-500" onClick={() => setCategoryReport('duplicate')} />
         </div>
       )}
 
