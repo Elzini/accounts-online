@@ -83,6 +83,14 @@ export function PurchasesReport() {
   const locale = language === 'ar' ? 'ar-SA' : 'en-US';
   const formatCurrency = (value: number) => decimals === 0 ? String(Math.round(value)) : value.toFixed(decimals);
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(locale);
+  const getSupplierTaxNumber = (supplier: any, inv: any) => (
+    supplier?.registration_number
+    || (supplier as any)?.tax_number
+    || supplier?.id_number
+    || inv?.supplier_tax_number
+    || inv?.customer_vat_number
+    || ''
+  ).toString().trim();
 
   const suppliersMap = useMemo(() => {
     return suppliers.reduce((acc, supplier) => {
@@ -212,6 +220,15 @@ export function PurchasesReport() {
     queryClient.invalidateQueries({ queryKey: ['invoices', companyId] });
   };
 
+  const handleOpenValidation = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['suppliers', companyId] }),
+      queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] }),
+    ]);
+    setValidationFilter('all');
+    setValidationOpen(true);
+  };
+
   const handlePrint = () => {
     printReport({
       title: getFilterLabel(),
@@ -291,7 +308,7 @@ export function PurchasesReport() {
       const inv: any = row.raw || {};
       const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
       const sName = (supplier?.name || inv.supplier?.name || inv.customer_name || '').toString().trim().toLowerCase();
-      const sTax = (supplier?.id_number || (supplier as any)?.tax_number || inv.supplier_tax_number || inv.customer_vat_number || '').toString().trim();
+      const sTax = getSupplierTaxNumber(supplier, inv);
       const sInv = (inv.supplier_invoice_number || '').toString().trim();
       if (!sInv) return;
       const key = `${sTax || sName}::${sInv}`;
@@ -304,9 +321,7 @@ export function PurchasesReport() {
 
       const supplierName: string =
         supplier?.name || inv.supplier?.name || inv.customer_name || '';
-      const supplierTax: string =
-        supplier?.id_number || (supplier as any)?.tax_number ||
-        inv.supplier_tax_number || inv.customer_vat_number || '';
+      const supplierTax: string = getSupplierTaxNumber(supplier, inv);
       const systemInvoiceNumber = inv.invoice_number || row.reference || '';
       const supplierInvoiceNumber = inv.supplier_invoice_number || '';
       const subtotal = safeNum(inv.subtotal ?? row.baseAmount);
@@ -444,7 +459,7 @@ export function PurchasesReport() {
       const inv: any = row.raw || {};
       const supplier: any = inv.supplier_id ? freshSuppliersMap[inv.supplier_id] : null;
       const sName = (supplier?.name || inv.supplier?.name || inv.customer_name || '').toString().trim().toLowerCase();
-      const sTax = (supplier?.id_number || (supplier as any)?.tax_number || inv.supplier_tax_number || inv.customer_vat_number || '').toString().trim();
+      const sTax = getSupplierTaxNumber(supplier, inv);
       const sInv = (inv.supplier_invoice_number || '').toString().trim();
       if (!sInv) return;
       const key = `${sTax || sName}::${sInv}`;
@@ -463,12 +478,7 @@ export function PurchasesReport() {
         || inv.customer_name
         || (isCarDealership ? (inv.supplier as any)?.name : '')
         || '';
-      const supplierTaxRaw =
-        supplier?.id_number
-        || (supplier as any)?.tax_number
-        || inv.supplier_tax_number
-        || inv.customer_vat_number
-        || '';
+      const supplierTaxRaw = getSupplierTaxNumber(supplier, inv);
 
       // ── Invoice identity ──
       const systemInvoiceNumber = inv.invoice_number || row.reference || '';
@@ -664,7 +674,7 @@ export function PurchasesReport() {
           {!isCarDealership && (
             <Button
               variant="outline"
-              onClick={() => { setValidationFilter('all'); setValidationOpen(true); }}
+              onClick={handleOpenValidation}
               className={`gap-2 ${issueRows.length > 0 ? 'border-destructive/50 text-destructive hover:bg-destructive/10' : 'border-success/40 text-success hover:bg-success/10'}`}
               title={language === 'ar' ? 'فحص جودة بيانات فواتير المشتريات قبل التصدير' : 'Validate purchase invoices before export'}
             >
