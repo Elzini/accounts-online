@@ -10,22 +10,25 @@ type SupplierUpdate = Database['public']['Tables']['suppliers']['Update'];
 
 export async function fetchSuppliers() {
   const companyId = await requireCompanyId();
+  // Read directly from `suppliers` (RLS already restricts access to authorized roles).
+  // The `suppliers_safe` view returns masked tax/registration numbers (e.g. ••••0003)
+  // which broke the ZATCA export — the tax authority requires the full number.
   const { data, error } = await supabase
-    .from('suppliers_safe')
+    .from('suppliers')
     .select('*')
     .eq('company_id', companyId)
     .order('created_at', { ascending: false });
-  
+
   if (error) throw error;
   return data?.map(supplier => ({
     id: supplier.id,
     company_id: supplier.company_id,
     name: supplier.name,
-    phone: supplier.phone_masked,
+    phone: supplier.phone,
     address: supplier.address,
     notes: supplier.notes,
-    id_number: supplier.id_number_masked,
-    registration_number: supplier.registration_number_masked,
+    id_number: supplier.id_number,
+    registration_number: supplier.registration_number,
     created_at: supplier.created_at,
     updated_at: supplier.updated_at,
     registration_number_encrypted: null as string | null,
