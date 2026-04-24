@@ -121,52 +121,52 @@ ${isPDF ? 'الملف مرفق كصورة/PDF.' : `المحتوى:\n${fileConten
       { role: "user", content: userContent },
     ],
     tools: [
-        {
-          type: "function",
-          function: {
-            name: "extract_purchase_invoice",
-            description: "Extract structured data from a purchase invoice. Invoice number must be extracted exactly as shown on the invoice document.",
-            parameters: {
-              type: "object",
-              properties: {
-                supplier_name: { type: "string", description: "اسم المورد القانوني الكامل المرتبط بالرقم الضريبي والعنوان (الكيان المُصدِر للفاتورة، وليس اسم الفرع/المحطة)" },
-                supplier_branch_name: { type: "string", description: "اسم الفرع أو المحطة (إن وجد منفصلاً عن الاسم القانوني)" },
-                supplier_tax_number: { type: "string", description: "الرقم الضريبي للمورد" },
-                supplier_phone: { type: "string", description: "هاتف المورد" },
-                supplier_address: { type: "string", description: "عنوان المورد" },
-                invoice_number: { type: "string", description: "رقم الفاتورة بالضبط كما يظهر في الفاتورة - مثل 1-170 أو INV-001" },
-                invoice_date: { type: "string", description: "تاريخ الفاتورة YYYY-MM-DD" },
-                due_date: { type: "string", description: "تاريخ الاستحقاق YYYY-MM-DD" },
+      {
+        type: "function",
+        function: {
+          name: "extract_purchase_invoice",
+          description: "Extract structured data from a purchase invoice. Invoice number must be extracted exactly as shown on the invoice document.",
+          parameters: {
+            type: "object",
+            properties: {
+              supplier_name: { type: "string", description: "اسم المورد القانوني الكامل المرتبط بالرقم الضريبي والعنوان (الكيان المُصدِر للفاتورة، وليس اسم الفرع/المحطة)" },
+              supplier_branch_name: { type: "string", description: "اسم الفرع أو المحطة (إن وجد منفصلاً عن الاسم القانوني)" },
+              supplier_tax_number: { type: "string", description: "الرقم الضريبي للمورد" },
+              supplier_phone: { type: "string", description: "هاتف المورد" },
+              supplier_address: { type: "string", description: "عنوان المورد" },
+              invoice_number: { type: "string", description: "رقم الفاتورة بالضبط كما يظهر في الفاتورة - مثل 1-170 أو INV-001" },
+              invoice_date: { type: "string", description: "تاريخ الفاتورة YYYY-MM-DD" },
+              due_date: { type: "string", description: "تاريخ الاستحقاق YYYY-MM-DD" },
+              items: {
+                type: "array",
+                description: "بنود الفاتورة",
                 items: {
-                  type: "array",
-                  description: "بنود الفاتورة",
-                  items: {
-                    type: "object",
-                    properties: {
-                      description: { type: "string", description: "وصف البند" },
-                      quantity: { type: "number", description: "الكمية" },
-                      unit_price: { type: "number", description: "سعر الوحدة" },
-                      total: { type: "number", description: "الإجمالي" },
-                    },
-                    required: ["description", "quantity", "unit_price", "total"],
+                  type: "object",
+                  properties: {
+                    description: { type: "string", description: "وصف البند" },
+                    quantity: { type: "number", description: "الكمية" },
+                    unit_price: { type: "number", description: "سعر الوحدة" },
+                    total: { type: "number", description: "الإجمالي" },
                   },
+                  required: ["description", "quantity", "unit_price", "total"],
                 },
-                subtotal: { type: "number", description: "المجموع قبل الضريبة" },
-                vat_amount: { type: "number", description: "مبلغ ضريبة القيمة المضافة" },
-                vat_rate: { type: "number", description: "نسبة الضريبة" },
-                total_amount: { type: "number", description: "الإجمالي شامل الضريبة" },
-                discount: { type: "number", description: "مبلغ الخصم إن وجد" },
-                notes: { type: "string", description: "ملاحظات أخرى" },
-                price_includes_tax: { type: "boolean", description: "هل الأسعار شاملة الضريبة" },
               },
-              required: ["supplier_name", "invoice_number", "invoice_date", "items", "total_amount"],
-              additionalProperties: false,
+              subtotal: { type: "number", description: "المجموع قبل الضريبة" },
+              vat_amount: { type: "number", description: "مبلغ ضريبة القيمة المضافة" },
+              vat_rate: { type: "number", description: "نسبة الضريبة" },
+              total_amount: { type: "number", description: "الإجمالي شامل الضريبة" },
+              discount: { type: "number", description: "مبلغ الخصم إن وجد" },
+              notes: { type: "string", description: "ملاحظات أخرى" },
+              price_includes_tax: { type: "boolean", description: "هل الأسعار شاملة الضريبة" },
             },
+            required: ["supplier_name", "invoice_number", "invoice_date", "items", "total_amount"],
+            additionalProperties: false,
           },
         },
-      ],
-      tool_choice: { type: "function", function: { name: "extract_purchase_invoice" } },
-    });
+      },
+    ],
+    tool_choice: { type: "function", function: { name: "extract_purchase_invoice" } },
+  });
 
   // Retry logic for transient 402/429 errors (rate limiting / temporary throttling)
   const MAX_RETRIES = 3;
