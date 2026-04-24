@@ -393,7 +393,7 @@ export function PurchasesReport() {
           <Button
             variant="outline"
             onClick={handleExportZatcaExcel}
-            className="gap-2 border-emerald-600/40 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+            className="gap-2 border-success/40 text-success hover:bg-success/10"
             title={language === 'ar' ? 'تصدير ملف Excel متوافق مع هيئة الزكاة والضريبة' : 'Export ZATCA-compliant Excel'}
           >
             <FileSpreadsheet className="w-4 h-4" />
