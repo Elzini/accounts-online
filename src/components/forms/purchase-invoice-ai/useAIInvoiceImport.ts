@@ -360,6 +360,7 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
     setParsedData(null);
     setBatchResults([]);
     setBatchErrors([]);
+    setBatchTimeline([]);
     setFileName('');
     setIsLoading(false);
     setIsBatchMode(false);
