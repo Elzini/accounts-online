@@ -6,9 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files, ArrowLeftRight, Eye } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files, ArrowLeftRight, Eye, Pencil } from 'lucide-react';
 import { InvoiceReconciliation } from './InvoiceReconciliation';
 import { useAIInvoiceImport } from './purchase-invoice-ai/useAIInvoiceImport';
+import { EditBatchInvoiceDialog } from './purchase-invoice-ai/EditBatchInvoiceDialog';
 
 // Re-export types for backward compatibility
 export type { ParsedInvoiceData, BatchParsedResult } from './purchase-invoice-ai/types';
