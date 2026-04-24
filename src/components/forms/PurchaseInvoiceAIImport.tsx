@@ -98,9 +98,22 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
           {/* Reconciliation View */}
           {hook.reconciliationResults && !hook.selectedBatchResult && (
             <div className="space-y-4">
-              <Button variant="ghost" size="sm" onClick={() => hook.setReconciliationResults(null)} className="gap-1">
-                ← العودة لنتائج التحليل
-              </Button>
+              <div className="flex items-center justify-between gap-2">
+                <Button variant="ghost" size="sm" onClick={() => hook.setReconciliationResults(null)} className="gap-1">
+                  ← العودة لنتائج التحليل
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={hook.handleReconcile}
+                  disabled={hook.isReconciling || hook.batchResults.length === 0}
+                  className="gap-2"
+                  title="إعادة تشغيل فحص التحقق/التكرار باستخدام نفس البيانات المُحلَّلة (بدون إعادة رفع الملفات)"
+                >
+                  {hook.isReconciling ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  إعادة فحص التحقق
+                </Button>
+              </div>
 
               {hook.costCenters.filter(cc => cc.is_active).length > 0 && (
                 <CostCenterSelector costCenters={hook.costCenters} value={hook.selectedCostCenterId} onChange={hook.setSelectedCostCenterId} />
