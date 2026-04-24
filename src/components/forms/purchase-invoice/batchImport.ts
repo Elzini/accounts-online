@@ -90,6 +90,9 @@ export async function handleBatchImport({
   let duplicateCount = 0;
   let missingNumberCount = 0;
   const duplicateMessages: string[] = [];
+  // Track invoice numbers that were skipped (duplicate or missing) so post-import
+  // verification doesn't falsely flag them as "not found"
+  const skippedInvoiceNumbers = new Set<string>();
 
   for (const result of results) {
     try {
