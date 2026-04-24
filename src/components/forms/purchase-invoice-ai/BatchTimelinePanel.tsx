@@ -53,7 +53,7 @@ const StatusBadge = ({ status }: { status: BatchTimelineEntry['status'] }) => {
       );
     case 'success':
       return (
-        <Badge className="gap-1 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/20 border border-emerald-500/30">
+        <Badge className="gap-1 bg-success/15 text-success hover:bg-success/20 border border-success/30">
           <CheckCircle2 className="w-3 h-3" />
           نجاح
         </Badge>
@@ -67,7 +67,7 @@ const StatusBadge = ({ status }: { status: BatchTimelineEntry['status'] }) => {
       );
     case 'shrunk':
       return (
-        <Badge className="gap-1 bg-amber-500/15 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30">
+        <Badge className="gap-1 bg-warning/15 text-warning hover:bg-warning/20 border border-warning/30">
           <TrendingDown className="w-3 h-3" />
           تقليص + إعادة
         </Badge>
@@ -117,7 +117,7 @@ export function BatchTimelinePanel({ entries, defaultCollapsed = false }: BatchT
         <div className="flex items-center gap-2">
           {/* مؤشرات سريعة */}
           {stats.success > 0 && (
-            <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs gap-1">
+            <Badge className="bg-success/15 text-success hover:bg-success/20 border border-success/30 text-xs gap-1">
               <CheckCircle2 className="w-3 h-3" />
               {stats.success}
             </Badge>
@@ -129,13 +129,13 @@ export function BatchTimelinePanel({ entries, defaultCollapsed = false }: BatchT
             </Badge>
           )}
           {stats.shrinks > 0 && (
-            <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 text-xs gap-1">
+            <Badge className="bg-warning/15 text-warning hover:bg-warning/20 border border-warning/30 text-xs gap-1">
               <TrendingDown className="w-3 h-3" />
               {stats.shrinks}
             </Badge>
           )}
           {stats.grows > 0 && (
-            <Badge className="bg-sky-500/15 text-sky-700 hover:bg-sky-500/20 border border-sky-500/30 text-xs gap-1">
+            <Badge className="bg-info/15 text-info hover:bg-info/20 border border-info/30 text-xs gap-1">
               <TrendingUp className="w-3 h-3" />
               {stats.grows}
             </Badge>
@@ -217,7 +217,7 @@ export function BatchTimelinePanel({ entries, defaultCollapsed = false }: BatchT
                       <span
                         className={
                           (e.attempts ?? 0) > 1
-                            ? 'font-semibold text-amber-600'
+                            ? 'font-semibold text-warning'
                             : 'text-muted-foreground'
                         }
                       >
@@ -234,11 +234,11 @@ export function BatchTimelinePanel({ entries, defaultCollapsed = false }: BatchT
                       <span className="font-mono">
                         {e.successCount !== undefined || e.errorCount !== undefined ? (
                           <>
-                            <span className="text-emerald-600">
+                            <span className="text-success">
                               {e.successCount ?? 0}
                             </span>
                             <span className="text-muted-foreground"> / </span>
-                            <span className="text-red-600">
+                            <span className="text-destructive">
                               {e.errorCount ?? 0}
                             </span>
                           </>
@@ -252,8 +252,8 @@ export function BatchTimelinePanel({ entries, defaultCollapsed = false }: BatchT
                         <Badge
                           className={
                             e.sizeChange.type === 'shrink'
-                              ? 'gap-1 bg-amber-500/15 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30'
-                              : 'gap-1 bg-sky-500/15 text-sky-700 hover:bg-sky-500/20 border border-sky-500/30'
+                              ? 'gap-1 bg-warning/15 text-warning hover:bg-warning/20 border border-warning/30'
+                              : 'gap-1 bg-info/15 text-info hover:bg-info/20 border border-info/30'
                           }
                           title={e.sizeChange.reason}
                         >
