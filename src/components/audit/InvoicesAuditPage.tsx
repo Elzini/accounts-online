@@ -99,17 +99,25 @@ export function InvoicesAuditPage() {
     });
 
     invoices.forEach(inv => {
-      const subtotal = Number(inv.taxable_amount ?? inv.subtotal ?? 0);
+      // Use subtotal (post-discount net) as the VAT base, matching the posting engine standard.
+      // taxable_amount may differ when a line-level discount is recorded separately.
+      const subtotal = Number(inv.subtotal ?? 0);
       const vat = Number(inv.vat_amount ?? 0);
       const total = Number(inv.total ?? 0);
-      const expected = subtotal + vat;
-      if (total > 0 && Math.abs(expected - total) > TOL) {
+      const expectedFromSubtotal = subtotal + vat;
+      const taxable = Number(inv.taxable_amount ?? 0);
+      const expectedFromTaxable = taxable + vat;
+      // Only flag as math error if BOTH bases disagree with total (true accounting error)
+      const mismatch = total > 0
+        && Math.abs(expectedFromSubtotal - total) > TOL
+        && (taxable === 0 || Math.abs(expectedFromTaxable - total) > TOL);
+      if (mismatch) {
         out.push({
           id: `${inv.id}-math`,
           invoice: inv,
           kind: 'math',
-          detail: `الصافي ${subtotal.toFixed(2)} + الضريبة ${vat.toFixed(2)} = ${expected.toFixed(2)} ≠ الإجمالي ${total.toFixed(2)}`,
-          expected: { total: Number(expected.toFixed(2)) },
+          detail: `الصافي ${subtotal.toFixed(2)} + الضريبة ${vat.toFixed(2)} = ${expectedFromSubtotal.toFixed(2)} ≠ الإجمالي ${total.toFixed(2)}`,
+          expected: { total: Number(expectedFromSubtotal.toFixed(2)) },
           fixable: true,
         });
       }
