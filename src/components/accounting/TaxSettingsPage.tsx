@@ -56,7 +56,14 @@ export function TaxSettingsPage() {
     try {
       const saved = await upsertTaxSettings.mutateAsync(formData);
       setFormData(mapToFormData(saved));
-      toast.success(t.tax_saved);
+      const isAr = direction === 'rtl';
+      const statusText = saved.is_active
+        ? (isAr ? '✅ الضريبة مفعّلة (is_active = true)' : '✅ Tax is active (is_active = true)')
+        : (isAr ? '⚠️ الضريبة غير مفعّلة (is_active = false)' : '⚠️ Tax is inactive (is_active = false)');
+      toast.success(t.tax_saved, {
+        description: statusText,
+        duration: 6000,
+      });
     } catch (error) {
       toast.error(t.tax_save_error);
     }
