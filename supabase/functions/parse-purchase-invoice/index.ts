@@ -114,78 +114,109 @@ ${isPDF ? 'الملف مرفق كصورة/PDF.' : `المحتوى:\n${fileConten
     });
   }
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userContent },
-      ],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "extract_purchase_invoice",
-            description: "Extract structured data from a purchase invoice. Invoice number must be extracted exactly as shown on the invoice document.",
-            parameters: {
-              type: "object",
-              properties: {
-                supplier_name: { type: "string", description: "اسم المورد القانوني الكامل المرتبط بالرقم الضريبي والعنوان (الكيان المُصدِر للفاتورة، وليس اسم الفرع/المحطة)" },
-                supplier_branch_name: { type: "string", description: "اسم الفرع أو المحطة (إن وجد منفصلاً عن الاسم القانوني)" },
-                supplier_tax_number: { type: "string", description: "الرقم الضريبي للمورد" },
-                supplier_phone: { type: "string", description: "هاتف المورد" },
-                supplier_address: { type: "string", description: "عنوان المورد" },
-                invoice_number: { type: "string", description: "رقم الفاتورة بالضبط كما يظهر في الفاتورة - مثل 1-170 أو INV-001" },
-                invoice_date: { type: "string", description: "تاريخ الفاتورة YYYY-MM-DD" },
-                due_date: { type: "string", description: "تاريخ الاستحقاق YYYY-MM-DD" },
+  const requestBody = JSON.stringify({
+    model: "google/gemini-2.5-flash",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userContent },
+    ],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "extract_purchase_invoice",
+          description: "Extract structured data from a purchase invoice. Invoice number must be extracted exactly as shown on the invoice document.",
+          parameters: {
+            type: "object",
+            properties: {
+              supplier_name: { type: "string", description: "اسم المورد القانوني الكامل المرتبط بالرقم الضريبي والعنوان (الكيان المُصدِر للفاتورة، وليس اسم الفرع/المحطة)" },
+              supplier_branch_name: { type: "string", description: "اسم الفرع أو المحطة (إن وجد منفصلاً عن الاسم القانوني)" },
+              supplier_tax_number: { type: "string", description: "الرقم الضريبي للمورد" },
+              supplier_phone: { type: "string", description: "هاتف المورد" },
+              supplier_address: { type: "string", description: "عنوان المورد" },
+              invoice_number: { type: "string", description: "رقم الفاتورة بالضبط كما يظهر في الفاتورة - مثل 1-170 أو INV-001" },
+              invoice_date: { type: "string", description: "تاريخ الفاتورة YYYY-MM-DD" },
+              due_date: { type: "string", description: "تاريخ الاستحقاق YYYY-MM-DD" },
+              items: {
+                type: "array",
+                description: "بنود الفاتورة",
                 items: {
-                  type: "array",
-                  description: "بنود الفاتورة",
-                  items: {
-                    type: "object",
-                    properties: {
-                      description: { type: "string", description: "وصف البند" },
-                      quantity: { type: "number", description: "الكمية" },
-                      unit_price: { type: "number", description: "سعر الوحدة" },
-                      total: { type: "number", description: "الإجمالي" },
-                    },
-                    required: ["description", "quantity", "unit_price", "total"],
+                  type: "object",
+                  properties: {
+                    description: { type: "string", description: "وصف البند" },
+                    quantity: { type: "number", description: "الكمية" },
+                    unit_price: { type: "number", description: "سعر الوحدة" },
+                    total: { type: "number", description: "الإجمالي" },
                   },
+                  required: ["description", "quantity", "unit_price", "total"],
                 },
-                subtotal: { type: "number", description: "المجموع قبل الضريبة" },
-                vat_amount: { type: "number", description: "مبلغ ضريبة القيمة المضافة" },
-                vat_rate: { type: "number", description: "نسبة الضريبة" },
-                total_amount: { type: "number", description: "الإجمالي شامل الضريبة" },
-                discount: { type: "number", description: "مبلغ الخصم إن وجد" },
-                notes: { type: "string", description: "ملاحظات أخرى" },
-                price_includes_tax: { type: "boolean", description: "هل الأسعار شاملة الضريبة" },
               },
-              required: ["supplier_name", "invoice_number", "invoice_date", "items", "total_amount"],
-              additionalProperties: false,
+              subtotal: { type: "number", description: "المجموع قبل الضريبة" },
+              vat_amount: { type: "number", description: "مبلغ ضريبة القيمة المضافة" },
+              vat_rate: { type: "number", description: "نسبة الضريبة" },
+              total_amount: { type: "number", description: "الإجمالي شامل الضريبة" },
+              discount: { type: "number", description: "مبلغ الخصم إن وجد" },
+              notes: { type: "string", description: "ملاحظات أخرى" },
+              price_includes_tax: { type: "boolean", description: "هل الأسعار شاملة الضريبة" },
             },
+            required: ["supplier_name", "invoice_number", "invoice_date", "items", "total_amount"],
+            additionalProperties: false,
           },
         },
-      ],
-      tool_choice: { type: "function", function: { name: "extract_purchase_invoice" } },
-    }),
+      },
+    ],
+    tool_choice: { type: "function", function: { name: "extract_purchase_invoice" } },
   });
 
-  if (!response.ok) {
-    if (response.status === 429) {
-      throw new Error("تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً");
+  // Retry logic for transient 402/429 errors (rate limiting / temporary throttling)
+  const MAX_RETRIES = 3;
+  let response: Response | null = null;
+  let lastErrorBody = "";
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: requestBody,
+    });
+
+    if (response.ok) break;
+
+    // Read error body once for diagnostics
+    lastErrorBody = await response.text();
+    console.error(`AI gateway error (attempt ${attempt + 1}/${MAX_RETRIES + 1}):`, response.status, lastErrorBody.slice(0, 500));
+
+    // Retry on rate limits / transient billing throttles
+    if ((response.status === 429 || response.status === 402) && attempt < MAX_RETRIES) {
+      const backoffMs = Math.min(1000 * Math.pow(2, attempt) + Math.random() * 500, 8000);
+      console.log(`Retrying after ${Math.round(backoffMs)}ms...`);
+      await new Promise((r) => setTimeout(r, backoffMs));
+      continue;
     }
-    if (response.status === 402) {
-      throw new Error("يرجى شحن رصيد الاستخدام");
-    }
-    const text = await response.text();
-    console.error("AI gateway error:", response.status, text);
-    throw new Error(`AI gateway error: ${response.status}`);
+
+    break; // Non-retryable or out of retries
   }
+
+  if (!response || !response.ok) {
+    const status = response?.status ?? 0;
+    if (status === 429) {
+      throw new Error("تم تجاوز حد الطلبات (Rate Limit). جرّب بعد دقيقة.");
+    }
+    if (status === 402) {
+      // Distinguish between true credit exhaustion and per-minute throttling
+      const isThrottle = /rate|throttl|per minute|too many/i.test(lastErrorBody);
+      throw new Error(
+        isThrottle
+          ? "تم تجاوز حد الاستخدام المؤقت لـ AI. خفّض حجم الدفعة أو جرّب بعد دقيقة."
+          : `رصيد AI غير كافٍ. التفاصيل: ${lastErrorBody.slice(0, 200)}`
+      );
+    }
+    throw new Error(`AI gateway error ${status}: ${lastErrorBody.slice(0, 200)}`);
+  }
+
 
   const aiData = await response.json();
 
