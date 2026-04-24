@@ -14,27 +14,30 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Handle batch mode
+    // Handle batch mode - process files in PARALLEL for speed
     if (batchFiles && Array.isArray(batchFiles) && batchFiles.length > 0) {
-      const results = [];
-      const errors = [];
-      
-      for (let i = 0; i < batchFiles.length; i++) {
+      const results: any[] = [];
+      const errors: any[] = [];
+
+      // Process all files in the chunk in parallel (the client already chunks them)
+      const settled = await Promise.allSettled(
+        batchFiles.map((file: any, i: number) =>
+          parseInvoice(file.fileContent, file.fileName, LOVABLE_API_KEY)
+            .then((data) => ({ index: i, fileName: file.fileName, data, success: true }))
+        )
+      );
+
+      settled.forEach((res, i) => {
         const file = batchFiles[i];
-        try {
-          const result = await parseInvoice(file.fileContent, file.fileName, LOVABLE_API_KEY);
-          results.push({ index: i, fileName: file.fileName, data: result, success: true });
-        } catch (e) {
-          console.error(`Error parsing file ${file.fileName}:`, e);
-          errors.push({ index: i, fileName: file.fileName, error: e instanceof Error ? e.message : "Unknown error" });
+        if (res.status === "fulfilled") {
+          results.push(res.value);
+        } else {
+          console.error(`Error parsing file ${file.fileName}:`, res.reason);
+          const errMsg = res.reason instanceof Error ? res.reason.message : "Unknown error";
+          errors.push({ index: i, fileName: file.fileName, error: errMsg });
         }
-        
-        // Small delay between requests to avoid rate limiting
-        if (i < batchFiles.length - 1) {
-          await new Promise(r => setTimeout(r, 500));
-        }
-      }
-      
+      });
+
       return new Response(JSON.stringify({ results, errors, total: batchFiles.length }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
