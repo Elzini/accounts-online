@@ -35,7 +35,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
             استيراد فواتير مشتريات بالذكاء الاصطناعي
           </DialogTitle>
           <DialogDescription>
-            ارفع فاتورة واحدة أو عدة فواتير (حتى 40+) وسيتم استخراج البيانات تلقائياً
+            ارفع فاتورة واحدة أو عدة فواتير (حتى 500) وسيتم استخراج البيانات تلقائياً
           </DialogDescription>
         </DialogHeader>
 
