@@ -259,6 +259,16 @@ function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, onEdit
   const isImage = attachmentFile?.type?.startsWith('image/') || !!attachmentThumbnail;
   const pdfUrl = isPdf && attachmentFile ? URL.createObjectURL(attachmentFile) : undefined;
   const hasAttachment = !!(attachmentThumbnail || pdfUrl);
+  
+  // Zoom state for image
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const minZoom = 0.5;
+  const maxZoom = 3;
+  const zoomStep = 0.25;
+  
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + zoomStep, maxZoom));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - zoomStep, minZoom));
+  const handleResetZoom = () => setZoomLevel(1);
 
   return (
     <div className="space-y-4">
@@ -277,9 +287,49 @@ function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, onEdit
             </div>
             <div className="border rounded-lg overflow-hidden bg-muted/20 sticky top-0" style={{ maxHeight: '600px' }}>
               {isImage && attachmentThumbnail && (
-                <a href={attachmentThumbnail} target="_blank" rel="noopener noreferrer">
-                  <img src={attachmentThumbnail} alt="فاتورة" className="w-full h-auto object-contain max-h-[600px] cursor-zoom-in" />
-                </a>
+                <div className="relative overflow-auto" style={{ maxHeight: '600px' }}>
+                  {/* Zoom Controls */}
+                  <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-background/90 backdrop-blur-sm rounded-lg shadow-lg p-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={handleZoomOut}
+                      disabled={zoomLevel <= minZoom}
+                      title="تصغير"
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <span className="text-xs font-medium px-2 min-w-[50px] text-center">
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={handleZoomIn}
+                      disabled={zoomLevel >= maxZoom}
+                      title="تكبير"
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs"
+                      onClick={handleResetZoom}
+                      disabled={zoomLevel === 1}
+                    >
+                      إعادة
+                    </Button>
+                  </div>
+                  <img 
+                    src={attachmentThumbnail} 
+                    alt="فاتورة" 
+                    className="w-full h-auto object-contain transition-transform duration-200"
+                    style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center' }}
+                  />
+                </div>
               )}
               {isPdf && pdfUrl && (
                 <iframe src={pdfUrl} className="w-full h-[600px]" title="فاتورة PDF" />
