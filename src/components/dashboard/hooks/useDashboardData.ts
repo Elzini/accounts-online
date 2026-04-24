@@ -178,9 +178,10 @@ export function useDashboardData() {
 
   // New system detection
   const isNewSystem = useMemo(() => {
-    // relies on dashboardConfig which is in widgets hook - we check basic conditions here
+    // Tax settings: existence of a record (active OR explicitly disabled) means user made a decision.
+    // This allows VAT-exempt companies to complete onboarding without forcing tax activation.
     const hasFiscalYear = fiscalYears.length > 0;
-    const hasTaxSettings = !!taxSettings?.is_active;
+    const hasTaxSettings = !!taxSettings; // record exists => decision made
     const hasAccounts = accountsList.length > 0;
     return !(hasFiscalYear && hasTaxSettings && hasAccounts);
   }, [fiscalYears, taxSettings, accountsList]);
