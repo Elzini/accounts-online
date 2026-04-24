@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { FileText, ShoppingCart, Truck, Printer, RefreshCw, Filter, FileSpreadsheet, ShieldAlert, AlertTriangle, CheckCircle2, Download } from 'lucide-react';
+import { FileText, ShoppingCart, Truck, Printer, RefreshCw, Filter, FileSpreadsheet, ShieldAlert, AlertTriangle, CheckCircle2, Download, Pencil } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -890,6 +890,7 @@ export function PurchasesReport() {
                     <TableHead className="text-right font-bold">{language === 'ar' ? 'الرقم الضريبي' : 'Tax #'}</TableHead>
                     <TableHead className="text-right font-bold">{language === 'ar' ? 'الإجمالي' : 'Total'}</TableHead>
                     <TableHead className="text-right font-bold">{language === 'ar' ? 'الملاحظات' : 'Issues'}</TableHead>
+                    <TableHead className="text-center font-bold">{language === 'ar' ? 'إجراء' : 'Action'}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -914,6 +915,23 @@ export function PurchasesReport() {
                             </Badge>
                           ))}
                         </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                          onClick={() => {
+                            const invId = (v.row as any)?.raw?.id || v.row.id;
+                            sessionStorage.setItem('viewPurchaseInvoiceId', invId);
+                            setValidationOpen(false);
+                            window.dispatchEvent(new CustomEvent('app:navigate', { detail: { page: 'add-purchase-invoice' } }));
+                          }}
+                          title={language === 'ar' ? 'فتح الفاتورة لتصحيح البيانات' : 'Open invoice to fix data'}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          {language === 'ar' ? 'تعديل' : 'Edit'}
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
