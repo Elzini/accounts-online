@@ -417,11 +417,17 @@ function BatchInvoiceCard({ result, formatCurrency, onPreview, onImportSingle, o
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground font-mono">#{result.index + 1}</span>
             <span className="text-sm font-bold truncate">{data.supplier_name}</span>
+            {data.supplier_branch_name && data.supplier_branch_name !== data.supplier_name && (
+              <Badge variant="outline" className="text-[10px] h-4 px-1 shrink-0" title="اسم الفرع/المحطة">
+                {data.supplier_branch_name}
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
             <span className="font-mono">{data.invoice_number}</span>
             <span>{data.invoice_date}</span>
             <span>{data.items?.length || 0} أصناف</span>
+            {data.supplier_tax_number && <span className="font-mono text-[10px]">ض: {data.supplier_tax_number}</span>}
           </div>
         </div>
         <div className="text-left shrink-0 space-y-0.5">
