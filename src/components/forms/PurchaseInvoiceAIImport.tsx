@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files, ArrowLeftRight, Eye, Pencil, ZoomIn, ZoomOut } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files, ArrowLeftRight, Eye, Pencil, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
 import { InvoiceReconciliation } from './InvoiceReconciliation';
 import { useAIInvoiceImport } from './purchase-invoice-ai/useAIInvoiceImport';
 import { EditBatchInvoiceDialog } from './purchase-invoice-ai/EditBatchInvoiceDialog';
@@ -98,9 +98,22 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
           {/* Reconciliation View */}
           {hook.reconciliationResults && !hook.selectedBatchResult && (
             <div className="space-y-4">
-              <Button variant="ghost" size="sm" onClick={() => hook.setReconciliationResults(null)} className="gap-1">
-                ← العودة لنتائج التحليل
-              </Button>
+              <div className="flex items-center justify-between gap-2">
+                <Button variant="ghost" size="sm" onClick={() => hook.setReconciliationResults(null)} className="gap-1">
+                  ← العودة لنتائج التحليل
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={hook.handleReconcile}
+                  disabled={hook.isReconciling || hook.batchResults.length === 0}
+                  className="gap-2"
+                  title="إعادة تشغيل فحص التحقق/التكرار باستخدام نفس البيانات المُحلَّلة (بدون إعادة رفع الملفات)"
+                >
+                  {hook.isReconciling ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  إعادة فحص التحقق
+                </Button>
+              </div>
 
               {hook.costCenters.filter(cc => cc.is_active).length > 0 && (
                 <CostCenterSelector costCenters={hook.costCenters} value={hook.selectedCostCenterId} onChange={hook.setSelectedCostCenterId} />
