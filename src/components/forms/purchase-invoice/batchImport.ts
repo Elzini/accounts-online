@@ -90,6 +90,9 @@ export async function handleBatchImport({
   let duplicateCount = 0;
   let missingNumberCount = 0;
   const duplicateMessages: string[] = [];
+  // Track invoice numbers that were skipped (duplicate or missing) so post-import
+  // verification doesn't falsely flag them as "not found"
+  const skippedInvoiceNumbers = new Set<string>();
 
   for (const result of results) {
     try {
@@ -106,12 +109,14 @@ export async function handleBatchImport({
       if (seenInBatch.has(supplierInvNumberRaw)) {
         duplicateCount++;
         duplicateMessages.push(`⛔ رقم الفاتورة ${supplierInvNumberRaw} مكرر داخل ملفات الاستيراد نفسها`);
+        skippedInvoiceNumbers.add(supplierInvNumberRaw);
         failCount++;
         continue;
       }
       if (existingSupplierInvNumbers.has(supplierInvNumberRaw)) {
         duplicateCount++;
         duplicateMessages.push(`⛔ رقم الفاتورة ${supplierInvNumberRaw} موجود مسبقاً في النظام`);
+        skippedInvoiceNumbers.add(supplierInvNumberRaw);
         failCount++;
         continue;
       }
@@ -286,7 +291,11 @@ export async function handleBatchImport({
         for (const result of results) {
           if (!result.success) continue;
           const parsed = result.data;
-          const matched = verifyInvoices.find(inv => inv.supplier_invoice_number === parsed.invoice_number);
+          const parsedNumber = (parsed.invoice_number || '').toString().trim();
+          // Skip verification for invoices we intentionally did not import
+          // (duplicates already in system, duplicates within batch, or missing number)
+          if (!parsedNumber || skippedInvoiceNumbers.has(parsedNumber)) continue;
+          const matched = verifyInvoices.find(inv => inv.supplier_invoice_number === parsedNumber);
 
           if (!matched) {
             mismatches.push(`❌ فاتورة ${parsed.invoice_number} - لم يتم العثور عليها في النظام`);
