@@ -280,6 +280,11 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
 
   const selectedBatchResult = selectedBatchIndex !== null ? batchResults.find(r => r.index === selectedBatchIndex) : null;
 
+  // Update an entry in the batch results (used by the edit dialog)
+  const handleUpdateBatchResult = (updated: BatchParsedResult) => {
+    setBatchResults(prev => prev.map(r => r.index === updated.index ? updated : r));
+  };
+
   return {
     isLoading, parsedData, batchResults, batchErrors,
     fileName, isBatchMode, progress, totalFiles,
@@ -294,5 +299,6 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
     handleImportSingleFromBatch, handleClose,
     handleReconcile, handleImportFromReconciliation,
     handleUpdateExisting, setParsedData,
+    handleUpdateBatchResult,
   };
 }

@@ -6,9 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files, ArrowLeftRight, Eye } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files, ArrowLeftRight, Eye, Pencil } from 'lucide-react';
 import { InvoiceReconciliation } from './InvoiceReconciliation';
 import { useAIInvoiceImport } from './purchase-invoice-ai/useAIInvoiceImport';
+import { EditBatchInvoiceDialog } from './purchase-invoice-ai/EditBatchInvoiceDialog';
 
 // Re-export types for backward compatibility
 export type { ParsedInvoiceData, BatchParsedResult } from './purchase-invoice-ai/types';
@@ -22,6 +23,8 @@ interface PurchaseInvoiceAIImportProps {
 
 export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchImport }: PurchaseInvoiceAIImportProps) {
   const hook = useAIInvoiceImport({ onImport, onBatchImport, onOpenChange });
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const editingResult = editingIndex !== null ? hook.batchResults.find(r => r.index === editingIndex) ?? null : null;
 
   return (
     <Dialog open={open} onOpenChange={hook.handleClose}>
@@ -133,6 +136,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                     formatCurrency={hook.formatCurrency}
                     onPreview={() => hook.setSelectedBatchIndex(result.index)}
                     onImportSingle={() => hook.handleImportSingleFromBatch(result)}
+                    onEdit={() => setEditingIndex(result.index)}
                   />
                 ))}
                 {hook.batchErrors.map((err) => (
@@ -182,6 +186,12 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
           )}
         </div>
       </DialogContent>
+      <EditBatchInvoiceDialog
+        open={editingIndex !== null}
+        onOpenChange={(o) => { if (!o) setEditingIndex(null); }}
+        result={editingResult}
+        onSave={(updated) => { hook.handleUpdateBatchResult(updated); setEditingIndex(null); }}
+      />
     </Dialog>
   );
 }
@@ -268,8 +278,8 @@ function SingleInvoicePreview({ data, formatCurrency, onReset, onConfirm, confir
   );
 }
 
-function BatchInvoiceCard({ result, formatCurrency, onPreview, onImportSingle }: {
-  result: any; formatCurrency: (val: number) => string; onPreview: () => void; onImportSingle: () => void;
+function BatchInvoiceCard({ result, formatCurrency, onPreview, onImportSingle, onEdit }: {
+  result: any; formatCurrency: (val: number) => string; onPreview: () => void; onImportSingle: () => void; onEdit: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const data = result.data;
@@ -297,7 +307,8 @@ function BatchInvoiceCard({ result, formatCurrency, onPreview, onImportSingle }:
           <div className="text-sm font-bold font-mono text-primary">{formatCurrency(data.total_amount)}</div>
         </div>
         <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={onPreview}><Eye className="w-3 h-3" /></Button>
+          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={onPreview} title="معاينة"><Eye className="w-3 h-3" /></Button>
+          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={onEdit} title="تعديل البيانات والمرفق"><Pencil className="w-3 h-3" /></Button>
           <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={onImportSingle}>استيراد</Button>
         </div>
       </div>
