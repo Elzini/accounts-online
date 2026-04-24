@@ -390,6 +390,15 @@ export function PurchasesReport() {
             <RefreshCw className="w-4 h-4" />
             {t.rpt_refresh}
           </Button>
+          <Button
+            variant="outline"
+            onClick={handleExportZatcaExcel}
+            className="gap-2 border-emerald-600/40 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+            title={language === 'ar' ? 'تصدير ملف Excel متوافق مع هيئة الزكاة والضريبة' : 'Export ZATCA-compliant Excel'}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            {language === 'ar' ? 'تصدير Excel (هيئة الزكاة)' : 'Export Excel (ZATCA)'}
+          </Button>
           <Button onClick={handlePrint} className="gap-2">
             <Printer className="w-4 h-4" />
             {t.rpt_print_report}
