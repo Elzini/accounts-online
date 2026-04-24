@@ -10,6 +10,7 @@ import { Upload, FileText, Loader2, CheckCircle, Sparkles, AlertCircle, X, Files
 import { InvoiceReconciliation } from './InvoiceReconciliation';
 import { useAIInvoiceImport } from './purchase-invoice-ai/useAIInvoiceImport';
 import { EditBatchInvoiceDialog } from './purchase-invoice-ai/EditBatchInvoiceDialog';
+import { BatchTimelinePanel } from './purchase-invoice-ai/BatchTimelinePanel';
 
 // Re-export types for backward compatibility
 export type { ParsedInvoiceData, BatchParsedResult } from './purchase-invoice-ai/types';
@@ -82,6 +83,13 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                   <p className="text-xs text-muted-foreground">{hook.fileName}</p>
                 </>
               )}
+
+              {/* Live timeline panel أثناء المعالجة */}
+              {hook.isBatchMode && hook.batchTimeline.length > 0 && (
+                <div className="mt-4 text-right">
+                  <BatchTimelinePanel entries={hook.batchTimeline} />
+                </div>
+              )}
             </div>
           )}
 
@@ -115,6 +123,10 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                 </Button>
               </div>
 
+              {hook.batchTimeline.length > 0 && (
+                <BatchTimelinePanel entries={hook.batchTimeline} defaultCollapsed />
+              )}
+
               {hook.costCenters.filter(cc => cc.is_active).length > 0 && (
                 <CostCenterSelector costCenters={hook.costCenters} value={hook.selectedCostCenterId} onChange={hook.setSelectedCostCenterId} />
               )}
@@ -133,6 +145,11 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
           {/* Batch results */}
           {!hook.isLoading && hook.isBatchMode && hook.batchResults.length > 0 && !hook.selectedBatchResult && !hook.reconciliationResults && (
             <div className="space-y-4">
+              {/* Batch execution timeline */}
+              {hook.batchTimeline.length > 0 && (
+                <BatchTimelinePanel entries={hook.batchTimeline} defaultCollapsed />
+              )}
+
               {/* Summary Card */}
               {(() => {
                 const successResults = hook.batchResults.filter(r => r.success);

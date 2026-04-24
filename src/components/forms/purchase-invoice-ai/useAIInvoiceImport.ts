@@ -8,7 +8,7 @@ import { supabase } from '@/hooks/modules/useMiscServices';
 import { useCostCenters } from '@/hooks/useCostCenters';
 import { useCompanyId } from '@/hooks/useCompanyId';
 import { matchInvoices, ReconciliationResult } from '../InvoiceReconciliation';
-import type { ParsedInvoiceData, BatchParsedResult } from './types';
+import type { ParsedInvoiceData, BatchParsedResult, BatchTimelineEntry } from './types';
 
 interface UseAIInvoiceImportProps {
   onImport: (data: ParsedInvoiceData) => void;
@@ -29,6 +29,7 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
   const [selectedCostCenterId, setSelectedCostCenterId] = useState<string | null>(null);
   const [reconciliationResults, setReconciliationResults] = useState<ReconciliationResult[] | null>(null);
   const [isReconciling, setIsReconciling] = useState(false);
+  const [batchTimeline, setBatchTimeline] = useState<BatchTimelineEntry[]>([]);
   const { data: costCenters = [] } = useCostCenters();
   const companyId = useCompanyId();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -98,6 +99,7 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
     setIsLoading(true);
     setBatchResults([]);
     setBatchErrors([]);
+    setBatchTimeline([]);
     setTotalFiles(validFiles.length);
     setProgress(0);
 
@@ -146,19 +148,43 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
       let cursor = 0;
       let chunkNumber = 0;
 
+      // Helpers لإدارة سجل الدفعات
+      const addTimelineEntry = (entry: BatchTimelineEntry) => {
+        setBatchTimeline((prev) => [...prev, entry]);
+      };
+      const updateTimelineEntry = (id: string, patch: Partial<BatchTimelineEntry>) => {
+        setBatchTimeline((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+      };
+
       while (cursor < validFiles.length) {
         chunkNumber++;
         const chunk = validFiles.slice(cursor, cursor + currentChunkSize);
         const chunkStartIndex = cursor;
         const sizeUsedForThisChunk = chunk.length;
 
+        // أنشئ سجل الدفعة
+        const entryId = `chunk-${chunkNumber}-${Date.now()}`;
+        const startedAt = Date.now();
+        addTimelineEntry({
+          id: entryId,
+          chunkNumber,
+          startedAt,
+          chunkSizeUsed: sizeUsedForThisChunk,
+          fileCount: sizeUsedForThisChunk,
+          attempts: 0,
+          status: 'running',
+        });
+
         let attempt = 0;
         let success = false;
         let lastError: any = null;
         let lastWasTimeout = false;
+        let chunkSuccessCount = 0;
+        let chunkErrorCount = 0;
 
         while (attempt < MAX_RETRIES && !success) {
           attempt++;
+          updateTimelineEntry(entryId, { attempts: attempt });
           try {
             const batchFiles = await Promise.all(
               chunk.map(async (file) => ({ fileContent: await fileToBase64(file), fileName: file.name }))
@@ -182,6 +208,7 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
                 return { ...r, index: globalIndex, fileObject: file, thumbnailUrl };
               }));
               allResults.push(...resultsWithFiles);
+              chunkSuccessCount = resultsWithFiles.filter((r) => r.success).length;
             }
             if (respData?.errors) {
               const remappedErrors = respData.errors.map((er: any) => ({
@@ -190,6 +217,7 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
                 fileName: validFiles[chunkStartIndex + er.index]?.name || er.fileName,
               }));
               allErrors.push(...remappedErrors);
+              chunkErrorCount = remappedErrors.length;
             }
             success = true;
             if (attempt > 1) {
@@ -214,12 +242,22 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
           }
         }
 
+        const endedAt = Date.now();
+
         if (success) {
-          // تقدّم المؤشر وحدّث منطق التعافي
+          // أكمل سجل الدفعة بنجاح
+          updateTimelineEntry(entryId, {
+            endedAt,
+            durationMs: endedAt - startedAt,
+            status: 'success',
+            successCount: chunkSuccessCount,
+            errorCount: chunkErrorCount,
+          });
+
           cursor += sizeUsedForThisChunk;
           consecutiveSuccesses++;
 
-          // تعافي تدريجي: زِد الحجم بعد عدد كافٍ من النجاحات المتتالية
+          // تعافي تدريجي
           if (
             consecutiveSuccesses >= RECOVERY_THRESHOLD &&
             currentChunkSize < MAX_CHUNK_SIZE
@@ -228,25 +266,44 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
             if (newSize !== currentChunkSize) {
               console.info(`Adaptive: تعافي — رفع حجم الدفعة من ${currentChunkSize} إلى ${newSize}`);
               toast.info(`📈 تحسّن الأداء — رفع حجم الدفعة إلى ${newSize}`);
+              updateTimelineEntry(entryId, {
+                sizeChange: {
+                  type: 'grow',
+                  from: currentChunkSize,
+                  to: newSize,
+                  reason: `${RECOVERY_THRESHOLD} نجاحات متتالية`,
+                },
+              });
               currentChunkSize = newSize;
               consecutiveSuccesses = 0;
             }
           }
         } else {
-          // فشل بعد كل المحاولات — إذا كان timeout وحجم الدفعة > MIN، قلّص وأعد المحاولة على نفس النطاق
           consecutiveSuccesses = 0;
 
           if (lastWasTimeout && currentChunkSize > MIN_CHUNK_SIZE) {
             const newSize = Math.max(MIN_CHUNK_SIZE, Math.floor(currentChunkSize / SHRINK_FACTOR));
             console.warn(`Adaptive: timeout — تقليص حجم الدفعة من ${currentChunkSize} إلى ${newSize} وإعادة المحاولة`);
             toast.warning(`📉 timeout — تقليص حجم الدفعة من ${currentChunkSize} إلى ${newSize} وإعادة المحاولة...`);
+            // وسم السجل كـ "shrunk" مع تفاصيل التغيير
+            updateTimelineEntry(entryId, {
+              endedAt,
+              durationMs: endedAt - startedAt,
+              status: 'shrunk',
+              errorMessage: String(lastError?.message || 'timeout'),
+              sizeChange: {
+                type: 'shrink',
+                from: currentChunkSize,
+                to: newSize,
+                reason: 'timeout بعد استنفاد المحاولات',
+              },
+            });
             currentChunkSize = newSize;
-            // لا نحرّك cursor — سنعيد محاولة نفس الملفات بحجم أصغر
             await sleep(1000);
             continue;
           }
 
-          // غير timeout أو وصلنا للحد الأدنى — سجّل الأخطاء واستمر
+          // فشل نهائي
           console.error(`Chunk ${chunkNumber} failed after ${attempt} attempts:`, lastError);
           chunk.forEach((file, idx) => {
             allErrors.push({
@@ -254,6 +311,13 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
               fileName: file.name,
               error: `${lastError?.message || 'فشل معالجة الدفعة'} (بعد ${attempt} محاولات، حجم=${sizeUsedForThisChunk})`,
             });
+          });
+          updateTimelineEntry(entryId, {
+            endedAt,
+            durationMs: endedAt - startedAt,
+            status: 'failed',
+            errorMessage: String(lastError?.message || 'فشل معالجة الدفعة'),
+            errorCount: sizeUsedForThisChunk,
           });
           cursor += sizeUsedForThisChunk;
         }
@@ -296,6 +360,7 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
     setParsedData(null);
     setBatchResults([]);
     setBatchErrors([]);
+    setBatchTimeline([]);
     setFileName('');
     setIsLoading(false);
     setIsBatchMode(false);
@@ -421,6 +486,7 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
     isReconciling, costCenters, companyId,
     fileInputRef, batchFileInputRef,
     selectedBatchResult, formatCurrency,
+    batchTimeline,
     handleSingleFileSelect, handleBatchFileSelect,
     handleConfirmImport, handleConfirmBatchImport,
     handleImportSingleFromBatch, handleClose,
