@@ -65,10 +65,58 @@ export async function handleBatchImport({
 
   toast.info(`بدء استيراد ${expectedCount} فاتورة...`);
 
+  // Pre-fetch existing supplier invoice numbers for this company to detect duplicates
+  let existingSupplierInvNumbers = new Set<string>();
+  try {
+    const { data: existingRows } = await supabase
+      .from('invoices')
+      .select('supplier_invoice_number')
+      .eq('company_id', companyId)
+      .eq('invoice_type', 'purchase')
+      .not('supplier_invoice_number', 'is', null);
+    if (existingRows) {
+      existingSupplierInvNumbers = new Set(
+        existingRows
+          .map((r: any) => (r.supplier_invoice_number || '').toString().trim())
+          .filter(Boolean)
+      );
+    }
+  } catch (e) {
+    console.warn('Could not pre-fetch existing supplier invoice numbers:', e);
+  }
+
+  // Track invoice numbers seen within this batch to catch in-batch duplicates
+  const seenInBatch = new Set<string>();
+  let duplicateCount = 0;
+  let missingNumberCount = 0;
+  const duplicateMessages: string[] = [];
+
   for (const result of results) {
     try {
       const data = result.data;
-      
+
+      // ====== Duplicate / missing invoice number guard ======
+      const supplierInvNumberRaw = (data.invoice_number || '').toString().trim();
+      if (!supplierInvNumberRaw) {
+        missingNumberCount++;
+        duplicateMessages.push(`⚠️ تم تخطي فاتورة بدون رقم (المورد: ${data.supplier_name || 'غير محدد'})`);
+        failCount++;
+        continue;
+      }
+      if (seenInBatch.has(supplierInvNumberRaw)) {
+        duplicateCount++;
+        duplicateMessages.push(`⛔ رقم الفاتورة ${supplierInvNumberRaw} مكرر داخل ملفات الاستيراد نفسها`);
+        failCount++;
+        continue;
+      }
+      if (existingSupplierInvNumbers.has(supplierInvNumberRaw)) {
+        duplicateCount++;
+        duplicateMessages.push(`⛔ رقم الفاتورة ${supplierInvNumberRaw} موجود مسبقاً في النظام`);
+        failCount++;
+        continue;
+      }
+      seenInBatch.add(supplierInvNumberRaw);
+
       // Find or create supplier
       let supplierId = '';
       const existingSupplier = suppliers.find(s => 
