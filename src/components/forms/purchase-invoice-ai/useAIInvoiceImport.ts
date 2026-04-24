@@ -99,6 +99,7 @@ export function useAIInvoiceImport({ onImport, onBatchImport, onOpenChange }: Us
     setIsLoading(true);
     setBatchResults([]);
     setBatchErrors([]);
+    setBatchTimeline([]);
     setTotalFiles(validFiles.length);
     setProgress(0);
 
