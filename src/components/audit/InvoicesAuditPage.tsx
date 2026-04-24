@@ -18,6 +18,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
@@ -67,6 +69,8 @@ export function InvoicesAuditPage() {
   const [activeTab, setActiveTab] = useState<IssueKind | 'all'>('all');
   const [confirmFixAllOpen, setConfirmFixAllOpen] = useState(false);
   const [fixingAll, setFixingAll] = useState(false);
+  const [detailIssue, setDetailIssue] = useState<Issue | null>(null);
+  const [categoryReport, setCategoryReport] = useState<IssueKind | 'all' | null>(null);
 
   const { data: invoices = [], refetch, isFetching } = useQuery<InvoiceRow[]>({
     queryKey: ['invoices-audit', companyId],
@@ -285,11 +289,11 @@ export function InvoicesAuditPage() {
       {/* Stats */}
       {hasRun && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard icon={ShieldCheck} label="فواتير مفحوصة" value={invoices.length} color="text-blue-500" />
-          <StatCard icon={Calculator} label="أخطاء حسابية" value={counts.math} color="text-red-500" />
-          <StatCard icon={Calendar} label="أخطاء التاريخ" value={counts.date} color="text-amber-500" />
-          <StatCard icon={FileX} label="رقم مورد ناقص" value={counts['missing-ref']} color="text-orange-500" />
-          <StatCard icon={Copy} label="فواتير مكررة" value={counts.duplicate} color="text-purple-500" />
+          <StatCard icon={ShieldCheck} label="فواتير مفحوصة" value={invoices.length} color="text-blue-500" onClick={() => setCategoryReport('all')} />
+          <StatCard icon={Calculator} label="أخطاء حسابية" value={counts.math} color="text-red-500" onClick={() => setCategoryReport('math')} />
+          <StatCard icon={Calendar} label="أخطاء التاريخ" value={counts.date} color="text-amber-500" onClick={() => setCategoryReport('date')} />
+          <StatCard icon={FileX} label="رقم مورد ناقص" value={counts['missing-ref']} color="text-orange-500" onClick={() => setCategoryReport('missing-ref')} />
+          <StatCard icon={Copy} label="فواتير مكررة" value={counts.duplicate} color="text-purple-500" onClick={() => setCategoryReport('duplicate')} />
         </div>
       )}
 
@@ -342,8 +346,8 @@ export function InvoicesAuditPage() {
                         const meta = KIND_META[issue.kind];
                         const Icon = meta.icon;
                         return (
-                          <TableRow key={issue.id}>
-                            <TableCell className="font-mono text-xs font-bold">{issue.invoice.invoice_number || '-'}</TableCell>
+                          <TableRow key={issue.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setDetailIssue(issue)}>
+                            <TableCell className="font-mono text-xs font-bold" onClick={(e) => e.stopPropagation()}>{issue.invoice.invoice_number || '-'}</TableCell>
                             <TableCell>
                               <Badge variant={issue.invoice.invoice_type === 'purchase' ? 'secondary' : 'outline'} className="text-[10px]">
                                 {issue.invoice.invoice_type === 'purchase' ? 'شراء' : 'بيع'}
@@ -432,13 +436,28 @@ export function InvoicesAuditPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Per-invoice detail dialog (row click) */}
+      <InvoiceDetailDialog issue={detailIssue} onClose={() => setDetailIssue(null)} onFix={fixSingle} />
+
+      {/* Category report dialog (stat card click) */}
+      <CategoryReportDialog
+        kind={categoryReport}
+        issues={categoryReport === 'all' ? issues : issues.filter(i => i.kind === categoryReport)}
+        totalChecked={invoices.length}
+        onClose={() => setCategoryReport(null)}
+        onPick={(iss) => { setCategoryReport(null); setDetailIssue(iss); }}
+      />
     </div>
   );
 }
 
-function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: number; color: string }) {
+function StatCard({ icon: Icon, label, value, color, onClick }: { icon: any; label: string; value: number; color: string; onClick?: () => void }) {
   return (
-    <Card>
+    <Card
+      onClick={onClick}
+      className={onClick ? 'cursor-pointer transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5' : ''}
+    >
       <CardContent className="p-4 flex items-center gap-3">
         <div className={`p-2 rounded-lg bg-muted ${color}`}><Icon className="w-5 h-5" /></div>
         <div>
@@ -447,5 +466,212 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// ── Detail dialog: shows ALL data for a single invoice + math verification ──
+function InvoiceDetailDialog({ issue, onClose, onFix }: { issue: Issue | null; onClose: () => void; onFix: (i: Issue) => void }) {
+  if (!issue) return null;
+  const inv = issue.invoice;
+  const subtotal = Number(inv.subtotal ?? 0);
+  const taxable = Number(inv.taxable_amount ?? 0);
+  const vat = Number(inv.vat_amount ?? 0);
+  const total = Number(inv.total ?? 0);
+  const expectedFromSubtotal = subtotal + vat;
+  const expectedFromTaxable = taxable + vat;
+  const diffSubtotal = total - expectedFromSubtotal;
+  const diffTaxable = total - expectedFromTaxable;
+  const urlDate = extractDateFromFileUrl(inv.file_url);
+  const fmt = (n: number) => n.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  return (
+    <Dialog open={!!issue} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileWarning className="w-5 h-5 text-primary" />
+            تقرير تحقق — {inv.invoice_number || inv.id.slice(0, 8)}
+          </DialogTitle>
+          <DialogDescription>عرض كامل لبيانات الفاتورة وإعادة احتساب القيم للتحقق</DialogDescription>
+        </DialogHeader>
+
+        <ScrollArea className="max-h-[65vh] pr-3">
+          <div className="space-y-4">
+            {/* Identity */}
+            <section className="rounded-lg border p-3 space-y-1.5 text-xs">
+              <div className="font-semibold text-sm mb-2">بيانات الفاتورة</div>
+              <Row label="رقم الفاتورة" value={inv.invoice_number || '-'} mono />
+              <Row label="النوع" value={inv.invoice_type === 'purchase' ? 'شراء' : 'بيع'} />
+              <Row label="التاريخ المسجل" value={inv.invoice_date} mono />
+              <Row label="رقم فاتورة المورد" value={inv.supplier_invoice_number || '— غير موجود —'} mono />
+              <Row label="المورد" value={inv.supplier?.name || '-'} />
+              <Row label="معرف الفاتورة" value={inv.id} mono small />
+              {inv.file_url && (
+                <Row label="ملف ZATCA الأصلي" value={
+                  <a href={inv.file_url} target="_blank" rel="noreferrer" className="text-primary underline inline-flex items-center gap-1">
+                    فتح الملف <ExternalLink className="w-3 h-3" />
+                  </a>
+                } />
+              )}
+            </section>
+
+            {/* Math verification */}
+            <section className="rounded-lg border p-3 space-y-2 text-xs">
+              <div className="font-semibold text-sm mb-1 flex items-center gap-1.5">
+                <Calculator className="w-4 h-4 text-red-500" /> إعادة احتساب المبالغ
+              </div>
+              <div className="grid grid-cols-2 gap-2 font-mono">
+                <Cell label="الصافي (subtotal)" value={fmt(subtotal)} />
+                <Cell label="الوعاء الضريبي (taxable)" value={fmt(taxable)} />
+                <Cell label="ضريبة القيمة المضافة" value={fmt(vat)} />
+                <Cell label="الإجمالي المسجل" value={fmt(total)} bold />
+              </div>
+              <div className="border-t pt-2 mt-2 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span>الصافي + الضريبة =</span>
+                  <span className="font-mono">{fmt(expectedFromSubtotal)}</span>
+                  <span className={Math.abs(diffSubtotal) > TOL ? 'text-red-600 font-bold' : 'text-emerald-600'}>
+                    فرق: {fmt(diffSubtotal)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>الوعاء + الضريبة =</span>
+                  <span className="font-mono">{fmt(expectedFromTaxable)}</span>
+                  <span className={Math.abs(diffTaxable) > TOL ? 'text-red-600 font-bold' : 'text-emerald-600'}>
+                    فرق: {fmt(diffTaxable)}
+                  </span>
+                </div>
+                {vat > 0 && subtotal > 0 && (
+                  <div className="text-muted-foreground pt-1">
+                    نسبة الضريبة الفعلية: {((vat / subtotal) * 100).toFixed(2)}%
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Date verification */}
+            {urlDate && (
+              <section className="rounded-lg border p-3 space-y-1.5 text-xs">
+                <div className="font-semibold text-sm mb-1 flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-amber-500" /> التحقق من التاريخ
+                </div>
+                <Row label="التاريخ المستخرج من الملف" value={urlDate} mono />
+                <Row label="التاريخ المسجل في النظام" value={inv.invoice_date} mono />
+                <div className={urlDate === inv.invoice_date ? 'text-emerald-600' : 'text-red-600 font-semibold'}>
+                  {urlDate === inv.invoice_date ? '✓ التواريخ متطابقة' : '✗ التواريخ غير متطابقة'}
+                </div>
+              </section>
+            )}
+
+            {/* Issue summary */}
+            <section className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-xs space-y-1">
+              <div className="font-semibold text-sm flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-amber-600" /> ملخص الخطأ
+              </div>
+              <div>{issue.detail}</div>
+              {issue.expected && (
+                <div className="text-muted-foreground pt-1">
+                  القيم المقترحة للإصلاح: {issue.expected.total !== undefined && `الإجمالي → ${fmt(issue.expected.total)}`}
+                  {issue.expected.invoice_date && ` | التاريخ → ${issue.expected.invoice_date}`}
+                </div>
+              )}
+            </section>
+          </div>
+        </ScrollArea>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>إغلاق</Button>
+          {issue.fixable && (
+            <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => { onFix(issue); onClose(); }}>
+              <Wrench className="w-4 h-4" /> إصلاح هذه الفاتورة
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Category report dialog: list all issues in a category (or all checked invoices) ──
+function CategoryReportDialog({ kind, issues, totalChecked, onClose, onPick }:
+  { kind: IssueKind | 'all' | null; issues: Issue[]; totalChecked: number; onClose: () => void; onPick: (i: Issue) => void }) {
+  if (!kind) return null;
+  const titles: Record<string, string> = {
+    all: `تقرير شامل — ${totalChecked} فاتورة مفحوصة`,
+    math: 'تقرير الأخطاء الحسابية',
+    date: 'تقرير أخطاء التاريخ',
+    'missing-ref': 'تقرير الفواتير بدون رقم مورد',
+    duplicate: 'تقرير الفواتير المكررة',
+  };
+  const fmt = (n: number) => n.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  return (
+    <Dialog open={!!kind} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>{titles[kind]}</DialogTitle>
+          <DialogDescription>
+            {kind === 'all'
+              ? 'كافة بيانات الفواتير المفحوصة في هذه الجلسة. اضغط أي صف لعرض التحقق التفصيلي.'
+              : `${issues.length} حالة مكتشفة. اضغط أي صف لعرض التحقق الكامل وإعادة الاحتساب.`}
+          </DialogDescription>
+        </DialogHeader>
+
+        <ScrollArea className="max-h-[65vh]">
+          {issues.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">لا توجد بيانات في هذا التصنيف</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">رقم الفاتورة</TableHead>
+                  <TableHead className="text-xs">التاريخ</TableHead>
+                  <TableHead className="text-xs">المورد</TableHead>
+                  <TableHead className="text-xs text-end">الصافي</TableHead>
+                  <TableHead className="text-xs text-end">الضريبة</TableHead>
+                  <TableHead className="text-xs text-end">الإجمالي</TableHead>
+                  <TableHead className="text-xs">التفاصيل</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {issues.map(iss => (
+                  <TableRow key={iss.id} className="cursor-pointer hover:bg-muted/50" onClick={() => onPick(iss)}>
+                    <TableCell className="font-mono text-xs font-bold">{iss.invoice.invoice_number || '-'}</TableCell>
+                    <TableCell className="font-mono text-xs">{iss.invoice.invoice_date}</TableCell>
+                    <TableCell className="text-xs truncate max-w-[140px]">{iss.invoice.supplier?.name || '-'}</TableCell>
+                    <TableCell className="text-end font-mono text-xs">{fmt(Number(iss.invoice.subtotal ?? 0))}</TableCell>
+                    <TableCell className="text-end font-mono text-xs">{fmt(Number(iss.invoice.vat_amount ?? 0))}</TableCell>
+                    <TableCell className="text-end font-mono text-xs font-bold">{fmt(Number(iss.invoice.total ?? 0))}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{iss.detail}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </ScrollArea>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>إغلاق</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Row({ label, value, mono, small }: { label: string; value: any; mono?: boolean; small?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-muted-foreground shrink-0">{label}:</span>
+      <span className={`text-end ${mono ? 'font-mono' : ''} ${small ? 'text-[10px]' : ''}`}>{value}</span>
+    </div>
+  );
+}
+
+function Cell({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+  return (
+    <div className="rounded border bg-muted/30 p-2">
+      <div className="text-[10px] text-muted-foreground">{label}</div>
+      <div className={`text-sm ${bold ? 'font-bold' : ''}`}>{value}</div>
+    </div>
   );
 }
