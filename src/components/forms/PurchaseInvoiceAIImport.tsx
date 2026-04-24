@@ -28,7 +28,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
 
   return (
     <Dialog open={open} onOpenChange={hook.handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={hook.selectedBatchResult ? "max-w-6xl max-h-[90vh] overflow-y-auto" : "max-w-4xl max-h-[90vh] overflow-y-auto"}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
