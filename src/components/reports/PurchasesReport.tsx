@@ -220,6 +220,15 @@ export function PurchasesReport() {
     queryClient.invalidateQueries({ queryKey: ['invoices', companyId] });
   };
 
+  const handleOpenValidation = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['suppliers', companyId] }),
+      queryClient.invalidateQueries({ queryKey: ['company-purchases-report', companyId] }),
+    ]);
+    setValidationFilter('all');
+    setValidationOpen(true);
+  };
+
   const handlePrint = () => {
     printReport({
       title: getFilterLabel(),
@@ -665,7 +674,7 @@ export function PurchasesReport() {
           {!isCarDealership && (
             <Button
               variant="outline"
-              onClick={() => { setValidationFilter('all'); setValidationOpen(true); }}
+              onClick={handleOpenValidation}
               className={`gap-2 ${issueRows.length > 0 ? 'border-destructive/50 text-destructive hover:bg-destructive/10' : 'border-success/40 text-success hover:bg-success/10'}`}
               title={language === 'ar' ? 'فحص جودة بيانات فواتير المشتريات قبل التصدير' : 'Validate purchase invoices before export'}
             >
