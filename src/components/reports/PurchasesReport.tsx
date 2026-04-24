@@ -72,6 +72,8 @@ export function PurchasesReport() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState<CarStatusFilter | InvoiceStatusFilter>('all');
+  const [validationOpen, setValidationOpen] = useState(false);
+  const [validationFilter, setValidationFilter] = useState<'all' | 'missing_name' | 'missing_tax' | 'missing_inv' | 'math'>('all');
   const { printReport } = usePrintReport();
   const queryClient = useQueryClient();
   const { t, language } = useLanguage();
