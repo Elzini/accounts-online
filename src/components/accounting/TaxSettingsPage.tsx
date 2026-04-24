@@ -5,9 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useTaxSettings, useUpsertTaxSettings } from '@/hooks/useAccounting';
 import { toast } from 'sonner';
-import { Loader2, Percent, Save, Building2, MapPin } from 'lucide-react';
+import { Loader2, Percent, Save, Building2, MapPin, Power, PowerOff } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function TaxSettingsPage() {
@@ -15,6 +25,8 @@ export function TaxSettingsPage() {
   const { data: taxSettings, isLoading } = useTaxSettings();
   const upsertTaxSettings = useUpsertTaxSettings();
   const [isQuickSaving, setIsQuickSaving] = useState(false);
+  const [confirmToggleOpen, setConfirmToggleOpen] = useState(false);
+  const isAr = direction === 'rtl';
 
   const [formData, setFormData] = useState({
     tax_name: 'ضريبة القيمة المضافة',
@@ -56,7 +68,6 @@ export function TaxSettingsPage() {
     try {
       const saved = await upsertTaxSettings.mutateAsync(formData);
       setFormData(mapToFormData(saved));
-      const isAr = direction === 'rtl';
       const statusText = saved.is_active
         ? (isAr ? '✅ الضريبة مفعّلة (is_active = true)' : '✅ Tax is active (is_active = true)')
         : (isAr ? '⚠️ الضريبة غير مفعّلة (is_active = false)' : '⚠️ Tax is inactive (is_active = false)');
@@ -67,6 +78,17 @@ export function TaxSettingsPage() {
     } catch (error) {
       toast.error(t.tax_save_error);
     }
+  };
+
+  const confirmToggleActive = async () => {
+    setConfirmToggleOpen(false);
+    const nextActive = !formData.is_active;
+    await handleQuickToggleSave(
+      { ...formData, is_active: nextActive },
+      nextActive
+        ? (isAr ? '✅ تم تفعيل الضريبة (is_active = true)' : '✅ Tax activated (is_active = true)')
+        : (isAr ? '⚠️ تم تعطيل الضريبة (is_active = false)' : '⚠️ Tax deactivated (is_active = false)')
+    );
   };
 
   const handleQuickToggleSave = async (nextData: typeof formData, successMessage?: string) => {
@@ -173,22 +195,51 @@ export function TaxSettingsPage() {
             </div>
           </div>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
-              <div>
-                <Label htmlFor="is_active" className="text-base font-medium cursor-pointer">{t.tax_enable}</Label>
+            <div className="flex flex-col gap-3 p-4 rounded-lg border bg-muted/50 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="is_active" className="text-base font-medium cursor-pointer">{t.tax_enable}</Label>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-semibold ${
+                      formData.is_active
+                        ? 'text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30'
+                        : 'text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30'
+                    }`}
+                  >
+                    {formData.is_active
+                      ? (isAr ? 'مفعّلة' : 'Active')
+                      : (isAr ? 'غير مفعّلة' : 'Inactive')}
+                  </span>
+                </div>
                 <p className="text-sm text-muted-foreground">{t.tax_enable_desc}</p>
               </div>
-              <Switch
-                id="is_active"
-                checked={formData.is_active}
-                onCheckedChange={(checked) => {
-                  void handleQuickToggleSave(
-                    { ...formData, is_active: checked },
-                    checked ? 'تم تفعيل الضريبة' : 'تم تعطيل الضريبة'
-                  );
-                }}
-                disabled={isQuickSaving || upsertTaxSettings.isPending}
-              />
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={formData.is_active ? 'outline' : 'default'}
+                  onClick={() => setConfirmToggleOpen(true)}
+                  disabled={isQuickSaving || upsertTaxSettings.isPending}
+                  className="gap-2"
+                >
+                  {isQuickSaving || upsertTaxSettings.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : formData.is_active ? (
+                    <PowerOff className="w-4 h-4" />
+                  ) : (
+                    <Power className="w-4 h-4" />
+                  )}
+                  {formData.is_active
+                    ? (isAr ? 'تعطيل الضريبة' : 'Deactivate')
+                    : (isAr ? 'تفعيل الضريبة' : 'Activate')}
+                </Button>
+                <Switch
+                  id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={() => setConfirmToggleOpen(true)}
+                  disabled={isQuickSaving || upsertTaxSettings.isPending}
+                />
+              </div>
             </div>
             <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
               <div>
@@ -228,6 +279,40 @@ export function TaxSettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <AlertDialog open={confirmToggleOpen} onOpenChange={setConfirmToggleOpen}>
+        <AlertDialogContent dir={direction}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {formData.is_active ? (
+                <PowerOff className="w-5 h-5 text-amber-500" />
+              ) : (
+                <Power className="w-5 h-5 text-emerald-500" />
+              )}
+              {formData.is_active
+                ? (isAr ? 'تأكيد تعطيل الضريبة' : 'Confirm Tax Deactivation')
+                : (isAr ? 'تأكيد تفعيل الضريبة' : 'Confirm Tax Activation')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {formData.is_active
+                ? (isAr
+                    ? 'سيتم تعطيل ضريبة القيمة المضافة (is_active = false) ولن تُطبَّق على فواتير المبيعات والمشتريات الجديدة. هل تريد المتابعة؟'
+                    : 'VAT will be deactivated (is_active = false) and will no longer apply to new sales/purchase invoices. Continue?')
+                : (isAr
+                    ? 'سيتم تفعيل ضريبة القيمة المضافة (is_active = true) وستُطبَّق على فواتير المبيعات والمشتريات الجديدة بنسبة ' + formData.tax_rate + '%. هل تريد المتابعة؟'
+                    : 'VAT will be activated (is_active = true) at ' + formData.tax_rate + '% and will apply to new sales/purchase invoices. Continue?')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{isAr ? 'إلغاء' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmToggleActive}>
+              {formData.is_active
+                ? (isAr ? 'نعم، تعطيل' : 'Yes, deactivate')
+                : (isAr ? 'نعم، تفعيل' : 'Yes, activate')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
