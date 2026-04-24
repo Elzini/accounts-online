@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { FileText, ShoppingCart, Truck, Printer, RefreshCw, Filter, FileSpreadsheet } from 'lucide-react';
+import { FileText, ShoppingCart, Truck, Printer, RefreshCw, Filter, FileSpreadsheet, ShieldAlert, AlertTriangle, CheckCircle2, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useCars, useSuppliers } from '@/hooks/useDatabase';
 import { useExpenses } from '@/hooks/useExpenses';
 import { DateRangeFilter } from '@/components/ui/date-range-filter';
