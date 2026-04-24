@@ -512,10 +512,10 @@ export function PurchasesReport() {
     const sheetData = [headers, ...rows, totalsRow];
     const ws = XLSX.utils.aoa_to_sheet(sheetData);
 
-    // Column widths
+    // Column widths — wider tax # column to fit full Saudi VAT (15 digits)
     ws['!cols'] = [
-      { wch: 5 }, { wch: 20 }, { wch: 22 }, { wch: 34 }, { wch: 20 },
-      { wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 20 }, { wch: 36 },
+      { wch: 5 }, { wch: 20 }, { wch: 22 }, { wch: 34 }, { wch: 22 },
+      { wch: 14 }, { wch: 18 }, { wch: 14 }, { wch: 20 }, { wch: 40 },
     ];
 
     // Number format for currency columns (G, H, I)
@@ -528,6 +528,13 @@ export function PurchasesReport() {
           ws[cellAddr].z = '#,##0.00';
         }
       });
+      // Force tax-number column (E) to TEXT so Excel keeps leading zeros & full digits
+      const taxAddr = `E${r}`;
+      if (ws[taxAddr] && ws[taxAddr].v != null) {
+        ws[taxAddr].t = 's';
+        ws[taxAddr].z = '@';
+        ws[taxAddr].v = String(ws[taxAddr].v).replace(/^\u200E/, '');
+      }
     }
 
     if (language === 'ar') {
