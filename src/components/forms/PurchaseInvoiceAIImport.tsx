@@ -23,6 +23,8 @@ interface PurchaseInvoiceAIImportProps {
 
 export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchImport }: PurchaseInvoiceAIImportProps) {
   const hook = useAIInvoiceImport({ onImport, onBatchImport, onOpenChange });
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const editingResult = editingIndex !== null ? hook.batchResults.find(r => r.index === editingIndex) ?? null : null;
 
   return (
     <Dialog open={open} onOpenChange={hook.handleClose}>
