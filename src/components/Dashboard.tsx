@@ -77,7 +77,7 @@ export function Dashboard({ stats, setActivePage, isLoading = false, isFocusMode
       <div className="relative space-y-4 sm:space-y-6 md:space-y-8">
         <AnimatedDashboardBackground />
         <WelcomeHeader amountDisplayMode={data.amountDisplayMode} onAmountDisplayModeChange={data.setAmountDisplayMode} onRefresh={data.handleRefresh} isRefreshing={data.isRefreshing} />
-        <GettingStartedDashboard setActivePage={setActivePage} hasFiscalYear={data.fiscalYears.length > 0} hasTaxSettings={!!data.taxSettings} hasAccounts={data.accountsList.length > 0} />
+        <GettingStartedDashboard setActivePage={setActivePage} hasFiscalYear={data.fiscalYears.length > 0} hasTaxSettings={!!data.taxSettings} taxIsActive={!!data.taxSettings?.is_active} hasAccounts={data.accountsList.length > 0} />
       </div>
     );
   }
