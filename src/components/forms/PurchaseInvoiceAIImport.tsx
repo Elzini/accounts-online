@@ -83,6 +83,13 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                   <p className="text-xs text-muted-foreground">{hook.fileName}</p>
                 </>
               )}
+
+              {/* Live timeline panel أثناء المعالجة */}
+              {hook.isBatchMode && hook.batchTimeline.length > 0 && (
+                <div className="mt-4 text-right">
+                  <BatchTimelinePanel entries={hook.batchTimeline} />
+                </div>
+              )}
             </div>
           )}
 
