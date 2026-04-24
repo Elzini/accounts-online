@@ -34,3 +34,26 @@ export interface BatchParsedResult {
   fileObject?: File;
   thumbnailUrl?: string;
 }
+
+/** سجل تنفيذ دفعة واحدة (للوحة التشخيص) */
+export interface BatchTimelineEntry {
+  id: string;                  // معرف فريد للسجل
+  chunkNumber: number;         // ترتيب الدفعة (1, 2, 3, ...)
+  startedAt: number;           // timestamp بدء الدفعة
+  endedAt?: number;            // timestamp انتهاء الدفعة
+  durationMs?: number;         // المدة بالميلي ثانية
+  chunkSizeUsed: number;       // حجم الدفعة المُستخدم فعلياً
+  fileCount: number;           // عدد الملفات في الدفعة
+  attempts: number;            // عدد المحاولات
+  status: 'running' | 'success' | 'failed' | 'shrunk';
+  errorMessage?: string;       // رسالة الخطأ إن فشلت
+  /** تغيير الحجم بعد هذه الدفعة (للتتبع البصري) */
+  sizeChange?: {
+    type: 'shrink' | 'grow';
+    from: number;
+    to: number;
+    reason: string;
+  };
+  successCount?: number;       // عدد الفواتير الناجحة في الدفعة
+  errorCount?: number;         // عدد الفواتير الفاشلة في الدفعة
+}
