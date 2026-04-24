@@ -132,7 +132,8 @@ ${isPDF ? 'الملف مرفق كصورة/PDF.' : `المحتوى:\n${fileConten
             parameters: {
               type: "object",
               properties: {
-                supplier_name: { type: "string", description: "اسم المورد" },
+                supplier_name: { type: "string", description: "اسم المورد القانوني الكامل المرتبط بالرقم الضريبي والعنوان (الكيان المُصدِر للفاتورة، وليس اسم الفرع/المحطة)" },
+                supplier_branch_name: { type: "string", description: "اسم الفرع أو المحطة (إن وجد منفصلاً عن الاسم القانوني)" },
                 supplier_tax_number: { type: "string", description: "الرقم الضريبي للمورد" },
                 supplier_phone: { type: "string", description: "هاتف المورد" },
                 supplier_address: { type: "string", description: "عنوان المورد" },
