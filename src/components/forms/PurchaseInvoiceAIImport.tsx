@@ -301,7 +301,8 @@ function BatchInvoiceCard({ result, formatCurrency, onPreview, onImportSingle, o
           <div className="text-sm font-bold font-mono text-primary">{formatCurrency(data.total_amount)}</div>
         </div>
         <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={onPreview}><Eye className="w-3 h-3" /></Button>
+          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={onPreview} title="معاينة"><Eye className="w-3 h-3" /></Button>
+          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={onEdit} title="تعديل البيانات والمرفق"><Pencil className="w-3 h-3" /></Button>
           <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={onImportSingle}>استيراد</Button>
         </div>
       </div>
