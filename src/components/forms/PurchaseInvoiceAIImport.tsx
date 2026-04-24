@@ -148,7 +148,7 @@ export function PurchaseInvoiceAIImport({ open, onOpenChange, onImport, onBatchI
                 );
               })()}
 
-              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="flex items-center gap-2 p-3 bg-success/10 text-success rounded-lg border border-success/30">
                 <CheckCircle className="w-5 h-5" />
                 <span className="text-sm font-medium">
                   تم تحليل {hook.batchResults.filter(r => r.success).length} فاتورة بنجاح
