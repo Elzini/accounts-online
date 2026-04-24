@@ -454,7 +454,7 @@ export function PurchasesReport() {
 
     const rows = filteredRows.map((row, idx) => {
       const inv: any = row.raw || {};
-      const supplier: any = inv.supplier_id ? suppliersMap[inv.supplier_id] : null;
+      const supplier: any = inv.supplier_id ? freshSuppliersMap[inv.supplier_id] : null;
 
       // ── Supplier identity ──
       const supplierName: string =
