@@ -25,6 +25,8 @@ export function TaxSettingsPage() {
   const { data: taxSettings, isLoading } = useTaxSettings();
   const upsertTaxSettings = useUpsertTaxSettings();
   const [isQuickSaving, setIsQuickSaving] = useState(false);
+  const [confirmToggleOpen, setConfirmToggleOpen] = useState(false);
+  const isAr = direction === 'rtl';
 
   const [formData, setFormData] = useState({
     tax_name: 'ضريبة القيمة المضافة',
