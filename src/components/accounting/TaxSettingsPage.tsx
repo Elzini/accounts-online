@@ -5,9 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useTaxSettings, useUpsertTaxSettings } from '@/hooks/useAccounting';
 import { toast } from 'sonner';
-import { Loader2, Percent, Save, Building2, MapPin } from 'lucide-react';
+import { Loader2, Percent, Save, Building2, MapPin, Power, PowerOff } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export function TaxSettingsPage() {
