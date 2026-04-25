@@ -103,16 +103,16 @@ export async function getComprehensiveTrialBalance(
     // For income/expense accounts: if period starts AFTER fiscal year start, 
     // include entries from FY start to period start as opening
     if (fyStartDate && effectiveStartDate > fyStartDate) {
-      let ieOpeningQuery = supabase
-        .from('journal_entry_lines')
-        .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date)')
-        .eq('journal_entry.company_id', companyId)
-        .eq('journal_entry.is_posted', true)
-        .gte('journal_entry.entry_date', fyStartDate)
-        .lt('journal_entry.entry_date', effectiveStartDate)
-        .limit(10000);
-
-      const { data: ieOpeningLines } = await ieOpeningQuery;
+      const ieOpeningLines = await fetchAllJournalLines((from, to) =>
+        supabase
+          .from('journal_entry_lines')
+          .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date)')
+          .eq('journal_entry.company_id', companyId)
+          .eq('journal_entry.is_posted', true)
+          .gte('journal_entry.entry_date', fyStartDate)
+          .lt('journal_entry.entry_date', effectiveStartDate)
+          .range(from, to)
+      );
 
       (ieOpeningLines || []).forEach((line: any) => {
         const d = Number(line.debit) || 0, c = Number(line.credit) || 0;
