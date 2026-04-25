@@ -8,7 +8,7 @@ import { fetchAccounts } from './accounts';
 import { isBalanceSheetType } from '@/utils/accountTypes';
 
 const JOURNAL_LINE_PAGE_SIZE = 1000;
-const DISABLED_ACCOUNT_MARKERS = ['معطّل', 'معطل', 'deprecated'];
+const DISABLED_ACCOUNT_MARKERS = ['مُعطّل', 'معطّل', 'معطل', 'deprecated'];
 
 function isReportableAccount(account: AccountCategory) {
   const normalizedName = account.name.toLowerCase();
