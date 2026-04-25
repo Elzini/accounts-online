@@ -70,15 +70,15 @@ export async function getComprehensiveTrialBalance(
 
   if (effectiveStartDate) {
     // Balance Sheet accounts: all entries before period start
-    let bsOpeningQuery = supabase
-      .from('journal_entry_lines')
-      .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date)')
-      .eq('journal_entry.company_id', companyId)
-      .eq('journal_entry.is_posted', true)
-      .lt('journal_entry.entry_date', effectiveStartDate)
-      .limit(10000);
-
-    const { data: bsOpeningLines } = await bsOpeningQuery;
+    const bsOpeningLines = await fetchAllJournalLines((from, to) =>
+      supabase
+        .from('journal_entry_lines')
+        .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date)')
+        .eq('journal_entry.company_id', companyId)
+        .eq('journal_entry.is_posted', true)
+        .lt('journal_entry.entry_date', effectiveStartDate)
+        .range(from, to)
+    );
 
     const accountTypeMap = new Map<string, string>();
     accounts.forEach(a => accountTypeMap.set(a.id, a.type));
