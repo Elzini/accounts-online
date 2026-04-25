@@ -7,6 +7,24 @@ import { AccountCategory } from './types';
 import { fetchAccounts } from './accounts';
 import { isBalanceSheetType } from '@/utils/accountTypes';
 
+const JOURNAL_LINE_PAGE_SIZE = 1000;
+
+async function fetchAllJournalLines(buildQuery: (from: number, to: number) => any): Promise<any[]> {
+  const allRows: any[] = [];
+
+  for (let from = 0; ; from += JOURNAL_LINE_PAGE_SIZE) {
+    const { data, error } = await buildQuery(from, from + JOURNAL_LINE_PAGE_SIZE - 1);
+    if (error) throw error;
+
+    const rows = data || [];
+    allRows.push(...rows);
+
+    if (rows.length < JOURNAL_LINE_PAGE_SIZE) break;
+  }
+
+  return allRows;
+}
+
 export async function getComprehensiveTrialBalance(
   companyId: string, startDate?: string, endDate?: string, fiscalYearId?: string
 ): Promise<{
