@@ -324,7 +324,8 @@ export function useComprehensiveTrialBalance(startDate?: string, endDate?: strin
     queryKey: ['comprehensive-trial-balance', companyId, startDate, endDate, fyId],
     queryFn: () => companyId ? getComprehensiveTrialBalance(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30s - shorter cache to reflect recent journal adjustments
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -338,6 +339,7 @@ export function useVATSettlementReport(startDate?: string, endDate?: string) {
     queryKey: ['vat-settlement-report', companyId, startDate, endDate, fyId],
     queryFn: () => companyId ? getVATSettlementReport(companyId, startDate, endDate, fyId) : null,
     enabled: !!companyId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 }
