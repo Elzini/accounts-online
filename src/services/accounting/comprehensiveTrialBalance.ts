@@ -175,6 +175,9 @@ export async function getComprehensiveTrialBalance(
     if (agg.od === 0 && agg.oc === 0 && agg.pd === 0 && agg.pc === 0) return;
     const openingNet = agg.od - agg.oc;
     const closingNet = (agg.od + agg.pd) - (agg.oc + agg.pc);
+    // Hide accounts with zero opening AND zero closing balance (e.g., deprecated/closed accounts)
+    // Parent accounts always render if they have children with balances (already filtered above)
+    if (!hasChildren && openingNet === 0 && closingNet === 0) return;
     trialAccounts.push({
       account,
       openingDebit: openingNet > 0 ? openingNet : 0,
