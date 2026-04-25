@@ -8,6 +8,12 @@ import { fetchAccounts } from './accounts';
 import { isBalanceSheetType } from '@/utils/accountTypes';
 
 const JOURNAL_LINE_PAGE_SIZE = 1000;
+const DISABLED_ACCOUNT_MARKERS = ['معطّل', 'معطل', 'deprecated'];
+
+function isReportableAccount(account: AccountCategory) {
+  const normalizedName = account.name.toLowerCase();
+  return !DISABLED_ACCOUNT_MARKERS.some(marker => normalizedName.includes(marker.toLowerCase()));
+}
 
 async function fetchAllJournalLines(buildQuery: (from: number, to: number) => any): Promise<any[]> {
   const allRows: any[] = [];
@@ -42,6 +48,8 @@ export async function getComprehensiveTrialBalance(
   };
 }> {
   const accounts = await fetchAccounts(companyId);
+  const reportableAccounts = accounts.filter(isReportableAccount);
+  const reportableAccountIds = new Set(reportableAccounts.map(account => account.id));
 
   let fyStartDate: string | undefined;
   let effectiveStartDate: string | undefined;
@@ -77,11 +85,12 @@ export async function getComprehensiveTrialBalance(
         .eq('journal_entry.company_id', companyId)
         .eq('journal_entry.is_posted', true)
         .lt('journal_entry.entry_date', effectiveStartDate)
+        .order('id', { ascending: true })
         .range(from, to)
     );
 
     const accountTypeMap = new Map<string, string>();
-    accounts.forEach(a => accountTypeMap.set(a.id, a.type));
+    reportableAccounts.forEach(a => accountTypeMap.set(a.id, a.type));
 
     // Process all lines before period start
     (bsOpeningLines || []).forEach((line: any) => {
@@ -111,6 +120,7 @@ export async function getComprehensiveTrialBalance(
           .eq('journal_entry.is_posted', true)
           .gte('journal_entry.entry_date', fyStartDate)
           .lt('journal_entry.entry_date', effectiveStartDate)
+          .order('id', { ascending: true })
           .range(from, to)
       );
 
@@ -133,6 +143,7 @@ export async function getComprehensiveTrialBalance(
       .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date)')
       .eq('journal_entry.company_id', companyId)
       .eq('journal_entry.is_posted', true)
+      .order('id', { ascending: true })
       .range(from, to);
 
     if (effectiveStartDate) query = query.gte('journal_entry.entry_date', effectiveStartDate);
@@ -142,6 +153,7 @@ export async function getComprehensiveTrialBalance(
 
   const periodBalances = new Map<string, { debit: number; credit: number }>();
   (periodLines || []).forEach((line: any) => {
+    if (!reportableAccountIds.has(line.account_id)) return;
     const current = periodBalances.get(line.account_id) || { debit: 0, credit: 0 };
     current.debit += Number(line.debit) || 0; current.credit += Number(line.credit) || 0;
     periodBalances.set(line.account_id, current);
@@ -150,15 +162,15 @@ export async function getComprehensiveTrialBalance(
   // Build hierarchy
   const leafOpening = new Map<string, { od: number; oc: number }>();
   const leafPeriod = new Map<string, { pd: number; pc: number }>();
-  accounts.forEach(account => {
+  reportableAccounts.forEach(account => {
     const ob = openingBalances.get(account.id);
     if (ob && (ob.debit > 0 || ob.credit > 0)) leafOpening.set(account.id, { od: ob.debit, oc: ob.credit });
     const pb = periodBalances.get(account.id);
     if (pb && (pb.debit > 0 || pb.credit > 0)) leafPeriod.set(account.id, { pd: pb.debit, pc: pb.credit });
   });
 
-  const accountMap = new Map(accounts.map(a => [a.id, a]));
-  const childrenOf = (parentId: string) => accounts.filter(a => a.parent_id === parentId);
+  const accountMap = new Map(reportableAccounts.map(a => [a.id, a]));
+  const childrenOf = (parentId: string) => reportableAccounts.filter(a => a.parent_id === parentId);
 
   const aggCache = new Map<string, { od: number; oc: number; pd: number; pc: number }>();
   const getAggregated = (accountId: string): { od: number; oc: number; pd: number; pc: number } => {
@@ -175,7 +187,7 @@ export async function getComprehensiveTrialBalance(
     aggCache.set(accountId, result);
     return result;
   };
-  accounts.forEach(a => getAggregated(a.id));
+  reportableAccounts.forEach(a => getAggregated(a.id));
 
   const trialAccounts: Array<{
     account: AccountCategory;
@@ -185,7 +197,7 @@ export async function getComprehensiveTrialBalance(
     isParent: boolean; level: number;
   }> = [];
 
-  const rootAccounts = accounts.filter(a => !a.parent_id || !accountMap.has(a.parent_id));
+  const rootAccounts = reportableAccounts.filter(a => !a.parent_id || !accountMap.has(a.parent_id));
 
   const addHierarchy = (account: AccountCategory, level: number) => {
     const children = childrenOf(account.id);
