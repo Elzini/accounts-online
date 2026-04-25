@@ -127,17 +127,18 @@ export async function getComprehensiveTrialBalance(
   }
 
   // 2) Period movement = ALL posted entries within the date range
-  let periodQuery = supabase
-    .from('journal_entry_lines')
-    .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date)')
-    .eq('journal_entry.company_id', companyId).eq('journal_entry.is_posted', true)
-    .limit(10000);
+  const periodLines = await fetchAllJournalLines((from, to) => {
+    let query = supabase
+      .from('journal_entry_lines')
+      .select('account_id, debit, credit, journal_entry:journal_entries!inner(company_id, is_posted, entry_date)')
+      .eq('journal_entry.company_id', companyId)
+      .eq('journal_entry.is_posted', true)
+      .range(from, to);
 
-  if (effectiveStartDate) periodQuery = periodQuery.gte('journal_entry.entry_date', effectiveStartDate);
-  if (effectiveEndDate) periodQuery = periodQuery.lte('journal_entry.entry_date', effectiveEndDate);
-
-  const { data: periodLines, error } = await periodQuery;
-  if (error) throw error;
+    if (effectiveStartDate) query = query.gte('journal_entry.entry_date', effectiveStartDate);
+    if (effectiveEndDate) query = query.lte('journal_entry.entry_date', effectiveEndDate);
+    return query;
+  });
 
   const periodBalances = new Map<string, { debit: number; credit: number }>();
   (periodLines || []).forEach((line: any) => {
