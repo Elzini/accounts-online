@@ -223,9 +223,13 @@ export async function generateZatcaQRDataPhase2(
   );
   const derSignature = rawSignatureToDER(new Uint8Array(rawSignatureBuffer));
 
-  // Tag 8: Public key in SPKI format (~91 bytes)
-  // Tag 9: Certificate stamp signature (self-signed)
-  const { spkiBytes, stampSignature } = await getOrCreateStamp(keyPair);
+  // Tag 8: Full self-signed X.509 certificate (DER) — required by ZATCA scanner
+  // Tag 9: Certificate signatureValue (the signature on the cert itself)
+  const { spkiBytes, stampSignature } = await getOrCreateStamp(keyPair, {
+    commonName: data.sellerName.trim() || 'ZATCA Stamp',
+    organization: data.sellerName.trim() || 'Saudi Seller',
+    country: 'SA',
+  });
 
   // Build TLV with proper binary tags
   const fields = [
