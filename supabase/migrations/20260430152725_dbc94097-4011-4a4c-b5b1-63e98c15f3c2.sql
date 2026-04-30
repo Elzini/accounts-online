@@ -1,0 +1,1 @@
+UPDATE public.invoices SET status='draft' WHERE id='5aa3de57-d3c0-4661-aa9e-1457a060f12f';
