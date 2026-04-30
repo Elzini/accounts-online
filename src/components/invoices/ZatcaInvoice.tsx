@@ -421,12 +421,12 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                     <td className="p-3 text-right border-b border-gray-100">{index + 1}</td>
                     <td className="p-3 text-right border-b border-gray-100">{item.description}</td>
                     <td className="p-3 text-center border-b border-gray-100">{item.quantity}</td>
-                    <td className="p-3 text-center border-b border-gray-100">{Math.round(item.unitPrice).toLocaleString('en-US')}</td>
+                    <td className="p-3 text-center border-b border-gray-100">{item.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="p-3 text-center border-b border-gray-100">
                       {Math.round(item.taxAmount).toLocaleString('en-US')}
                     </td>
                     <td className="p-3 text-center border-b border-gray-100 font-medium">
-                      {Math.round(item.total).toLocaleString('en-US')}
+                      {item.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                   </tr>
                 ))}
@@ -438,18 +438,18 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
           <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
             <div className="flex justify-between items-center p-4 border-b border-gray-100">
                <span className="text-gray-600 font-medium">{L.subtotalLabel}</span>
-               <span className="font-bold text-lg">{Math.round(subtotal).toLocaleString('en-US')} ر.س</span>
+               <span className="font-bold text-lg">{subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س</span>
              </div>
              <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
                <span className="text-gray-600 font-medium">{L.taxLabel} ({taxRate}%)</span>
-               <span className="font-bold text-lg">{Math.round(taxAmount).toLocaleString('en-US')} ر.س</span>
+               <span className="font-bold text-lg">{taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س</span>
              </div>
              <div 
                className="flex justify-between items-center p-4 text-white"
                style={{ backgroundColor: settings.primary_color }}
              >
                <span className="font-bold text-lg">{L.grandTotalLabel} ({taxRate}%)</span>
-              <span className="font-bold text-xl">{Math.round(total).toLocaleString('en-US')} ر.س</span>
+              <span className="font-bold text-xl">{total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س</span>
             </div>
           </div>
 
