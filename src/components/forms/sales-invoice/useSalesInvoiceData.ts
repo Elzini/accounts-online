@@ -162,6 +162,11 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
     const fyStart = new Date(selectedFiscalYear.start_date); fyStart.setHours(0, 0, 0, 0);
     const fyEnd = new Date(selectedFiscalYear.end_date); fyEnd.setHours(23, 59, 59, 999);
     return sourceData.filter((item: any) => {
+      // Prefer explicit fiscal_year_id when present (handles cases where
+      // the invoice_date doesn't fall inside the stored fiscal year range)
+      if (item.fiscal_year_id) {
+        return item.fiscal_year_id === selectedFiscalYear.id;
+      }
       const itemDate = new Date(isCarDealership ? item.sale_date : item.invoice_date);
       return itemDate >= fyStart && itemDate <= fyEnd;
     });
