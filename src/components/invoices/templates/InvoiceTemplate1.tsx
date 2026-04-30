@@ -129,12 +129,12 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       {/* Totals + QR */}
       <div className="flex border-t">
         <div className="flex-1 p-3">
-           <div className="flex justify-between py-1"><span>{L.subtotalLabel}</span><span>{Math.round(subtotal).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between py-1"><span>{L.subtotalLabel}</span><span>{subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
            {discountAmount > 0 && (
-             <div className="flex justify-between py-1"><span>الاجمالي بعد الخصم</span><span>{Math.round(subtotalAfterDiscount).toLocaleString('en-US')}</span></div>
+             <div className="flex justify-between py-1"><span>الاجمالي بعد الخصم</span><span>{subtotalAfterDiscount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
            )}
-           <div className="flex justify-between py-1"><span>{L.taxLabel} {taxRate}%</span><span>{Math.round(taxAmount).toLocaleString('en-US')}</span></div>
-           <div className="flex justify-between py-1 font-bold text-base border-t mt-1 pt-2"><span>{L.grandTotalLabel}</span><span>{Math.round(total).toLocaleString('en-US')}</span></div>
+           <div className="flex justify-between py-1"><span>{L.taxLabel} {taxRate}%</span><span>{taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+           <div className="flex justify-between py-1 font-bold text-base border-t mt-1 pt-2"><span>{L.grandTotalLabel}</span><span>{total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
         </div>
         <div className="p-3 border-r flex items-center">
           <div>
