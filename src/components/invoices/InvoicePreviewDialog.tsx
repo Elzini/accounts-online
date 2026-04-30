@@ -16,6 +16,8 @@ import { InvoiceLabelCustomizer } from './InvoiceLabelCustomizer';
 import { InvoiceTemplate1, InvoiceTemplate2, InvoiceTemplate3, InvoiceTemplate4, InvoiceTemplate5 } from './templates';
 import { InvoiceTemplateName, InvoiceTemplateData, InvoiceCustomLabels, defaultInvoiceLabels } from './templates/types';
 import { getZatcaPhase2DisplayState } from '@/lib/zatcaPhase2Status';
+import { useZatcaConfigStatus } from '@/hooks/useZatcaConfigStatus';
+import { ShieldCheck, ShieldAlert, KeyRound, QrCode, Activity } from 'lucide-react';
 
 interface InvoiceItem {
   description: string;
@@ -77,10 +79,14 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
   const [plateNumber, setPlateNumber] = useState('');
 
   const invoiceUUID = useMemo(() => data.uuid || generateInvoiceUUID(), [data.uuid, data.invoiceNumber]);
+  const zatcaConfig = useZatcaConfigStatus();
   const phase2State = useMemo(() => getZatcaPhase2DisplayState({
     officialQrData: data.officialQrData,
     zatcaStatus: data.zatcaStatus,
-  }), [data.officialQrData, data.zatcaStatus]);
+    hasComplianceCsid: zatcaConfig.hasComplianceCsid,
+    hasProductionCsid: zatcaConfig.hasProductionCsid,
+    onboardingStatus: zatcaConfig.onboardingStatus,
+  }), [data.officialQrData, data.zatcaStatus, zatcaConfig.hasComplianceCsid, zatcaConfig.hasProductionCsid, zatcaConfig.onboardingStatus]);
 
   const handlePrint = useReactToPrint({
     contentRef: invoiceRef,
@@ -221,17 +227,71 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
             </Button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
-            <Badge
-              className={phase2State.isPhase2Approved
-                ? 'bg-black text-white hover:bg-black/90 font-bold'
-                : phase2State.normalizedStatus === 'rejected' || phase2State.normalizedStatus === 'failed' || phase2State.normalizedStatus === 'error' || phase2State.normalizedStatus === 'invalid'
-                  ? 'border border-destructive/20 bg-destructive/10 text-destructive'
-                  : 'bg-secondary text-secondary-foreground'}
-            >
-              {phase2State.label}
-            </Badge>
-            <p className="text-xs text-muted-foreground">{phase2State.description}</p>
+          <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge
+                className={phase2State.isPhase2Approved
+                  ? 'bg-black text-white hover:bg-black/90 font-bold'
+                  : phase2State.normalizedStatus === 'rejected' || phase2State.normalizedStatus === 'failed' || phase2State.normalizedStatus === 'error' || phase2State.normalizedStatus === 'invalid'
+                    ? 'border border-destructive/20 bg-destructive/10 text-destructive'
+                    : 'bg-secondary text-secondary-foreground'}
+              >
+                {phase2State.label}
+              </Badge>
+              <p className="text-xs text-muted-foreground">{phase2State.description}</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {/* Signature source */}
+              <div className="flex items-center gap-2 bg-background/60 border border-border/50 rounded px-2 py-1.5">
+                {phase2State.signatureSource === 'official' && phase2State.hasProductionCsid ? (
+                  <ShieldCheck className="w-4 h-4 text-green-600 shrink-0" />
+                ) : phase2State.signatureSource === 'local' ? (
+                  <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
+                ) : (
+                  <ShieldAlert className="w-4 h-4 text-muted-foreground shrink-0" />
+                )}
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground text-[10px]">نوع التوقيع</span>
+                  <span className="font-medium">{phase2State.signatureLabel}</span>
+                </div>
+              </div>
+
+              {/* CSID status */}
+              <div className="flex items-center gap-2 bg-background/60 border border-border/50 rounded px-2 py-1.5">
+                <KeyRound className={`w-4 h-4 shrink-0 ${phase2State.hasProductionCsid ? 'text-green-600' : phase2State.hasComplianceCsid ? 'text-amber-600' : 'text-destructive'}`} />
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground text-[10px]">شهادة الشركة</span>
+                  <span className="font-medium">{phase2State.csidLabel}</span>
+                </div>
+              </div>
+
+              {/* QR presence */}
+              <div className="flex items-center gap-2 bg-background/60 border border-border/50 rounded px-2 py-1.5">
+                <QrCode className={`w-4 h-4 shrink-0 ${phase2State.hasOfficialQr ? 'text-green-600' : 'text-muted-foreground'}`} />
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground text-[10px]">باركود ZATCA المحفوظ</span>
+                  <span className="font-medium">{phase2State.hasOfficialQr ? 'موجود (zatca_qr)' : 'غير موجود'}</span>
+                </div>
+              </div>
+
+              {/* Status & onboarding */}
+              <div className="flex items-center gap-2 bg-background/60 border border-border/50 rounded px-2 py-1.5">
+                <Activity className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex flex-col">
+                  <span className="text-muted-foreground text-[10px]">حالة الفاتورة / التسجيل</span>
+                  <span className="font-medium">
+                    {phase2State.normalizedStatus || 'غير مُرسلة'} · {phase2State.onboardingLabel}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {!phase2State.hasProductionCsid && (
+              <p className="text-[11px] text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-2 py-1.5">
+                ⚠️ هذه الشركة لم تُكمل التسجيل في ZATCA (لا توجد Production CSID). الباركود الناتج سيظهر في تطبيق ZATCA الرسمي كـ "متوافق" فقط وليس "معتمد".
+              </p>
+            )}
           </div>
 
           <InvoiceLabelCustomizer labels={customLabels} onChange={setCustomLabels} />
