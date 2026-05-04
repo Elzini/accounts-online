@@ -181,8 +181,8 @@ export const InvoiceTemplate6 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       {/* Footer */}
       <div className="mt-10 text-center text-[11px] text-gray-700 border-t pt-3">
         <div>{companyAddress}</div>
-        {taxSettings?.phone && (
-          <div dir="ltr" className="mt-1">{taxSettings.phone}</div>
+        {data.sellerPhone && (
+          <div dir="ltr" className="mt-1">{data.sellerPhone}</div>
         )}
       </div>
     </div>
