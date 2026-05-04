@@ -50,6 +50,11 @@ export interface InvoiceTemplateData {
   projectReference?: string;
   customLabels?: InvoiceCustomLabels;
   plateNumber?: string;
+  retentionRate?: number;
+  retentionAmount?: number;
+  totalDue?: number;
+  sellerCity?: string;
+  sellerDistrict?: string;
 }
 
 export interface InvoiceCustomLabels {
