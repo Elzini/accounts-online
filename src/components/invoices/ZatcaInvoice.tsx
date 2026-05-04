@@ -186,13 +186,7 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                 settings.qr_position === 'right' ? 'order-first' : ''
               }`}>
                 <div className="bg-white p-2 rounded-lg shadow-lg">
-                  <QRCodeSVG
-                    value={qrData}
-                    size={140}
-                    level="L"
-                    includeMargin={true}
-                    fgColor="#000000"
-                  />
+                  <ZatcaQrBlock value={qrData} size={180} />
                 </div>
                 {!isVatValid && (
                   <div className="mt-1 text-xs text-yellow-200 bg-yellow-600/50 px-2 py-0.5 rounded">
@@ -208,13 +202,6 @@ export const ZatcaInvoice = forwardRef<HTMLDivElement, ZatcaInvoiceProps>(
                     <span className="opacity-75">الوقت</span>
                     <p className="font-bold">{formattedTime}</p>
                   </div>
-                </div>
-                <div className={`mt-2 max-w-[180px] text-center text-[9px] font-bold leading-tight rounded px-2 py-1 ${
-                  phase2State.isPhase2Approved
-                    ? 'bg-black text-white'
-                    : 'bg-gray-200 text-gray-700'
-                }`}>
-                  {phase2State.label}
                 </div>
               </div>
             )}
