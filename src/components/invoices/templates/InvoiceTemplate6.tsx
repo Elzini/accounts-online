@@ -29,7 +29,7 @@ export const InvoiceTemplate6 = forwardRef<HTMLDivElement, Props>(({ data }, ref
   const companyAddress = taxSettings?.national_address || sellerAddress || '';
   const commercialRegister = taxSettings?.commercial_register || '';
 
-  const retentionAmount = data.retentionAmount ?? (total * (retentionRate / 100));
+  const retentionAmount = data.retentionAmount ?? (subtotal * (retentionRate / 100));
   const totalDue = data.totalDue ?? (total - retentionAmount);
 
   const qrData = useZatcaPhase2QR({
