@@ -38,7 +38,7 @@ const defaultInvoiceData: InvoiceFormData = {
   po_details: '', project_reference: '',
 };
 
-export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
+export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void, forceItemsMode = false) {
   // === External hooks ===
   const { data: customers = [] } = useCustomers();
   const { data: allCars = [] } = useCars();
@@ -62,7 +62,10 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void) {
   const { permissions } = useAuth();
   const { data: inventoryItems = [] } = useItems();
   const { data: units = [] } = useUnits();
-  const isCarDealership = useIndustryFeatures().hasCarInventory;
+  const industryHasCars = useIndustryFeatures().hasCarInventory;
+  // When forceItemsMode is true (Sales Items Invoice), bypass car-dealership flow
+  // even for car dealerships, so the form behaves like a regular items invoice.
+  const isCarDealership = forceItemsMode ? false : industryHasCars;
 
   // === Local state ===
   const [existingInvoices, setExistingInvoices] = useState<any[]>([]);

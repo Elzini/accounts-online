@@ -173,6 +173,7 @@ export function renderPageContent({
     case 'add-supplier': return <SupplierForm setActivePage={setActivePage} />;
     case 'add-purchase': case 'add-purchase-invoice': return <PurchaseInvoiceForm setActivePage={setActivePage} />;
     case 'add-sale': case 'add-sale-invoice': return <SalesInvoiceForm setActivePage={setActivePage} />;
+    case 'add-sale-items': return <SalesInvoiceForm setActivePage={setActivePage} forceItemsMode />;
     case 'partner-dealerships': return <PartnerDealershipsTable setActivePage={setActivePage} />;
     case 'car-transfers': return <CarTransfersTable setActivePage={setActivePage} />;
     case 'inventory-report': return <InventoryReport />;
