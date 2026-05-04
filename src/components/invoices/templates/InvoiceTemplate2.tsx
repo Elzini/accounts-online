@@ -75,10 +75,7 @@ export const InvoiceTemplate2 = forwardRef<HTMLDivElement, Props>(({ data }, ref
           <div className="flex gap-2"><span className="text-gray-500 w-24">طريقة الدفع:</span><span>{paymentMethod === 'credit' ? 'آجل / Credit' : paymentMethod === 'bank' ? 'تحويل بنكي / Bank' : 'نقدي / Cash'}</span></div>
         </div>
         <div className="p-2 flex justify-end">
-          <div>
-            <QRCodeSVG value={qrData} size={140} level="L" includeMargin={true} />
-            <div className={`mt-1 text-center text-[9px] font-bold rounded px-2 py-0.5 ${phase2State.isPhase2Approved ? 'bg-black text-white' : ''}`}>{phase2State.label}</div>
-          </div>
+          <ZatcaQrBlock value={qrData} size={170} />
         </div>
       </div>
 

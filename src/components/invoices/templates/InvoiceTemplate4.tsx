@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import { format } from 'date-fns';
 import { QRCodeSVG } from 'qrcode.react';
+import { ZatcaQrBlock } from '@/components/invoices/ZatcaQrBlock';
 import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import { numberToArabicWords } from '@/lib/numberToArabicWords';
 import logoImage from '@/assets/logo.png';
@@ -136,11 +137,8 @@ export const InvoiceTemplate4 = forwardRef<HTMLDivElement, Props>(({ data }, ref
       {/* Totals Row */}
       <div className="flex border-t-2 border-gray-800">
         {/* QR Code Left */}
-        <div className="p-3 flex items-start">
-          <div>
-            <QRCodeSVG value={qrData} size={150} level="L" includeMargin={true} />
-            <div className={`mt-1 text-center text-[9px] font-bold rounded px-2 py-0.5 ${phase2State.isPhase2Approved ? 'bg-black text-white' : ''}`}>{phase2State.label}</div>
-          </div>
+        <div className="p-3 flex items-start justify-center">
+          <ZatcaQrBlock value={qrData} size={200} />
         </div>
         {/* Totals Right */}
         <div className="flex-1 text-[10px]">
