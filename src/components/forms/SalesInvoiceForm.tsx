@@ -21,10 +21,16 @@ import { SalesActionBar } from './sales-invoice/SalesActionBar';
 
 interface SalesInvoiceFormProps {
   setActivePage: (page: ActivePage) => void;
+  /**
+   * When true, this Sales Invoice form is used as a regular items-only invoice
+   * (parts/services/etc.) even on car-dealership companies, bypassing the
+   * cars-selection flow.
+   */
+  forceItemsMode?: boolean;
 }
 
-export function SalesInvoiceForm({ setActivePage }: SalesInvoiceFormProps) {
-  const hook = useSalesInvoiceData(setActivePage);
+export function SalesInvoiceForm({ setActivePage, forceItemsMode = false }: SalesInvoiceFormProps) {
+  const hook = useSalesInvoiceData(setActivePage, forceItemsMode);
   const {
     isViewingExisting, currentSaleStatus, isApproved, isEditing, setIsEditing,
     currentInvoiceIndex, fiscalYearFilteredSales, searchBarRef, dir,
