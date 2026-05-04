@@ -8,10 +8,7 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { email, newPassword, secret } = await req.json();
-    if (secret !== Deno.env.get("BACKUP_SECRET_TOKEN")) {
-      return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    const { email, newPassword } = await req.json();
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: list, error: listErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
     if (listErr) throw listErr;
