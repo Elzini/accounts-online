@@ -165,10 +165,13 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     setLoading(true);
     // Set pending 2FA flag BEFORE signIn to prevent PublicRoute redirect race condition
     sessionStorage.setItem('pending_2fa_verification', 'true');
+    console.log('[LOGIN] Starting signIn for:', email);
     try {
       const { error, data } = await signIn(email, password);
+      console.log('[LOGIN] signIn result:', { hasError: !!error, hasUser: !!data?.user, userId: data?.user?.id });
       if (error) {
         sessionStorage.removeItem('pending_2fa_verification');
+        console.error('[LOGIN] signIn error:', error.message);
         if (error.message.includes('Invalid login credentials')) {
           toast.error(t.invalid_credentials || 'بيانات الدخول غير صحيحة');
         } else if (error.message.includes('Email not confirmed')) {
@@ -182,6 +185,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       // Check 2FA status before completing login
       try {
         const twoFaStatus = await check2FAStatus();
+        console.log('[LOGIN] 2FA status:', twoFaStatus);
         if (twoFaStatus.success && twoFaStatus.isEnabled) {
           // 2FA is enabled - keep the flag and show verification dialog
           setTwoFaType(twoFaStatus.twoFaType || 'totp');
@@ -192,13 +196,16 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           return;
         }
       } catch (e) {
-        console.error('2FA check error:', e);
+        console.error('[LOGIN] 2FA check error:', e);
       }
 
+      console.log('[LOGIN] Calling completeLogin, mode=', mode, 'subdomain=', extractSubdomain(), 'baseDomain=', getBaseDomain());
       // No 2FA - complete login first, THEN remove flag
       await completeLogin(data);
+      console.log('[LOGIN] completeLogin done');
       sessionStorage.removeItem('pending_2fa_verification');
-    } catch {
+    } catch (err) {
+      console.error('[LOGIN] Unexpected error:', err);
       toast.error(t.unexpected_error || 'حدث خطأ غير متوقع');
     } finally {
       setLoading(false);
