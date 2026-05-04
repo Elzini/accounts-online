@@ -327,10 +327,10 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
                 dir="ltr"
               />
               <span className="text-xs text-amber-800">
-                = {(data.total * (retentionRate / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR
+                = {(data.subtotal * (retentionRate / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR
               </span>
               <span className="text-xs text-amber-700 mr-auto">
-                المستحق: {(data.total - data.total * (retentionRate / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR
+                المستحق: {(data.total - data.subtotal * (retentionRate / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR
               </span>
             </div>
           )}
