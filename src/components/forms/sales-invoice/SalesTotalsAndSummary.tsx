@@ -16,8 +16,11 @@ export function SalesTotalsAndSummary({ hook }: SalesTotalsAndSummaryProps) {
   const {
     invoiceData, accounts, nextInvoiceNumber, isViewingExisting, currentSaleStatus, currentInvoiceIndex,
     displayTotals, discount, setDiscount, discountType, setDiscountType, paidAmount, setPaidAmount,
+    retentionRate, setRetentionRate,
     formatCurrency, taxRate, currency, t,
   } = hook;
+  const retentionAmount = (displayTotals.finalTotal || 0) * ((retentionRate || 0) / 100);
+  const totalDue = (displayTotals.finalTotal || 0) - retentionAmount;
 
   return (
     <>
@@ -91,6 +94,34 @@ export function SalesTotalsAndSummary({ hook }: SalesTotalsAndSummaryProps) {
           <div className={`border-2 rounded-xl p-4 text-center ${displayTotals.profit >= 0 ? 'bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-emerald-200 dark:border-emerald-800' : 'bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border-red-200 dark:border-red-800'}`}>
             <div className={`text-2xl font-black ${displayTotals.profit >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}`}>{formatCurrency(displayTotals.profit)}</div>
             <div className={`text-[10px] font-semibold mt-1 ${displayTotals.profit >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-red-600 dark:text-red-500'}`}>{t.inv_profit}</div>
+          </div>
+        </div>
+
+        {/* Retention row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+          <div className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/30 border-2 border-rose-200 dark:border-rose-800 rounded-xl p-3">
+            <Label className="text-[10px] font-semibold text-rose-700 dark:text-rose-400 uppercase tracking-wider block mb-1">
+              نسبة الاحتجاز Retention %
+            </Label>
+            <Input
+              type="number" min={0} max={100} step={0.5}
+              value={retentionRate}
+              onChange={(e) => setRetentionRate(parseFloat(e.target.value) || 0)}
+              className="h-9 text-base font-bold text-center bg-white dark:bg-background border border-rose-300 dark:border-rose-700 rounded"
+              placeholder="0" dir="ltr"
+            />
+          </div>
+          <div className="bg-rose-50/60 dark:bg-rose-950/20 border-2 border-rose-200 dark:border-rose-800 rounded-xl p-3 text-center">
+            <Label className="text-[10px] font-semibold text-rose-700 dark:text-rose-400 uppercase tracking-wider block mb-1">
+              قيمة الاحتجاز
+            </Label>
+            <div className="text-xl font-black text-rose-700 dark:text-rose-400">{formatCurrency(retentionAmount)}</div>
+          </div>
+          <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-3 text-center text-white shadow-lg">
+            <Label className="text-[10px] font-semibold opacity-90 uppercase tracking-wider block mb-1">
+              المستحق بعد الاحتجاز Total Due
+            </Label>
+            <div className="text-2xl font-black">{formatCurrency(totalDue)}</div>
           </div>
         </div>
 

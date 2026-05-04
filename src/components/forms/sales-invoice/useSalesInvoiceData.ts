@@ -77,6 +77,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void, f
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('amount');
   const [paidAmount, setPaidAmount] = useState(0);
+  const [retentionRate, setRetentionRate] = useState<number>(0);
   const [currentInvoiceIndex, setCurrentInvoiceIndex] = useState(0);
   const [isViewingExisting, setIsViewingExisting] = useState(false);
   const [currentSaleId, setCurrentSaleId] = useState<string | null>(null);
@@ -674,7 +675,7 @@ export function useSalesInvoiceData(setActivePage: (page: ActivePage) => void, f
     taxRate, nextInvoiceNumber, savedTemplates,
     invoiceData, setInvoiceData, selectedCars, selectedInventoryItems,
     invoiceOpen, setInvoiceOpen, savedSaleData, discount, setDiscount, discountType, setDiscountType,
-    paidAmount, setPaidAmount, currentInvoiceIndex, isViewingExisting, currentSaleId,
+    paidAmount, setPaidAmount, retentionRate, setRetentionRate, currentInvoiceIndex, isViewingExisting, currentSaleId,
     deleteDialogOpen, setDeleteDialogOpen, reverseDialogOpen, setReverseDialogOpen,
     approveDialogOpen, setApproveDialogOpen, currentSaleStatus, isEditing, setIsEditing,
     isApproved, isReadOnly, selectedCustomer, searchBarRef,
