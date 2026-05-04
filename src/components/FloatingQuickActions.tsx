@@ -1,17 +1,21 @@
 import { useState } from 'react';
-import { Plus, X, DollarSign, ShoppingCart, Receipt, Users, Truck, FileCheck } from 'lucide-react';
+import { Plus, X, DollarSign, ShoppingCart, Receipt, Users, Truck, FileCheck, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ActivePage } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useDraggable } from '@/hooks/useDraggable';
+import { useIndustryFeatures } from '@/hooks/useIndustryFeatures';
 
 interface FloatingQuickActionsProps {
   setActivePage: (page: ActivePage) => void;
 }
 
-const actions = [
+type ActionItem = { id: ActivePage; icon: typeof DollarSign; labelAr: string; labelEn: string; color: string; carDealershipOnly?: boolean };
+
+const actions: ActionItem[] = [
   { id: 'add-sale-invoice' as ActivePage, icon: DollarSign, labelAr: 'فاتورة مبيعات', labelEn: 'New Sale', color: 'bg-emerald-500 hover:bg-emerald-600 text-white' },
+  { id: 'add-sale-items' as ActivePage, icon: Package, labelAr: 'فاتورة مبيعات أصناف', labelEn: 'Sale - Items Only', color: 'bg-teal-500 hover:bg-teal-600 text-white', carDealershipOnly: true },
   { id: 'add-purchase-invoice' as ActivePage, icon: ShoppingCart, labelAr: 'فاتورة مشتريات', labelEn: 'New Purchase', color: 'bg-blue-500 hover:bg-blue-600 text-white' },
   { id: 'vouchers' as ActivePage, icon: Receipt, labelAr: 'سند قبض / صرف', labelEn: 'Voucher', color: 'bg-amber-500 hover:bg-amber-600 text-white' },
   { id: 'quotations' as ActivePage, icon: FileCheck, labelAr: 'عرض سعر', labelEn: 'Quotation', color: 'bg-violet-500 hover:bg-violet-600 text-white' },
@@ -23,6 +27,8 @@ export function FloatingQuickActions({ setActivePage }: FloatingQuickActionsProp
   const [isOpen, setIsOpen] = useState(false);
   const { language } = useLanguage();
   const isAr = language === 'ar';
+  const isCarDealership = useIndustryFeatures().hasCarInventory;
+  const visibleActions = actions.filter(a => !a.carDealershipOnly || isCarDealership);
 
   const { position, dragHandleProps, wasDragged } = useDraggable({
     initialPosition: { x: isAr ? 20 : window.innerWidth - 76, y: window.innerHeight - 80 },
@@ -41,7 +47,7 @@ export function FloatingQuickActions({ setActivePage }: FloatingQuickActionsProp
         "flex flex-col-reverse gap-2 mb-3 transition-all duration-300",
         isOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
       )} style={{ position: 'absolute', bottom: '100%', left: 0 }}>
-        {actions.map((action, i) => {
+        {visibleActions.map((action, i) => {
           const Icon = action.icon;
           return (
             <div
