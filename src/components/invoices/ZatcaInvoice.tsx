@@ -2,6 +2,7 @@ import { forwardRef, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { QRCodeSVG } from 'qrcode.react';
+import { ZatcaQrBlock } from '@/components/invoices/ZatcaQrBlock';
 import { TaxSettings } from '@/services/accounting';
 import { useZatcaPhase2QR } from '@/hooks/useZatcaPhase2QR';
 import logoImage from '@/assets/logo.png';
