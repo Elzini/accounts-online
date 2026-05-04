@@ -175,8 +175,8 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     customLabels,
     plateNumber,
     retentionRate,
-    retentionAmount: data.total * (retentionRate / 100),
-    totalDue: data.total - (data.total * (retentionRate / 100)),
+    retentionAmount: data.subtotal * (retentionRate / 100),
+    totalDue: data.total - (data.subtotal * (retentionRate / 100)),
   };
 
   const renderTemplate = () => {
