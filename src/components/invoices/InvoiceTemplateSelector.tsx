@@ -45,6 +45,12 @@ const templates: { id: InvoiceTemplateName; name: string; description: string; p
     description: 'فاتورة ضريبية مفصلة ثنائية اللغة مع بيانات العميل والبنك وأمر الشراء',
     preview: '🏢',
   },
+  {
+    id: 'template6',
+    name: 'نموذج المقاولات (Retention)',
+    description: 'تصميم بهانس للمقاولات مع خانة الاحتجاز Retention وإجمالي مستحق',
+    preview: '🏗️',
+  },
 ];
 
 export function InvoiceTemplateSelector({ open, onClose, onSelect }: InvoiceTemplateSelectorProps) {

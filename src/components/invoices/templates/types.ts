@@ -50,6 +50,11 @@ export interface InvoiceTemplateData {
   projectReference?: string;
   customLabels?: InvoiceCustomLabels;
   plateNumber?: string;
+  retentionRate?: number;
+  retentionAmount?: number;
+  totalDue?: number;
+  sellerCity?: string;
+  sellerDistrict?: string;
 }
 
 export interface InvoiceCustomLabels {
@@ -90,4 +95,4 @@ export const defaultInvoiceLabels: InvoiceCustomLabels = {
   plateNumberLabelEn: 'Plate Number',
 };
 
-export type InvoiceTemplateName = 'template1' | 'template2' | 'template3' | 'template4' | 'template5' | 'default';
+export type InvoiceTemplateName = 'template1' | 'template2' | 'template3' | 'template4' | 'template5' | 'template6' | 'default';

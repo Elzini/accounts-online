@@ -13,7 +13,7 @@ import { generateZatcaJSONString, downloadJSONInvoice } from '@/lib/zatcaJSON';
 import { toast } from 'sonner';
 import { InvoiceTemplateSelector } from './InvoiceTemplateSelector';
 import { InvoiceLabelCustomizer } from './InvoiceLabelCustomizer';
-import { InvoiceTemplate1, InvoiceTemplate2, InvoiceTemplate3, InvoiceTemplate4, InvoiceTemplate5 } from './templates';
+import { InvoiceTemplate1, InvoiceTemplate2, InvoiceTemplate3, InvoiceTemplate4, InvoiceTemplate5, InvoiceTemplate6 } from './templates';
 import { InvoiceTemplateName, InvoiceTemplateData, InvoiceCustomLabels, defaultInvoiceLabels } from './templates/types';
 import { getZatcaPhase2DisplayState } from '@/lib/zatcaPhase2Status';
 import { useZatcaConfigStatus } from '@/hooks/useZatcaConfigStatus';
@@ -77,6 +77,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
   const [customLabels, setCustomLabels] = useState<InvoiceCustomLabels>({ ...defaultInvoiceLabels });
   const [plateNumber, setPlateNumber] = useState('');
+  const [retentionRate, setRetentionRate] = useState<number>(10);
 
   const invoiceUUID = useMemo(() => data.uuid || generateInvoiceUUID(), [data.uuid, data.invoiceNumber]);
   const zatcaConfig = useZatcaConfigStatus();
@@ -173,6 +174,9 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     projectReference: (data as any).projectReference || '',
     customLabels,
     plateNumber,
+    retentionRate,
+    retentionAmount: data.total * (retentionRate / 100),
+    totalDue: data.total - (data.total * (retentionRate / 100)),
   };
 
   const renderTemplate = () => {
@@ -182,6 +186,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
       case 'template3': return <InvoiceTemplate3 ref={invoiceRef} data={templateData} />;
       case 'template4': return <InvoiceTemplate4 ref={invoiceRef} data={templateData} />;
       case 'template5': return <InvoiceTemplate5 ref={invoiceRef} data={templateData} />;
+      case 'template6': return <InvoiceTemplate6 ref={invoiceRef} data={templateData} />;
       default: return <ZatcaInvoice ref={invoiceRef} data={{ ...data, uuid: invoiceUUID, paymentMethod: templateData.paymentMethod, customLabels, plateNumber }} />;
     }
   };
@@ -307,7 +312,29 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
               dir="auto"
             />
           </div>
-          
+
+          {selectedTemplate === 'template6' && (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <label className="text-xs font-medium text-amber-900 whitespace-nowrap">نسبة الاحتجاز Retention %:</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={0.5}
+                value={retentionRate}
+                onChange={(e) => setRetentionRate(Number(e.target.value) || 0)}
+                className="w-24 h-7 text-xs bg-white border border-amber-300 rounded px-2 focus:outline-none focus:border-amber-500"
+                dir="ltr"
+              />
+              <span className="text-xs text-amber-800">
+                = {(data.total * (retentionRate / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR
+              </span>
+              <span className="text-xs text-amber-700 mr-auto">
+                المستحق: {(data.total - data.total * (retentionRate / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR
+              </span>
+            </div>
+          )}
+
           <div className="border border-border rounded-lg overflow-hidden bg-muted p-4">
             {renderTemplate()}
           </div>
