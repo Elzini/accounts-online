@@ -56,8 +56,7 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
             <p className="text-xs" dir="ltr">Vat : {vatNumber}</p>
           </div>
           <div className="text-left text-xs">
-            <QRCodeSVG value={qrData} size={130} level="L" includeMargin={true} />
-            <div className={`mt-1 text-center text-[9px] font-bold rounded px-2 py-0.5 ${phase2State.isPhase2Approved ? 'bg-black text-white' : ''}`}>{phase2State.label}</div>
+            <ZatcaQrBlock value={qrData} size={140} />
           </div>
         </div>
       </div>
@@ -136,11 +135,8 @@ export const InvoiceTemplate1 = forwardRef<HTMLDivElement, Props>(({ data }, ref
            <div className="flex justify-between py-1"><span>{L.taxLabel} {taxRate}%</span><span>{taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
            <div className="flex justify-between py-1 font-bold text-base border-t mt-1 pt-2"><span>{L.grandTotalLabel}</span><span>{total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
         </div>
-        <div className="p-3 border-r flex items-center">
-          <div>
-            <QRCodeSVG value={qrData} size={150} level="L" includeMargin={true} />
-            <div className={`mt-1 text-center text-[9px] font-bold rounded px-2 py-0.5 ${phase2State.isPhase2Approved ? 'bg-black text-white' : ''}`}>{phase2State.label}</div>
-          </div>
+        <div className="p-3 border-r flex items-center justify-center">
+          <ZatcaQrBlock value={qrData} size={200} />
         </div>
       </div>
 
