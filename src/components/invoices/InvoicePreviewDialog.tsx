@@ -13,7 +13,7 @@ import { generateZatcaJSONString, downloadJSONInvoice } from '@/lib/zatcaJSON';
 import { toast } from 'sonner';
 import { InvoiceTemplateSelector } from './InvoiceTemplateSelector';
 import { InvoiceLabelCustomizer } from './InvoiceLabelCustomizer';
-import { InvoiceTemplate1, InvoiceTemplate2, InvoiceTemplate3, InvoiceTemplate4, InvoiceTemplate5 } from './templates';
+import { InvoiceTemplate1, InvoiceTemplate2, InvoiceTemplate3, InvoiceTemplate4, InvoiceTemplate5, InvoiceTemplate6 } from './templates';
 import { InvoiceTemplateName, InvoiceTemplateData, InvoiceCustomLabels, defaultInvoiceLabels } from './templates/types';
 import { getZatcaPhase2DisplayState } from '@/lib/zatcaPhase2Status';
 import { useZatcaConfigStatus } from '@/hooks/useZatcaConfigStatus';
@@ -77,6 +77,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
   const [customLabels, setCustomLabels] = useState<InvoiceCustomLabels>({ ...defaultInvoiceLabels });
   const [plateNumber, setPlateNumber] = useState('');
+  const [retentionRate, setRetentionRate] = useState<number>(10);
 
   const invoiceUUID = useMemo(() => data.uuid || generateInvoiceUUID(), [data.uuid, data.invoiceNumber]);
   const zatcaConfig = useZatcaConfigStatus();
@@ -173,6 +174,9 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
     projectReference: (data as any).projectReference || '',
     customLabels,
     plateNumber,
+    retentionRate,
+    retentionAmount: data.total * (retentionRate / 100),
+    totalDue: data.total - (data.total * (retentionRate / 100)),
   };
 
   const renderTemplate = () => {
@@ -182,6 +186,7 @@ export function InvoicePreviewDialog({ open, onOpenChange, data }: InvoicePrevie
       case 'template3': return <InvoiceTemplate3 ref={invoiceRef} data={templateData} />;
       case 'template4': return <InvoiceTemplate4 ref={invoiceRef} data={templateData} />;
       case 'template5': return <InvoiceTemplate5 ref={invoiceRef} data={templateData} />;
+      case 'template6': return <InvoiceTemplate6 ref={invoiceRef} data={templateData} />;
       default: return <ZatcaInvoice ref={invoiceRef} data={{ ...data, uuid: invoiceUUID, paymentMethod: templateData.paymentMethod, customLabels, plateNumber }} />;
     }
   };
