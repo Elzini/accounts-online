@@ -19,7 +19,7 @@ export function SalesTotalsAndSummary({ hook }: SalesTotalsAndSummaryProps) {
     retentionRate, setRetentionRate,
     formatCurrency, taxRate, currency, t,
   } = hook;
-  const retentionAmount = (displayTotals.finalTotal || 0) * ((retentionRate || 0) / 100);
+  const retentionAmount = retentionRate || 0;
   const totalDue = (displayTotals.finalTotal || 0) - retentionAmount;
 
   return (
@@ -101,21 +101,23 @@ export function SalesTotalsAndSummary({ hook }: SalesTotalsAndSummaryProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
           <div className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/30 border-2 border-rose-200 dark:border-rose-800 rounded-xl p-3">
             <Label className="text-[10px] font-semibold text-rose-700 dark:text-rose-400 uppercase tracking-wider block mb-1">
-              نسبة الاحتجاز Retention %
+              قيمة الاحتجاز Retention
             </Label>
             <Input
-              type="number" min={0} max={100} step={0.5}
+              type="number" min={0} step={0.01}
               value={retentionRate}
               onChange={(e) => setRetentionRate(parseFloat(e.target.value) || 0)}
               className="h-9 text-base font-bold text-center bg-white dark:bg-background border border-rose-300 dark:border-rose-700 rounded"
-              placeholder="0" dir="ltr"
+              placeholder="0.00" dir="ltr"
             />
           </div>
           <div className="bg-rose-50/60 dark:bg-rose-950/20 border-2 border-rose-200 dark:border-rose-800 rounded-xl p-3 text-center">
             <Label className="text-[10px] font-semibold text-rose-700 dark:text-rose-400 uppercase tracking-wider block mb-1">
-              قيمة الاحتجاز
+              نسبة الاحتجاز من الإجمالي
             </Label>
-            <div className="text-xl font-black text-rose-700 dark:text-rose-400">{formatCurrency(retentionAmount)}</div>
+            <div className="text-xl font-black text-rose-700 dark:text-rose-400">
+              {((displayTotals.finalTotal || 0) > 0 ? (retentionAmount / displayTotals.finalTotal * 100) : 0).toFixed(2)}%
+            </div>
           </div>
           <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-3 text-center text-white shadow-lg">
             <Label className="text-[10px] font-semibold opacity-90 uppercase tracking-wider block mb-1">
