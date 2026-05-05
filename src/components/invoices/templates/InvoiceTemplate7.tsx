@@ -67,18 +67,18 @@ export const InvoiceTemplate7 = forwardRef<HTMLDivElement, Props>(({ data }, ref
     >
       {/* Header */}
       <div className="grid grid-cols-[auto_1fr_auto] items-center gap-6 border border-gray-400 p-4">
-        <div className="flex justify-start">
-          <ZatcaQrBlock value={qrData} size={130} />
+        <div className="space-y-1 min-w-[230px]">
+          <Row label="الرقم التسلسلي" value={String(invoiceNumber)} />
+          <Row label="تاريخ الإصدار" value={formattedDate} />
+          <Row label="تاريخ التوريد" value={formattedDate} />
         </div>
         <div className="text-center">
           <div className="text-[20px] font-bold">
             <span dir="ltr">Tax Invoice</span> &nbsp; فاتورة ضريبية
           </div>
         </div>
-        <div className="space-y-1 min-w-[230px]">
-          <Row label="الرقم التسلسلي" value={String(invoiceNumber)} />
-          <Row label="تاريخ الإصدار" value={formattedDate} />
-          <Row label="تاريخ التوريد" value={formattedDate} />
+        <div className="flex justify-end">
+          <ZatcaQrBlock value={qrData} size={130} />
         </div>
       </div>
 
