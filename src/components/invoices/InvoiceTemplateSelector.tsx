@@ -51,6 +51,12 @@ const templates: { id: InvoiceTemplateName; name: string; description: string; p
     description: 'تصميم بهانس للمقاولات مع خانة الاحتجاز Retention وإجمالي مستحق',
     preview: '🏗️',
   },
+  {
+    id: 'template7',
+    name: 'نموذج الفاتورة الضريبية التفصيلي (ZATCA)',
+    description: 'فاتورة ضريبية تفصيلية ببيانات المورد والعميل والعنوان الوطني وجدول 6 أعمدة',
+    preview: '🧾',
+  },
 ];
 
 export function InvoiceTemplateSelector({ open, onClose, onSelect }: InvoiceTemplateSelectorProps) {
