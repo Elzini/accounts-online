@@ -188,8 +188,8 @@ export function SalesItemsTable({ hook }: SalesItemsTableProps) {
                     placeholder={t.inv_item_name_placeholder || 'اسم الصنف / الخدمة'} className="h-7 text-xs border-0 border-b border-border rounded-none bg-transparent" disabled={isApproved} />
                 </TableCell>
                 <TableCell className="py-2">
-                  <Input type="number" min={1} max={item.available_quantity || undefined} value={item.quantity}
-                    onChange={(e) => handleInventoryItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)}
+                  <Input type="number" step="any" min={0} max={item.available_quantity || undefined} value={item.quantity}
+                    onChange={(e) => handleInventoryItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)}
                     className="h-7 text-xs text-center w-16 border-0 border-b border-border rounded-none bg-transparent" disabled={isApproved} />
                 </TableCell>
                 <TableCell className="text-center text-xs py-2 text-muted-foreground">{item.available_quantity}</TableCell>
